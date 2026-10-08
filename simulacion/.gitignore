@@ -5,5 +5,3 @@ __pycache__/
 salida*/
 # checkpoints de PyTorch; se versionan solo los pesos exportados (dron_politica.json)
 modelos*/*.pt
-salida_v5/
-modelos_v5/

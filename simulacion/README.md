@@ -30,4 +30,4 @@ El entorno virtual `.venv` (torch CPU + numpy) no se sube al repositorio. Para c
 - `evaluar.py`: compara la IA contra reglas escritas a mano en los mismos escenarios.
 - `index.html`: visor 3D tipo estación de tierra (three.js), con la cámara FPV, la telemetría y las gráficas en vivo.
 - `modelos/dron_politica.json`: pesos de la red del dron, para cargarla en la Jetson.
-- `*_v2` … `*_v5`, `index_v4` … `index_v7`, `modelos_v1` … `modelos_v4`: versiones anteriores de cada experimento.
+- `*_v2` … `*_v5`, `index_v4` … `index_v7`, `modelos_v1` … `modelos_v5`: versiones anteriores de cada experimento.
