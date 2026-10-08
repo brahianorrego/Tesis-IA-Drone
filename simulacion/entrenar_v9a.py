@@ -192,8 +192,6 @@ def main():
     ap.add_argument("--horizonte", type=int, default=128)
     ap.add_argument("--continuar", action="store_true")
     ap.add_argument("--hito-cada", type=int, default=20)
-    ap.add_argument("--bloque", type=float, default=10e6,
-                    help="cada cuántos pasos se guarda una copia fija de los pesos en modelos/bloques/ (entrenamiento largo)")
     ap.add_argument("--desde", help="arrancar con los pesos de otro entrenamiento (.pt); si el dron tiene "
                                     "acciones u observaciones nuevas, se agregan a su capa de salida o de entrada")
     a = ap.parse_args()
@@ -337,8 +335,7 @@ def main():
         if iteracion % 5 == 0 or iteracion == 1:
             guardar_json(os.path.join(SALIDA, "replay_adv.json"), grabar_partida(red_d, red_p, True, iteracion, iteracion, pasos_tot))
             guardar_json(os.path.join(SALIDA, "replay_mision.json"), grabar_mision(red_d, red_p, actuar, iteracion, pasos_tot, iteracion + 2))
-        nuevo_bloque = int(pasos_tot // a.bloque) > int((pasos_tot - T * N) // a.bloque)
-        if iteracion % a.hito_cada == 0 or iteracion == 1 or nuevo_bloque:
+        if iteracion % a.hito_cada == 0 or iteracion == 1:
             nombre = "it%05d_partida.json" % iteracion
             guardar_json(os.path.join(SALIDA, "hitos", nombre), grabar_partida(red_d, red_p, True, 1000 + iteracion, iteracion, pasos_tot))
             hitos.append({"archivo": nombre, "it": iteracion, "pasos": pasos_tot, "adversaria": True, "mision": False})
@@ -350,16 +347,6 @@ def main():
                         "opt_p": ppo_p.opt.state_dict(), "iteracion": iteracion, "pasos": pasos_tot,
                         "tiempo": t_previo + time.time() - t0}, ruta_ckpt)
             guardar_json(os.path.join(MODELOS, "dron_politica.json"), dict(red_d.exportar(), iteracion=iteracion, pasos=pasos_tot))
-        if nuevo_bloque:
-            # BLOQUE: cada --bloque pasos queda una copia fija de los pesos (para comparar bloques o volver atrás)
-            nb = int(pasos_tot // a.bloque * a.bloque / 1e6)
-            os.makedirs(os.path.join(MODELOS, "bloques"), exist_ok=True)
-            torch.save({"dron": red_d.state_dict(), "persona": red_p.state_dict(), "opt_d": ppo_d.opt.state_dict(),
-                        "opt_p": ppo_p.opt.state_dict(), "iteracion": iteracion, "pasos": pasos_tot,
-                        "tiempo": t_previo + time.time() - t0}, os.path.join(MODELOS, "bloques", "bloque_%04dM.pt" % nb))
-            guardar_json(os.path.join(MODELOS, "bloques", "dron_politica_%04dM.json" % nb),
-                         dict(red_d.exportar(), iteracion=iteracion, pasos=pasos_tot))
-            print("=== bloque de %d M pasos guardado en modelos/bloques/ ===" % nb, flush=True)
         if iteracion % 5 == 0 or iteracion < 5:
             e = m["adv"] or {}
             c = control or {}

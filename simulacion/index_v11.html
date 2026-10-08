@@ -144,7 +144,7 @@
 <div id="barra" class="ui">
   <div class="marca">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2db7ff" stroke-width="1.6"><circle cx="5" cy="5" r="3"/><circle cx="19" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><path d="M7.2 7.2l9.6 9.6M16.8 7.2l-9.6 9.6"/><rect x="9.5" y="9.5" width="5" height="5" rx="1" fill="#2db7ff" stroke="none"/></svg>
-    DRON-IA <small>Estación de simulación · Tesis · <span style="color:var(--tenue)">Desarrollado por BRAHIAN ORREGO</span></small>
+    DRON-IA <small>Estación de simulación · Tesis</small>
   </div>
   <div class="ind"><span>Modo de vuelo</span><b id="i-modo">–</b></div>
   <div class="ind"><span>Control</span><b id="i-fuente">–</b></div>
@@ -236,14 +236,12 @@
 
 <script>
 "use strict";
-const NOMBRES = ["MANTENER", "ESQUIVAR IZQ", "ESQUIVAR DER", "FRENAR+SUBIR", "GIRAR IZQ", "GIRAR DER", "AVANZAR", "BAJAR", "GIMBAL ARRIBA", "GIMBAL ABAJO"];
-const NOMBRES_TXT = ["mantener", "esquivar a la izquierda", "esquivar a la derecha", "frenar y subir", "girar a la izquierda", "girar a la derecha", "avanzar", "bajar", "subir el gimbal", "bajar el gimbal"];
-// en la búsqueda por IA las mismas salidas son consignas de vuelo (persisten hasta que otra acción las cambie)
-const NOMBRES_BUSQ = ["HOVER", "LATERAL IZQ", "LATERAL DER", "SUBIR", "GIRAR IZQ", "GIRAR DER", "AVANZAR", "BAJAR", "GIMBAL ARRIBA", "GIMBAL ABAJO"];
+const NOMBRES = ["MANTENER", "ESQUIVAR IZQ", "ESQUIVAR DER", "FRENAR+SUBIR", "GIRAR IZQ", "GIRAR DER", "AVANZAR"];
+const NOMBRES_TXT = ["mantener", "esquivar a la izquierda", "esquivar a la derecha", "frenar y subir", "girar a la izquierda", "girar a la derecha", "avanzar"];
 const COL = { nominal: "#2db7ff", ok: "#33d17a", alerta: "#ff9f1a", peligro: "#ff4d4f", precaucion: "#f5c542", tenue: "#56667a", suave: "#8b9bb0" };
-const COL_ACC = [COL.nominal, COL.alerta, COL.alerta, COL.precaucion, COL.nominal, COL.nominal, COL.nominal, COL.precaucion, COL.nominal, COL.nominal];
+const COL_ACC = [COL.nominal, COL.alerta, COL.alerta, COL.precaucion, COL.nominal, COL.nominal, COL.nominal];
 const TRK = [["BÚSQUEDA 360°", COL.suave], ["FIJADO", COL.ok], ["MEMORIA", COL.nominal], ["PERDIDO", COL.alerta], ["RE-ID", COL.precaucion], ["VERIFICANDO", COL.precaucion]];
-const MODOS = ["SEARCH", "VERIFICA", "TRACK", "INVESTIGA", "ASOMO", "ALTURA", "PREDICCIÓN", "BÚSQUEDA IA"];
+const MODOS = ["SEARCH", "VERIFICA", "TRACK", "INVESTIGA", "ASOMO", "ALTURA", "PREDICCIÓN"];
 const ladoTxt = c => (c.bd ?? 1) < 0 ? "izquierda" : "derecha";
 const RESULTADOS = {
   "cumplida": ["MISIÓN CUMPLIDA · rastreo mantenido durante toda la prueba", COL.ok, true],
@@ -476,32 +474,7 @@ function cuna(sx, h, sy) {
   return geo;
 }
 const COLOR_OBST = { muro: 0xc9d0da, caja: 0xe8b53a, columna: 0x6fa9d6, rampa: 0xe8b53a };
-// ---- autoría: "BRAHIAN ORREGO" en letras 3D planas sobre el piso, cerca del punto de inicio. Solo es visual: la
-// simulación (Python) no la conoce, así que no interviene en las físicas
-const autoria = new THREE.Group();
-escena.add(autoria);
-const MAT_AUTORIA = new THREE.MeshStandardMaterial({ color: 0x7d8da1, roughness: 0.9, metalness: 0.0, transparent: true, opacity: 0.6 });
-let fuenteAutoria = null;
-new THREE.FontLoader().load("https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/helvetiker_bold.typeface.json",
-  f => { fuenteAutoria = f; if (partida) ponerAutoria(partida); }, undefined, () => {});
-function ponerAutoria(pt) {
-  while (autoria.children.length) autoria.remove(autoria.children[0]);
-  let m;
-  if (fuenteAutoria) {
-    const geo = new THREE.TextGeometry("BRAHIAN ORREGO", { font: fuenteAutoria, size: 0.9, height: 0.03, curveSegments: 4, bevelEnabled: false });
-    geo.computeBoundingBox(); geo.center();
-    m = new THREE.Mesh(geo, MAT_AUTORIA);
-    m.receiveShadow = true;
-  } else {   // sin la fuente (sin internet): el mismo texto como calcomanía
-    m = new THREE.Mesh(new THREE.PlaneGeometry(10, 1.4), new THREE.MeshBasicMaterial({ map: tex(textoPlano("BRAHIAN ORREGO", "#7d8da1", 1000, 140, 110)), transparent: true, opacity: 0.6, depthWrite: false }));
-  }
-  m.rotation.x = -Math.PI / 2;                       // plano sobre el piso, se lee a lo largo de +X (rumbo de la misión)
-  const [x, y] = pt.mision ? [pt.despegue[0] + 5.5, pt.despegue[1] - 3.2] : [0, -11];
-  m.position.copy(mundo(x, y, 0.02));
-  autoria.add(m);
-}
 function prepararEscenario(pt) {
-  ponerAutoria(pt);
   [grupoObst, grupoPaneles, helipuerto, lineaIA].forEach(g => { while (g.children.length) g.remove(g.children[0]); });
   (pt.obst || []).forEach(([cx, cy, sx, sy, h, tipo]) => {
     const m = new THREE.Mesh(tipo === "rampa" ? cuna(sx, h, sy) : cajaBisel(sx, h, sy, 0.06), est(COLOR_OBST[tipo] || 0xc9d0da, { roughness: 0.6 }));
@@ -940,13 +913,9 @@ function calcularEventos(pt) {     // eventos de la misión para la bitácora y 
       if (c.modo === 6 && p.modo !== 6) ev.push({ k, txt: "OBJETIVO SALIÓ DEL CUADRO · intercepción predictiva: sigue su trayectoria 2 s con la nariz y el gimbal en el punto predicho", col: COL.alerta, marca: true });
       if (c.modo === 3 && p.modo !== 3) ev.push({ k, txt: (p.modo === 6 ? "INTERCEPCIÓN SIN ÉXITO · " : "OBJETIVO PERDIDO · ") + (c.flq ? "FLANQUEO PROFUNDO: rodea la esquina por la que desapareció y queda detrás del muro" : `en campo abierto: punto de separación antes de su última posición (${c.ux.toFixed(1)}, ${c.uy.toFixed(1)})`), col: COL.alerta, marca: true });
       if (c.modo === 4 && p.modo !== 4) ev.push({ k, txt: c.flq ? `DETRÁS DEL MURO · rota hacia la ${ladoTxt(c)}, hacia la zona que estaba oculta (por donde entró el ladrón)` : `ASOMO · gira primero hacia la ${ladoTxt(c)}, por donde iba el ladrón`, col: COL.alerta });
-      const lc_ = (c.pers || []).find(q => q.rol === "ladron"), lp_ = (p.pers || []).find(q => q.rol === "ladron");
-      if (lc_ && lc_.sz > 0 && !(lp_ && lp_.sz > 0)) ev.push({ k, txt: `SALTO · el ladrón corre hacia el dron y salta para tumbarlo (dron a ${c.d[2].toFixed(1)} m; alcance de 2.5 a 2.7 m)`, col: COL.peligro, marca: true });
-      if (c.modo === 7 && p.modo !== 7) ev.push({ k, txt: `OBJETIVO PERDIDO · BÚSQUEDA POR IA: la política conserva motores y gimbal y lo busca con su última posición (${c.ux.toFixed(1)}, ${c.uy.toFixed(1)}), sin ruta fija`, col: COL.alerta, marca: true });
-      if (c.dsc && !p.dsc) ev.push({ k, txt: "RE-ADQUISICIÓN · el ladrón volvió a entrar en el cuadro: bono de descubrimiento para la táctica que lo logró", col: COL.ok, marca: true });
       if (c.rfx && !p.rfx) ev.push({ k, txt: "ESQUIVE REFLEJO · alguien corre hacia el dron para tumbarlo: el árbitro sube y se aparta", col: COL.peligro, marca: true });
       if (c.modo === 5 && p.modo !== 5) ev.push({ k, txt: `SIN RESULTADO · VENTAJA DE ALTURA: sube a ${(pt.z_alto ?? 6.5).toFixed(1)} m sobre la zona de pérdida en vez de rodear el panel`, col: COL.peligro, marca: true });
-      if (c.modo === 2 && p.modo >= 3) ev.push({ k, txt: `OBJETIVO RECUPERADO · ID ${idDe(ladDe(k))} reconfirmado (ReID)${p.modo === 5 ? " desde la altura" : p.modo === 4 ? " en el asomo" : p.modo === 6 ? " con la intercepción predictiva" : p.modo === 7 ? " con la búsqueda de la IA" : ""}: la IA retoma la persecución`, col: COL.ok, marca: true });
+      if (c.modo === 2 && p.modo >= 3) ev.push({ k, txt: `OBJETIVO RECUPERADO · ID ${idDe(ladDe(k))} reconfirmado (ReID)${p.modo === 5 ? " desde la altura" : p.modo === 4 ? " en el asomo" : p.modo === 6 ? " con la intercepción predictiva" : ""}: la IA retoma la persecución`, col: COL.ok, marca: true });
       if (c.trk === 4 && p.trk !== 4 && c.modo >= 2) ev.push({ k, txt: "OBJETIVO EN CÁMARA · confirmando su identidad por apariencia (ReID)", col: COL.precaucion });
     } else if (c.modo === undefined && c.trk !== undefined && c.trk !== p.trk && c.trk === 1 && !p.trk) {
       ev.push({ k, txt: `OBJETIVO DESIGNADO · ID ${idDe(ladDe(k))} por el operador`, col: COL.ok, marca: true });
@@ -1021,7 +990,6 @@ function lineaEstado(c, lad) {
   if (c.est === 1) return ["EVASIÓN", COL.alerta, "Amenaza confirmada: " + (fijado(c) ? "la IA ejecuta" : "la regla de seguridad ejecuta") + " «" + NOMBRES_TXT[c.cl] + "»" + (c.vis ? " sin dejar de apuntar al objetivo" : " · la guiñada sigue su curso")];
   if (c.est === 2) return ["ESTABILIZA", COL.precaucion, "Estabilizando después de la evasión"];
   if (c.fase === 2 && c.per && (c.modo === 0 || c.modo >= 4)) return ["PERÍMETRO", COL.peligro, "Persona a menos de 2 m: el giro de búsqueda queda en pausa hasta que se aleje"];
-  if (c.modo === 7) return ["BÚSQUEDA IA", COL.alerta, `La IA busca al objetivo perdido hace ${(c.tsv ?? 0).toFixed(1)} / ${partida.t_busqueda_ia ?? 60} s · última posición a ${Math.hypot(c.ux - c.d[0], c.uy - c.d[1]).toFixed(1)} m · altura ${c.d[2].toFixed(1)} m · gimbal ${(c.gmb ?? 0).toFixed(0)}°`];
   if (c.modo === 3) return ["INVESTIGA", COL.alerta, (c.flq ? `Flanqueo profundo · rodea la esquina por la que desapareció, sin rozarla, para quedar detrás del muro (${(c.ruta || []).length} punto${(c.ruta || []).length === 1 ? "" : "s"} de ruta)` : `Objetivo perdido en campo abierto · se detiene ${Math.hypot(c.wx - c.d[0], c.wy - c.d[1]).toFixed(1)} m antes de su última posición`) + (c.va ? " · por encima de los paneles" : "")];
   if (c.modo === 4) return ["ASOMO", COL.alerta, c.flq ? `Detrás del muro · paneo de 360° que empieza hacia la ${ladoTxt(c)}, hacia el interior de la zona que estaba oculta` : `Paneo de 360° que empieza hacia la ${ladoTxt(c)}, por donde iba el ladrón`];
   if (c.modo === 5) return ["ALTURA", COL.peligro, c.d[2] < (partida.z_alto ?? 6.5) - 0.2 ? `Ventaja de altura · sube rápido a ${(partida.z_alto ?? 6.5).toFixed(1)} m sobre la zona de pérdida (no rodea el panel)` : "Barrido de 360° desde la altura con la cámara a −65°: el panel ya no tapa · si no lo reconfirma, misión fallida"];
@@ -1055,7 +1023,7 @@ function actualizarPaneles(c, b, k, info) {
   $("i-modo").textContent = f1 ? "MANUAL" : "GUIDED";
   $("i-modo").style.color = f1 ? COL.texto : COL.nominal;
   $("i-fuente").textContent = f1 ? "PILOTO · RC" : c.modo === 0 ? (c.bf ? "AUTO · INSPECCIÓN" : "AUTO · SEARCH") : c.modo === 1 ? "AUTO · HOVER"
-    : c.modo === 3 ? "AUTO · INVESTIGA" : c.modo === 4 ? "AUTO · ASOMO" : c.modo === 5 ? "AUTO · ALTURA" : c.modo === 6 ? "AUTO · PREDICCIÓN" : c.modo === 7 ? "IA · BÚSQUEDA" : "IA · MAVLink";
+    : c.modo === 3 ? "AUTO · INVESTIGA" : c.modo === 4 ? "AUTO · ASOMO" : c.modo === 5 ? "AUTO · ALTURA" : c.modo === 6 ? "AUTO · PREDICCIÓN" : "IA · MAVLink";
   const [trkTxt, trkCol] = f1 ? ["IA INACTIVA", COL.tenue] : TRK[c.trk ?? (c.vis ? 1 : 0)];
   const cnd = candidato(c);
   $("i-obj").textContent = trkTxt + (fijado(c) && lad ? " · ID " + pad2(lad.id ?? 0) : c.modo === 1 && cnd ? " · ID " + pad2(cnd.id) : "");
@@ -1094,11 +1062,9 @@ function actualizarPaneles(c, b, k, info) {
   });
   $("pistas").innerHTML = filas.join("") || `<div class="pista"><span class="led"></span><span>—</span><span class="rol">sin personas en cámara</span><span></span></div>`;
   // decisiones
-  const iaActiva = !f1 && (c.modo === undefined || c.modo === 2 || c.modo === 7);     // la política decide tras el lock-on y al buscarlo si lo pierde
-  const nombresAcc = c.modo === 7 ? NOMBRES_BUSQ : NOMBRES;
-  filasDec.forEach((fila, i) => { const sp = fila.querySelector("span:not(.led)"); if (sp.textContent !== nombresAcc[i]) sp.textContent = nombresAcc[i]; });
+  const iaActiva = !f1 && (c.modo === undefined || c.modo === 2);     // la política solo decide tras el lock-on (y fuera del protocolo)
   $("p-dec").classList.toggle("apagado", !iaActiva);
-  const pr = NOMBRES.map((_, i) => !f1 && c.pr && c.pr.length ? c.pr[i] ?? 0 : 0);
+  const pr = !f1 && c.pr && c.pr.length ? c.pr : [0, 0, 0, 0, 0, 0, 0];
   const elegida = !iaActiva ? -1 : c.est === 1 ? c.cl : c.a ?? pr.indexOf(Math.max(...pr));
   filasDec.forEach((fila, i) => {
     fila.querySelector("i").style.width = (pr[i] * 100).toFixed(1) + "%";
@@ -1106,14 +1072,11 @@ function actualizarPaneles(c, b, k, info) {
     fila.classList.toggle("sel", i === elegida);
     fila.querySelector(".led").classList.toggle("on", i === elegida);
   });
-  const vetada = iaActiva && c.modo !== 7 && c.est === 0 && c.a >= 1 && c.a <= 3 && !c.amz;
-  const sinEfecto = iaActiva && c.modo !== 7 && c.est === 0 && c.a >= 7;
+  const vetada = iaActiva && c.est === 0 && c.a >= 1 && c.a <= 3 && !c.amz;
   $("veto").textContent = f1 ? "IA inactiva · solo actúa el bloqueo frontal (regla fija)"
     : c.modo === 0 ? (c.bf ? "Búsqueda activa tras los paneles · lógica fija; la política PPO actúa después del lock-on" : "Modo SEARCH · lógica fija; la política PPO actúa después del lock-on")
     : c.modo === 1 ? "Modo VERIFICACIÓN · hover a la espera del clic del operador"
-    : c.modo === 7 ? (c.est === 1 ? "Evasión en curso · la regla de seguridad manda durante la maniobra" : "Búsqueda por IA · la política controla motores y gimbal; recibe un bono si el ladrón vuelve a entrar en el cuadro")
     : c.modo >= 3 ? "Protocolo de pérdida (determinista) · la política retoma al reconfirmar el ID"
-    : sinEfecto ? "«" + NOMBRES_TXT[c.a] + "» sin efecto con el objetivo fijado · la altura y el gimbal siguen las reglas de seguimiento"
     : vetada ? "ÁRBITRO: «" + NOMBRES_TXT[c.a] + "» vetada · no hay amenaza real (la altura no se usa para seguir: eso lo hace el gimbal)"
     : c.est === 1 ? "Evasión en curso · la política no decide durante la maniobra"
     : c.giro ? "Giro comprometido · ninguna detección lo interrumpe salvo el perímetro de 2 m" : "";
@@ -1441,7 +1404,7 @@ function animar(ahora) {
       const g = pp.rol === "ladron" ? ladron : peatones[iPea++];
       if (!g) return;
       g.visible = true;
-      g.position.copy(mundo(lerp(pp.p[0], q.p[0], f), lerp(pp.p[1], q.p[1], f), lerp(pp.sz ?? 0, q.sz ?? 0, f)));
+      g.position.copy(mundo(lerp(pp.p[0], q.p[0], f), lerp(pp.p[1], q.p[1], f), 0));
       animarPersona(g, pp, dtReal, ahora, pp.rol === "ladron" ? dron.position : null);
       const u = g.userData, id = pad2(pp.id ?? 61), det = a.fase === 1 && pp.vis === undefined ? enCampo(a, pp) : pp.vis;
       let texto = null, fondo = "rgba(14,20,28,0.92)", borde = "rgba(127,216,255,0.7)", anilloOp = 0, anilloCol = 0x7fd8ff, anilloTex = TEX_ANILLO;
@@ -1478,7 +1441,7 @@ function animar(ahora) {
     }
     // flecha de escape: el último vector de movimiento del ladrón (de ahí sale el lado del paneo dirigido)
     const ev_ = a.ev || [0, 0], vev = Math.hypot(ev_[0], ev_[1]);
-    flechaEscape.visible = a.fase === 2 && (a.modo === 3 || a.modo === 4 || a.modo === 6 || a.modo === 7) && vev > 0.8;
+    flechaEscape.visible = a.fase === 2 && (a.modo === 3 || a.modo === 4 || a.modo === 6) && vev > 0.8;
     if (flechaEscape.visible) {
       flechaEscape.position.set(a.ux, 0.08, -a.uy);
       flechaEscape.setDirection(new THREE.Vector3(ev_[0] / vev, 0, -ev_[1] / vev));

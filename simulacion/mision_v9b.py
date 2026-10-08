@@ -257,7 +257,7 @@ def fase1(env, rng, obst, y0, ruta):
         env.dvx[:], env.dvy[:] = vx, vy
         # fase 1: la cámara, y con ella el LiDAR, mira casi al frente (protección frontal). Comando, ángulo físico y
         # pitch de la cámara quedan iguales: al cruzar a la fase 2 la IA hereda este ángulo, sin saltos
-        env.fijar_gimbal(-3.0)
+        env.gimbal[:] = env.gimbal_cmd[:] = env.cam_pitch[:] = -3.0
         env.mover_personas()
         cuadros.append(_cuadro_fase1(env, msg, lid if lid < 40 else None, palanca, bloq))
         if x >= ENTRADA_IA_X:

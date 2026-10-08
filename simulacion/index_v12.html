@@ -144,7 +144,7 @@
 <div id="barra" class="ui">
   <div class="marca">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2db7ff" stroke-width="1.6"><circle cx="5" cy="5" r="3"/><circle cx="19" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><path d="M7.2 7.2l9.6 9.6M16.8 7.2l-9.6 9.6"/><rect x="9.5" y="9.5" width="5" height="5" rx="1" fill="#2db7ff" stroke="none"/></svg>
-    DRON-IA <small>Estación de simulación · Tesis · <span style="color:var(--tenue)">Desarrollado por BRAHIAN ORREGO</span></small>
+    DRON-IA <small>Estación de simulación · Tesis</small>
   </div>
   <div class="ind"><span>Modo de vuelo</span><b id="i-modo">–</b></div>
   <div class="ind"><span>Control</span><b id="i-fuente">–</b></div>
@@ -476,32 +476,7 @@ function cuna(sx, h, sy) {
   return geo;
 }
 const COLOR_OBST = { muro: 0xc9d0da, caja: 0xe8b53a, columna: 0x6fa9d6, rampa: 0xe8b53a };
-// ---- autoría: "BRAHIAN ORREGO" en letras 3D planas sobre el piso, cerca del punto de inicio. Solo es visual: la
-// simulación (Python) no la conoce, así que no interviene en las físicas
-const autoria = new THREE.Group();
-escena.add(autoria);
-const MAT_AUTORIA = new THREE.MeshStandardMaterial({ color: 0x7d8da1, roughness: 0.9, metalness: 0.0, transparent: true, opacity: 0.6 });
-let fuenteAutoria = null;
-new THREE.FontLoader().load("https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/helvetiker_bold.typeface.json",
-  f => { fuenteAutoria = f; if (partida) ponerAutoria(partida); }, undefined, () => {});
-function ponerAutoria(pt) {
-  while (autoria.children.length) autoria.remove(autoria.children[0]);
-  let m;
-  if (fuenteAutoria) {
-    const geo = new THREE.TextGeometry("BRAHIAN ORREGO", { font: fuenteAutoria, size: 0.9, height: 0.03, curveSegments: 4, bevelEnabled: false });
-    geo.computeBoundingBox(); geo.center();
-    m = new THREE.Mesh(geo, MAT_AUTORIA);
-    m.receiveShadow = true;
-  } else {   // sin la fuente (sin internet): el mismo texto como calcomanía
-    m = new THREE.Mesh(new THREE.PlaneGeometry(10, 1.4), new THREE.MeshBasicMaterial({ map: tex(textoPlano("BRAHIAN ORREGO", "#7d8da1", 1000, 140, 110)), transparent: true, opacity: 0.6, depthWrite: false }));
-  }
-  m.rotation.x = -Math.PI / 2;                       // plano sobre el piso, se lee a lo largo de +X (rumbo de la misión)
-  const [x, y] = pt.mision ? [pt.despegue[0] + 5.5, pt.despegue[1] - 3.2] : [0, -11];
-  m.position.copy(mundo(x, y, 0.02));
-  autoria.add(m);
-}
 function prepararEscenario(pt) {
-  ponerAutoria(pt);
   [grupoObst, grupoPaneles, helipuerto, lineaIA].forEach(g => { while (g.children.length) g.remove(g.children[0]); });
   (pt.obst || []).forEach(([cx, cy, sx, sy, h, tipo]) => {
     const m = new THREE.Mesh(tipo === "rampa" ? cuna(sx, h, sy) : cajaBisel(sx, h, sy, 0.06), est(COLOR_OBST[tipo] || 0xc9d0da, { roughness: 0.6 }));
@@ -940,8 +915,6 @@ function calcularEventos(pt) {     // eventos de la misión para la bitácora y 
       if (c.modo === 6 && p.modo !== 6) ev.push({ k, txt: "OBJETIVO SALIÓ DEL CUADRO · intercepción predictiva: sigue su trayectoria 2 s con la nariz y el gimbal en el punto predicho", col: COL.alerta, marca: true });
       if (c.modo === 3 && p.modo !== 3) ev.push({ k, txt: (p.modo === 6 ? "INTERCEPCIÓN SIN ÉXITO · " : "OBJETIVO PERDIDO · ") + (c.flq ? "FLANQUEO PROFUNDO: rodea la esquina por la que desapareció y queda detrás del muro" : `en campo abierto: punto de separación antes de su última posición (${c.ux.toFixed(1)}, ${c.uy.toFixed(1)})`), col: COL.alerta, marca: true });
       if (c.modo === 4 && p.modo !== 4) ev.push({ k, txt: c.flq ? `DETRÁS DEL MURO · rota hacia la ${ladoTxt(c)}, hacia la zona que estaba oculta (por donde entró el ladrón)` : `ASOMO · gira primero hacia la ${ladoTxt(c)}, por donde iba el ladrón`, col: COL.alerta });
-      const lc_ = (c.pers || []).find(q => q.rol === "ladron"), lp_ = (p.pers || []).find(q => q.rol === "ladron");
-      if (lc_ && lc_.sz > 0 && !(lp_ && lp_.sz > 0)) ev.push({ k, txt: `SALTO · el ladrón corre hacia el dron y salta para tumbarlo (dron a ${c.d[2].toFixed(1)} m; alcance de 2.5 a 2.7 m)`, col: COL.peligro, marca: true });
       if (c.modo === 7 && p.modo !== 7) ev.push({ k, txt: `OBJETIVO PERDIDO · BÚSQUEDA POR IA: la política conserva motores y gimbal y lo busca con su última posición (${c.ux.toFixed(1)}, ${c.uy.toFixed(1)}), sin ruta fija`, col: COL.alerta, marca: true });
       if (c.dsc && !p.dsc) ev.push({ k, txt: "RE-ADQUISICIÓN · el ladrón volvió a entrar en el cuadro: bono de descubrimiento para la táctica que lo logró", col: COL.ok, marca: true });
       if (c.rfx && !p.rfx) ev.push({ k, txt: "ESQUIVE REFLEJO · alguien corre hacia el dron para tumbarlo: el árbitro sube y se aparta", col: COL.peligro, marca: true });
@@ -1021,7 +994,7 @@ function lineaEstado(c, lad) {
   if (c.est === 1) return ["EVASIÓN", COL.alerta, "Amenaza confirmada: " + (fijado(c) ? "la IA ejecuta" : "la regla de seguridad ejecuta") + " «" + NOMBRES_TXT[c.cl] + "»" + (c.vis ? " sin dejar de apuntar al objetivo" : " · la guiñada sigue su curso")];
   if (c.est === 2) return ["ESTABILIZA", COL.precaucion, "Estabilizando después de la evasión"];
   if (c.fase === 2 && c.per && (c.modo === 0 || c.modo >= 4)) return ["PERÍMETRO", COL.peligro, "Persona a menos de 2 m: el giro de búsqueda queda en pausa hasta que se aleje"];
-  if (c.modo === 7) return ["BÚSQUEDA IA", COL.alerta, `La IA busca al objetivo perdido hace ${(c.tsv ?? 0).toFixed(1)} / ${partida.t_busqueda_ia ?? 60} s · última posición a ${Math.hypot(c.ux - c.d[0], c.uy - c.d[1]).toFixed(1)} m · altura ${c.d[2].toFixed(1)} m · gimbal ${(c.gmb ?? 0).toFixed(0)}°`];
+  if (c.modo === 7) return ["BÚSQUEDA IA", COL.alerta, `La IA busca al objetivo perdido hace ${(c.tsv ?? 0).toFixed(1)} s · última posición a ${Math.hypot(c.ux - c.d[0], c.uy - c.d[1]).toFixed(1)} m · altura ${c.d[2].toFixed(1)} m · gimbal ${(c.gmb ?? 0).toFixed(0)}°`];
   if (c.modo === 3) return ["INVESTIGA", COL.alerta, (c.flq ? `Flanqueo profundo · rodea la esquina por la que desapareció, sin rozarla, para quedar detrás del muro (${(c.ruta || []).length} punto${(c.ruta || []).length === 1 ? "" : "s"} de ruta)` : `Objetivo perdido en campo abierto · se detiene ${Math.hypot(c.wx - c.d[0], c.wy - c.d[1]).toFixed(1)} m antes de su última posición`) + (c.va ? " · por encima de los paneles" : "")];
   if (c.modo === 4) return ["ASOMO", COL.alerta, c.flq ? `Detrás del muro · paneo de 360° que empieza hacia la ${ladoTxt(c)}, hacia el interior de la zona que estaba oculta` : `Paneo de 360° que empieza hacia la ${ladoTxt(c)}, por donde iba el ladrón`];
   if (c.modo === 5) return ["ALTURA", COL.peligro, c.d[2] < (partida.z_alto ?? 6.5) - 0.2 ? `Ventaja de altura · sube rápido a ${(partida.z_alto ?? 6.5).toFixed(1)} m sobre la zona de pérdida (no rodea el panel)` : "Barrido de 360° desde la altura con la cámara a −65°: el panel ya no tapa · si no lo reconfirma, misión fallida"];
@@ -1441,7 +1414,7 @@ function animar(ahora) {
       const g = pp.rol === "ladron" ? ladron : peatones[iPea++];
       if (!g) return;
       g.visible = true;
-      g.position.copy(mundo(lerp(pp.p[0], q.p[0], f), lerp(pp.p[1], q.p[1], f), lerp(pp.sz ?? 0, q.sz ?? 0, f)));
+      g.position.copy(mundo(lerp(pp.p[0], q.p[0], f), lerp(pp.p[1], q.p[1], f), 0));
       animarPersona(g, pp, dtReal, ahora, pp.rol === "ladron" ? dron.position : null);
       const u = g.userData, id = pad2(pp.id ?? 61), det = a.fase === 1 && pp.vis === undefined ? enCampo(a, pp) : pp.vis;
       let texto = null, fondo = "rgba(14,20,28,0.92)", borde = "rgba(127,216,255,0.7)", anilloOp = 0, anilloCol = 0x7fd8ff, anilloTex = TEX_ANILLO;

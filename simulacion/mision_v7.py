@@ -17,16 +17,14 @@ FASE 1 · Piloto al mando, con bloqueo frontal (regla fija, no IA)
 FASE 2 · IA activada a la mitad del salón (ver entorno.py)
   BUSCAR (giro de 360° y, si no hay nadie, revisar detrás de cada panel) -> VERIFICAR (hover + alerta; el
   operador confirma con un clic sobre el sospechoso) -> FIJADO (la política aprendida rastrea a ese ID; yaw con
-  banda muerta y gimbal para lo vertical). Si lo pierde: con PERDIDA_IA la política lo busca (BUSQUEDA_IA); si no,
-  el protocolo determinista INVESTIGAR (flanqueo) -> ASOMO -> VENTAJA DE ALTURA.
+  banda muerta y gimbal para lo vertical). Si lo pierde: INVESTIGAR (punto de separación) -> ASOMO -> VENTAJA DE ALTURA.
 """
 import math
 
 import numpy as np
 
-from entorno import (DT, GUIONES, L_DEAMBULAR, N_PANELES, PASOS_EPISODIO, T_BUSQUEDA_IA, T_BUSQUEDA_MAX,
-                     T_ESPERA_CLIC, T_RASTREO, Z_NOMINAL, Z_TACTICO, Z_TRANSITO, EntornoDronPersona,
-                     dist_punto_segmento, resultado_de)
+from entorno import (D_REPOSO, DT, GUIONES, L_DEAMBULAR, N_PANELES, PASOS_EPISODIO, T_BUSQUEDA_MAX, T_ESPERA_CLIC,
+                     T_RASTREO, Z_NOMINAL, Z_TACTICO, Z_TRANSITO, EntornoDronPersona, dist_punto_segmento, resultado_de)
 
 X_DESPEGUE = -21.0
 ENTRADA_IA_X = 0.0               # mitad del salón: aquí el piloto activa la IA
@@ -179,7 +177,7 @@ def fase1(env, rng, obst, y0, ruta):
     while t < 120.0:
         t += DT
         t_estado += DT
-        lid = float(env.lidar[0])           # LiDAR acoplado a la cámara (que en esta fase mira casi al frente)
+        lid = lidar_frontal(x, y, z, psi, obst)
         # ¿hay una persona de frente? (lo que ve la cámara del dron en el cuadro anterior)
         sen = env.info_sensor
         vis = sen["visible"][0] & env.activa[0]
@@ -255,9 +253,7 @@ def fase1(env, rng, obst, y0, ruta):
                     env.g_wy[0, 3] = float(np.clip(p3y + cruza_dir * 8, RUTA[2] + 1, RUTA[3] - 1))
         env.dx[:], env.dy[:], env.dz[:], env.psi[:] = x, y, z, psi
         env.dvx[:], env.dvy[:] = vx, vy
-        # fase 1: la cámara, y con ella el LiDAR, mira casi al frente (protección frontal). Comando, ángulo físico y
-        # pitch de la cámara quedan iguales: al cruzar a la fase 2 la IA hereda este ángulo, sin saltos
-        env.fijar_gimbal(-3.0)
+        env.gimbal[:] = -math.degrees(math.atan2(z - 0.9, D_REPOSO))     # la cámara mira al suelo por delante
         env.mover_personas()
         cuadros.append(_cuadro_fase1(env, msg, lid if lid < 40 else None, palanca, bloq))
         if x >= ENTRADA_IA_X:
@@ -311,6 +307,5 @@ def grabar_mision(red_d, red_p, actuar, iteracion, pasos_tot, semilla):
             "resultado": resultado, "maniobras": maniobras, "vista": round(vista, 3), "dt": DT,
             "obst": obst, "paneles": paneles, "despegue": [X_DESPEGUE, y0], "entrada_ia_x": ENTRADA_IA_X,
             "t_rastreo": T_RASTREO, "t_busqueda": T_BUSQUEDA_MAX, "t_clic": T_ESPERA_CLIC,
-            "z_transito": Z_TRANSITO, "z_alto": Z_TACTICO, "t_busqueda_ia": T_BUSQUEDA_IA,
-            "autor": "BRAHIAN ORREGO",
+            "z_transito": Z_TRANSITO, "z_alto": Z_TACTICO,
             "cuadros": c1 + c2}

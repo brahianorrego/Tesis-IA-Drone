@@ -24,9 +24,8 @@ import math
 
 import numpy as np
 
-from entorno import (DT, GUIONES, L_DEAMBULAR, N_PANELES, PASOS_EPISODIO, T_BUSQUEDA_IA, T_BUSQUEDA_MAX,
-                     T_ESPERA_CLIC, T_RASTREO, Z_NOMINAL, Z_TACTICO, Z_TRANSITO, EntornoDronPersona,
-                     dist_punto_segmento, resultado_de)
+from entorno import (DT, GUIONES, L_DEAMBULAR, N_PANELES, PASOS_EPISODIO, T_BUSQUEDA_MAX, T_ESPERA_CLIC,
+                     T_RASTREO, Z_NOMINAL, Z_TACTICO, Z_TRANSITO, EntornoDronPersona, dist_punto_segmento, resultado_de)
 
 X_DESPEGUE = -21.0
 ENTRADA_IA_X = 0.0               # mitad del salón: aquí el piloto activa la IA
@@ -257,7 +256,7 @@ def fase1(env, rng, obst, y0, ruta):
         env.dvx[:], env.dvy[:] = vx, vy
         # fase 1: la cámara, y con ella el LiDAR, mira casi al frente (protección frontal). Comando, ángulo físico y
         # pitch de la cámara quedan iguales: al cruzar a la fase 2 la IA hereda este ángulo, sin saltos
-        env.fijar_gimbal(-3.0)
+        env.gimbal[:] = env.gimbal_cmd[:] = env.cam_pitch[:] = -3.0
         env.mover_personas()
         cuadros.append(_cuadro_fase1(env, msg, lid if lid < 40 else None, palanca, bloq))
         if x >= ENTRADA_IA_X:
@@ -311,6 +310,5 @@ def grabar_mision(red_d, red_p, actuar, iteracion, pasos_tot, semilla):
             "resultado": resultado, "maniobras": maniobras, "vista": round(vista, 3), "dt": DT,
             "obst": obst, "paneles": paneles, "despegue": [X_DESPEGUE, y0], "entrada_ia_x": ENTRADA_IA_X,
             "t_rastreo": T_RASTREO, "t_busqueda": T_BUSQUEDA_MAX, "t_clic": T_ESPERA_CLIC,
-            "z_transito": Z_TRANSITO, "z_alto": Z_TACTICO, "t_busqueda_ia": T_BUSQUEDA_IA,
-            "autor": "BRAHIAN ORREGO",
+            "z_transito": Z_TRANSITO, "z_alto": Z_TACTICO,
             "cuadros": c1 + c2}

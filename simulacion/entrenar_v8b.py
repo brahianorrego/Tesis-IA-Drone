@@ -192,10 +192,8 @@ def main():
     ap.add_argument("--horizonte", type=int, default=128)
     ap.add_argument("--continuar", action="store_true")
     ap.add_argument("--hito-cada", type=int, default=20)
-    ap.add_argument("--bloque", type=float, default=10e6,
-                    help="cada cuántos pasos se guarda una copia fija de los pesos en modelos/bloques/ (entrenamiento largo)")
     ap.add_argument("--desde", help="arrancar con los pesos de otro entrenamiento (.pt); si el dron tiene "
-                                    "acciones u observaciones nuevas, se agregan a su capa de salida o de entrada")
+                                    "acciones nuevas, se agregan a su capa de salida")
     a = ap.parse_args()
     sin_ahorro_de_energia()
     torch.set_num_threads(8)
@@ -213,11 +211,6 @@ def main():
         for k, v in viejo.items():
             if v.shape == nuevo[k].shape:
                 nuevo[k] = v
-            elif v.dim() == 2 and v.shape[0] == nuevo[k].shape[0]:
-                # capa de entrada con observaciones nuevas (agregadas al final): se conservan las columnas viejas y
-                # las nuevas arrancan con pesos chicos para no desarmar lo aprendido
-                nuevo[k][:, :v.shape[1]] = v
-                nuevo[k][:, v.shape[1]:] *= 0.1
             else:                                   # capa de salida con acciones nuevas: se conservan las viejas
                 nuevo[k][:v.shape[0]] = v
                 nuevo[k][v.shape[0]:] = 0.0 if v.dim() == 1 else nuevo[k][v.shape[0]:] * 0.01
@@ -240,7 +233,6 @@ def main():
     ep_vis = np.zeros(N)
     ep_len = np.zeros(N)
     ep_pierde, ep_recupera = np.zeros(N), np.zeros(N)
-    ep_descubre = np.zeros(N)
     hitos = []
     ruta_hitos = os.path.join(SALIDA, "hitos", "lista.json")
     if os.path.exists(ruta_hitos):
@@ -258,7 +250,6 @@ def main():
         fin = []
         # monitor de jitter: castigos por brusquedad (derivada) y por esfuerzo acumulados en la iteración
         jit_sum, esf_sum, mando_n = 0.0, 0.0, 0
-        bia_b = np.zeros((T, N), bool)                      # pasos en que la IA estaba buscando (para sus acciones)
         for t in range(T):
             od, op = env.obs_dron(), env.obs_persona()
             md, mp = env.mascara_decision(), ~env.tactico.copy()     # el ladrón aprendido solo entrena en sus partidas
@@ -278,13 +269,11 @@ def main():
             jit_sum += float(info["jitter"].sum())
             esf_sum += float(info["esfuerzo"].sum())
             mando_n += int(info["al_mando"].sum())
-            ep_descubre += info["descubre"]
-            bia_b[t] = info["busqueda_ia"]
             for i in np.where(done)[0]:
                 fin.append((bool(info["choque_ladron"][i]), bool(info["choque_peaton"][i]), bool(info["panel"][i]),
                             bool(info["fuera"][i]), ep_vis[i] / ep_len[i], ep_man[i], ep_ret[i], int(info["peatones"][i]),
                             bool(info["exito"][i]), bool(info["perdido"][i]), bool(info["no_encontrado"][i]),
-                            ep_pierde[i], ep_recupera[i], ep_descubre[i]))
+                            ep_pierde[i], ep_recupera[i]))
             ep_ret[done] = 0.0
             ep_man[done] = 0.0
             ep_dmin[done] = 99.0
@@ -292,7 +281,6 @@ def main():
             ep_len[done] = 0.0
             ep_pierde[done] = 0.0
             ep_recupera[done] = 0.0
-            ep_descubre[done] = 0.0
         _, _, ultd, _ = actuar(red_d, env.obs_dron())
         _, _, ultp, _ = actuar(red_p, env.obs_persona())
         advd, retd = gae(rd_b, vd_b, done_b, ultd)
@@ -315,19 +303,15 @@ def main():
                     "vista": float(arr[:, 4].mean()), "maniobras": float(arr[:, 5].mean()),
                     "recompensa": float(arr[:, 6].mean()), "cumplida": float(arr[:, 8].mean()),
                     "perdido": float(arr[:, 9].mean()), "no_encontrado": float(arr[:, 10].mean()),
-                    "perdidas": float(arr[:, 11].mean()), "recuperaciones": float(arr[:, 12].mean()),
-                    "redescubre": float(arr[:, 13].mean())}
+                    "perdidas": float(arr[:, 11].mean()), "recuperaciones": float(arr[:, 12].mean())}
         dec = aplanar(ad_b)[aplanar(md_b)]
         frec = np.bincount(dec, minlength=len(CLASES)) / max(len(dec), 1)
-        dec_b = aplanar(ad_b)[aplanar(bia_b)]               # acciones elegidas buscando al ladrón perdido
-        frec_b = np.bincount(dec_b, minlength=len(CLASES)) / max(len(dec_b), 1)
         seg_mando = max(mando_n, 1) * DT                    # castigo por segundo con la IA al mando
         control = {"jitter": jit_sum / seg_mando, "esfuerzo": esf_sum / seg_mando,
                    "total": (jit_sum + esf_sum) / seg_mando, "seg_mando": round(mando_n * DT, 1)} if mando_n else None
         m = {"it": iteracion, "pasos": pasos_tot, "seg": round(t_previo + time.time() - t0, 1),
              "adv": resumen(fin), "control": control,
-             "acciones": [round(float(x), 4) for x in frec], "acciones_busqueda": [round(float(x), 4) for x in frec_b],
-             "dron": sd, "persona": sp,
+             "acciones": [round(float(x), 4) for x in frec], "dron": sd, "persona": sp,
              "pasos_s": int(T * N / dt_it)}
         metricas.append(m)
         if iteracion % 2 == 0 or iteracion < 5:
@@ -337,8 +321,7 @@ def main():
         if iteracion % 5 == 0 or iteracion == 1:
             guardar_json(os.path.join(SALIDA, "replay_adv.json"), grabar_partida(red_d, red_p, True, iteracion, iteracion, pasos_tot))
             guardar_json(os.path.join(SALIDA, "replay_mision.json"), grabar_mision(red_d, red_p, actuar, iteracion, pasos_tot, iteracion + 2))
-        nuevo_bloque = int(pasos_tot // a.bloque) > int((pasos_tot - T * N) // a.bloque)
-        if iteracion % a.hito_cada == 0 or iteracion == 1 or nuevo_bloque:
+        if iteracion % a.hito_cada == 0 or iteracion == 1:
             nombre = "it%05d_partida.json" % iteracion
             guardar_json(os.path.join(SALIDA, "hitos", nombre), grabar_partida(red_d, red_p, True, 1000 + iteracion, iteracion, pasos_tot))
             hitos.append({"archivo": nombre, "it": iteracion, "pasos": pasos_tot, "adversaria": True, "mision": False})
@@ -350,26 +333,15 @@ def main():
                         "opt_p": ppo_p.opt.state_dict(), "iteracion": iteracion, "pasos": pasos_tot,
                         "tiempo": t_previo + time.time() - t0}, ruta_ckpt)
             guardar_json(os.path.join(MODELOS, "dron_politica.json"), dict(red_d.exportar(), iteracion=iteracion, pasos=pasos_tot))
-        if nuevo_bloque:
-            # BLOQUE: cada --bloque pasos queda una copia fija de los pesos (para comparar bloques o volver atrás)
-            nb = int(pasos_tot // a.bloque * a.bloque / 1e6)
-            os.makedirs(os.path.join(MODELOS, "bloques"), exist_ok=True)
-            torch.save({"dron": red_d.state_dict(), "persona": red_p.state_dict(), "opt_d": ppo_d.opt.state_dict(),
-                        "opt_p": ppo_p.opt.state_dict(), "iteracion": iteracion, "pasos": pasos_tot,
-                        "tiempo": t_previo + time.time() - t0}, os.path.join(MODELOS, "bloques", "bloque_%04dM.pt" % nb))
-            guardar_json(os.path.join(MODELOS, "bloques", "dron_politica_%04dM.json" % nb),
-                         dict(red_d.exportar(), iteracion=iteracion, pasos=pasos_tot))
-            print("=== bloque de %d M pasos guardado en modelos/bloques/ ===" % nb, flush=True)
         if iteracion % 5 == 0 or iteracion < 5:
             e = m["adv"] or {}
             c = control or {}
             fmt = lambda v: "--" if v is None else "%.2f" % v
             fmt3 = lambda v: "--" if v is None else "%.4f" % v
-            print("it %5d | %6.1f M pasos | %5d p/s | CUMPLIDA %s | perdido %s | no encontrado %s | pérdidas %s, recuperadas %s | vista %s | lo alcanza: ladrón %s, peatón %s | panel %s | sale %s | maniobras %s | re-adquiridos %s | jitter %s/s, esfuerzo %s/s | acciones %s | buscando %s"
+            print("it %5d | %6.1f M pasos | %5d p/s | CUMPLIDA %s | perdido %s | no encontrado %s | pérdidas %s, recuperadas %s | vista %s | lo alcanza: ladrón %s, peatón %s | panel %s | sale %s | maniobras %s | jitter %s/s, esfuerzo %s/s | acciones %s"
                   % (iteracion, pasos_tot / 1e6, m["pasos_s"], fmt(e.get("cumplida")), fmt(e.get("perdido")), fmt(e.get("no_encontrado")), fmt(e.get("perdidas")), fmt(e.get("recuperaciones")),
                      fmt(e.get("vista")), fmt(e.get("alcanzado")), fmt(e.get("peaton")),
-                     fmt(e.get("panel")), fmt(e.get("fuera")), fmt(e.get("maniobras")), fmt(e.get("redescubre")), fmt3(c.get("jitter")), fmt3(c.get("esfuerzo")), m["acciones"],
-                     [round(x, 2) for x in m["acciones_busqueda"]]), flush=True)
+                     fmt(e.get("panel")), fmt(e.get("fuera")), fmt(e.get("maniobras")), fmt3(c.get("jitter")), fmt3(c.get("esfuerzo")), m["acciones"]), flush=True)
 
 
 if __name__ == "__main__":
