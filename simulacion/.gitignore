@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.log
+# repeticiones y métricas de cada entrenamiento (se regeneran; pesan decenas de MB)
+salida*/
+# checkpoints de PyTorch; se versionan solo los pesos exportados (dron_politica.json)
+modelos*/*.pt
+salida_v5/
+modelos_v5/

@@ -1,0 +1,1309 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dron vs Ladrón · IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --cian: #2ee6ff; --magenta: #ff3dbb; --lima: #a8ff3e; --amarillo: #ffd23f; --rojo: #ff4d5e; --azul: #4b8dff; --naranja: #ff9f43;
+    --vidrio: rgba(13, 19, 40, .62); --vidrio2: rgba(255, 255, 255, .07); --borde: rgba(255, 255, 255, .14);
+    --texto: #f4f7ff; --suave: rgba(222, 232, 255, .68); --tinta: #0d1326;
+    --fpv-w: 340px; --izq-w: 312px; --rebote: cubic-bezier(.34, 1.56, .64, 1);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #8fcbff; color: var(--texto); font: 14px/1.4 "Poppins", system-ui, sans-serif; }
+  #mundo { position: fixed; inset: 0; z-index: 0; }
+  #mundo canvas { display: block; }
+  .ui { position: absolute; z-index: 2; }
+  .panel { background: var(--vidrio); backdrop-filter: blur(18px) saturate(1.5); -webkit-backdrop-filter: blur(18px) saturate(1.5);
+           border: 1px solid var(--borde); border-radius: 24px; box-shadow: 0 12px 40px rgba(8, 16, 44, .35), inset 0 1px 0 rgba(255, 255, 255, .14); }
+  .entra { animation: entrar .8s var(--rebote) both; }
+  @keyframes entrar { from { opacity: 0; transform: translate(var(--dx, 0), var(--dy, 24px)) scale(.92); } }
+  .tit { font: 700 12px "Fredoka", sans-serif; letter-spacing: 1.2px; color: var(--suave); text-transform: uppercase; white-space: nowrap; }
+
+  /* ---------- logo ---------- */
+  #logo { left: 16px; top: 16px; width: var(--izq-w); padding: 10px 16px; display: flex; align-items: center; gap: 10px; --dx: -30px; --dy: 0; }
+  #logo h1 { margin: 0; font: 700 21px "Fredoka", sans-serif; letter-spacing: .3px; white-space: nowrap; }
+  #logo h1 em { font-style: normal; background: linear-gradient(90deg, var(--magenta), var(--amarillo)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  #logo h1 .l { color: #ff6b78; }
+  .vivo { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font: 600 11.5px "Fredoka"; color: var(--lima); background: rgba(168, 255, 62, .12);
+          padding: 3px 10px; border-radius: 99px; white-space: nowrap; }
+  .vivo::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--lima); box-shadow: 0 0 10px var(--lima); animation: latido 1.2s infinite; }
+  .vivo.parado { color: var(--suave); background: rgba(255, 255, 255, .08); }
+  .vivo.parado::before { background: var(--suave); box-shadow: none; animation: none; }
+  @keyframes latido { 50% { opacity: .25; } }
+
+  /* ---------- panel izquierdo ---------- */
+  #estado { left: 16px; top: 84px; width: var(--izq-w); padding: 14px 16px 12px; --dx: -40px; --dy: 0; animation-delay: .08s; }
+  .fila-modo { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+  .insignia { --c: var(--azul); display: inline-flex; align-items: center; gap: 6px; font: 700 15px "Fredoka"; color: var(--tinta); background: var(--c);
+              padding: 5px 14px; border-radius: 99px; animation: pulso 1.6s infinite; white-space: nowrap; }
+  @keyframes pulso { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--c) 75%, transparent), 0 0 18px color-mix(in srgb, var(--c) 60%, transparent); }
+                     100% { box-shadow: 0 0 0 14px transparent, 0 0 18px color-mix(in srgb, var(--c) 60%, transparent); } }
+  .insignia.sacude { animation: pulso 1.6s infinite, sacudir .45s; }
+  @keyframes sacudir { 20%, 60% { transform: translateX(-5px) rotate(-2deg); } 40%, 80% { transform: translateX(5px) rotate(2deg); } }
+  .chips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .chip { display: flex; gap: 8px; min-width: 0; align-items: center; background: var(--vidrio2); border-radius: 16px; padding: 8px 10px; border: 1px solid rgba(255, 255, 255, .06); }
+  .chip .ico { font-size: 20px; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .35)); }
+  .chip b { display: block; font: 700 15px "Poppins"; font-variant-numeric: tabular-nums; line-height: 1.2; white-space: nowrap; }
+  .chip small { display: block; color: var(--suave); font-size: 10.5px; font-weight: 500; white-space: nowrap; }
+  #espera p { margin: 6px 0 10px; color: var(--suave); font-size: 12.5px; }
+  .progreso { height: 14px; border-radius: 10px; background: rgba(255, 255, 255, .08); overflow: hidden; box-shadow: inset 0 2px 4px rgba(0, 0, 0, .4); }
+  .progreso div { height: 100%; width: 0; border-radius: 10px; background: linear-gradient(90deg, var(--azul), var(--cian)); box-shadow: 0 0 14px var(--cian); transition: width .3s; }
+  #prog-txt { display: block; margin-top: 5px; font-size: 12px; color: var(--suave); }
+  #barras { display: flex; flex-direction: column; gap: 7px; margin-top: 8px; }
+  .energia { display: grid; grid-template-columns: 104px 1fr 38px; gap: 8px; align-items: center; font-size: 12.5px; font-weight: 500; color: var(--suave); transition: color .2s; }
+  .energia .pista { position: relative; height: 13px; border-radius: 8px; background: rgba(255, 255, 255, .07); overflow: hidden; box-shadow: inset 0 2px 4px rgba(0, 0, 0, .45); }
+  .energia .lleno { height: 100%; width: 0; border-radius: 8px; background: linear-gradient(90deg, var(--a), var(--b)); box-shadow: 0 0 12px var(--b); transition: width .25s var(--rebote); }
+  .energia .pista::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 13px, rgba(13, 19, 40, .55) 13px 15px); }
+  .energia .pct { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .energia.top { color: #fff; font-weight: 700; }
+  .energia.top .lleno { animation: brillo .7s infinite alternate; }
+  @keyframes brillo { to { filter: brightness(1.35); box-shadow: 0 0 20px var(--b); } }
+  .pie { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, .08); font-size: 11.5px; color: var(--suave); }
+
+  /* ---------- columna derecha: FPV y radio ---------- */
+  #derecha { right: 16px; top: 16px; width: var(--fpv-w); display: flex; flex-direction: column; --dx: 40px; --dy: 0; animation-delay: .14s; }
+  .cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 12px; border-radius: 16px; }
+  .rec { font: 700 12px "Fredoka"; color: #ff5f6d; letter-spacing: 1px; }
+  .rec::before { content: "●"; margin-right: 5px; animation: latido 1s infinite; }
+  .mini { font: 600 11.5px "Fredoka"; padding: 2px 10px; border-radius: 99px; color: var(--tinta); background: #9fb0cc; white-space: nowrap; transition: background .2s; }
+  #fpv-vista { position: relative; width: 100%; aspect-ratio: 4 / 3; margin: 15px 0 15px; border-radius: 14px; overflow: hidden;
+               box-shadow: 0 0 0 7px #10162b, 0 0 0 8.5px rgba(46, 230, 255, .45), 0 16px 40px rgba(8, 16, 44, .45); }
+  #fpv-vista .filtro { position: absolute; inset: 0; backdrop-filter: saturate(1.4) contrast(1.16) brightness(.97); -webkit-backdrop-filter: saturate(1.4) contrast(1.16) brightness(.97);
+                        background: radial-gradient(ellipse at center, transparent 58%, rgba(5, 10, 30, .5) 100%),
+                                    repeating-linear-gradient(0deg, rgba(0, 0, 0, .045) 0 1px, transparent 1px 3px); }
+  #fpv-vista .ruido { position: absolute; inset: -20px; opacity: .05; mix-blend-mode: overlay; animation: ruido .5s steps(4) infinite; }
+  @keyframes ruido { 25% { transform: translate(-6px, 4px); } 50% { transform: translate(5px, -7px); } 75% { transform: translate(-3px, -5px); } }
+  .esq { position: absolute; width: 18px; height: 18px; border: 3px solid rgba(255, 255, 255, .85); }
+  .esq.a { left: 10px; top: 10px; border-right: 0; border-bottom: 0; border-radius: 6px 0 0 0; }
+  .esq.b { right: 10px; top: 10px; border-left: 0; border-bottom: 0; border-radius: 0 6px 0 0; }
+  .esq.c { left: 10px; bottom: 10px; border-right: 0; border-top: 0; border-radius: 0 0 0 6px; }
+  .esq.d { right: 10px; bottom: 10px; border-left: 0; border-top: 0; border-radius: 0 0 6px 0; }
+  .mira { position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; margin: -13px; border: 2px solid rgba(255, 255, 255, .8); border-radius: 50%; }
+  .mira::before, .mira::after { content: ""; position: absolute; background: rgba(255, 255, 255, .8); }
+  .mira::before { left: 50%; top: -8px; bottom: -8px; width: 2px; margin-left: -1px; }
+  .mira::after { top: 50%; left: -8px; right: -8px; height: 2px; margin-top: -1px; }
+  .hud-fpv { position: absolute; font: 600 11px "Poppins"; color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, .8); letter-spacing: .4px; font-variant-numeric: tabular-nums; }
+  .caja-det { position: absolute; border: 2.5px solid; border-radius: 6px; box-shadow: 0 0 12px currentColor; }
+  .caja-det span { position: absolute; left: -2.5px; bottom: 100%; font: 700 10.5px "Fredoka"; color: var(--tinta); padding: 0 6px; border-radius: 5px 5px 5px 0; white-space: nowrap; letter-spacing: .3px; }
+  #radio-panel { padding: 8px 10px 9px; }
+  #radio { width: 100%; display: block; }
+  #radio-pie { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0 8px; margin-top: 2px; padding: 0 4px; }
+  #radio-nota { margin-left: auto; font-size: 10.5px; color: var(--suave); text-align: right; white-space: nowrap; }
+
+  /* ---------- estadísticas ---------- */
+  #stats { right: 16px; bottom: 16px; width: var(--fpv-w); padding: 12px 14px; --dy: 40px; animation-delay: .2s; }
+  .stats-cab { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .numeros { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .num { background: var(--vidrio2); border-radius: 14px; padding: 7px 6px 6px; text-align: center; border: 1px solid rgba(255, 255, 255, .06); position: relative; }
+  .num b { display: block; font: 800 21px "Poppins"; line-height: 1.15; font-variant-numeric: tabular-nums; background: linear-gradient(180deg, #fff, var(--c)); -webkit-background-clip: text; background-clip: text; color: transparent;
+           filter: drop-shadow(0 0 8px color-mix(in srgb, var(--c) 55%, transparent)); }
+  .num small { display: block; font-size: 10px; color: var(--suave); line-height: 1.2; margin-top: 2px; }
+  .num i { position: absolute; right: 6px; top: 4px; font: 700 9.5px "Poppins"; font-style: normal; }
+  .num.lima { --c: var(--lima); } .num.magenta { --c: var(--magenta); } .num.cian { --c: var(--cian); } .num.amarillo { --c: var(--amarillo); }
+  .tabs { display: flex; gap: 5px; margin: 10px 0 6px; }
+  .tab { flex: 1; font: 600 12px "Fredoka"; color: var(--suave); background: rgba(255, 255, 255, .06); border: 0; border-radius: 12px; padding: 6px 4px; cursor: pointer;
+         transition: transform .2s var(--rebote), background .2s, color .2s; }
+  .tab:hover { transform: translateY(-2px) scale(1.04); color: #fff; }
+  .tab:active { transform: scale(.92); }
+  .tab.activo { color: var(--tinta); background: linear-gradient(180deg, #6ff3ff, #1fc8ea); box-shadow: 0 3px 0 #1496b3, 0 0 16px rgba(46, 230, 255, .4); }
+  .grafica { height: 150px; position: relative; }
+  #g-nota { font-size: 11px; color: var(--suave); margin-top: 4px; min-height: 15px; }
+  #stats-abrir { display: none; }
+  #stats.compacto .tabs, #stats.compacto .grafica, #stats.compacto #g-nota { display: none; }
+  #stats.compacto #stats-abrir, #stats.abierto #stats-abrir { display: inline-block; flex: none; padding: 4px 10px; }
+  #stats.abierto { z-index: 3; }
+
+  /* ---------- dock inferior ---------- */
+  .dock { left: calc(var(--izq-w) + 32px); right: calc(var(--fpv-w) + 32px); bottom: 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; pointer-events: none; }
+  .dock > * { pointer-events: auto; }
+  #mensaje { padding: 10px 22px; font: 600 17px "Fredoka"; text-align: center; max-width: 100%; border-radius: 20px; transition: background .25s, border-color .25s; }
+  #mensaje.bloqueo { background: rgba(255, 77, 94, .93); border-color: #ff8a95; animation: sacudir .45s; }
+  #mensaje.ia { border-color: rgba(168, 255, 62, .5); box-shadow: 0 0 24px rgba(168, 255, 62, .25), 0 12px 40px rgba(8, 16, 44, .35); }
+  .linea-tiempo { width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 18px; }
+  .linea-tiempo .et { font: 600 12.5px "Fredoka"; white-space: nowrap; }
+  .pista-t { position: relative; flex: 1; height: 14px; border-radius: 10px; background: rgba(255, 255, 255, .08); cursor: pointer; box-shadow: inset 0 2px 4px rgba(0, 0, 0, .4); }
+  .pista-t .s1 { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 10px 0 0 10px; background: linear-gradient(90deg, #6d86b8, #9fb3dd); }
+  .pista-t .s2 { position: absolute; right: 0; top: 0; bottom: 0; border-radius: 0 10px 10px 0; background: linear-gradient(90deg, var(--lima), var(--cian)); opacity: .8; }
+  .pista-t .cursor { position: absolute; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 4px rgba(46, 230, 255, .5), 0 0 16px var(--cian); }
+  #reloj { font: 700 13px "Poppins"; min-width: 52px; text-align: right; font-variant-numeric: tabular-nums; }
+  .controles { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; align-items: center; }
+  .btn { font: 600 14px "Fredoka"; color: var(--tinta); background: linear-gradient(180deg, #ffffff, #dfe7f5); border: 0; border-radius: 16px; padding: 8px 14px; cursor: pointer;
+         box-shadow: 0 4px 0 #a9b6cf, 0 8px 20px rgba(8, 16, 44, .3); transition: transform .18s var(--rebote), box-shadow .18s; }
+  .btn:hover { transform: translateY(-2px) scale(1.05); }
+  .btn:active { transform: translateY(3px) scale(.94); box-shadow: 0 1px 0 #a9b6cf, 0 3px 10px rgba(8, 16, 44, .3); }
+  .btn.activo { background: linear-gradient(180deg, #7af5ff, #22c8ea); box-shadow: 0 4px 0 #1592ad, 0 0 18px rgba(46, 230, 255, .55); }
+  select.btn { appearance: none; padding-right: 30px; max-width: 250px;
+               background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%230d1326' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center, linear-gradient(180deg, #ffffff, #dfe7f5); }
+  .grupo { display: flex; gap: 6px; }
+
+  /* ---------- carteles centrales ---------- */
+  #activacion { left: 50%; top: 38%; transform: translate(-50%, -50%) scale(.4); opacity: 0; pointer-events: none; text-align: center; transition: transform .6s var(--rebote), opacity .3s; }
+  #activacion.ver { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  #activacion .grande { font: 700 64px "Fredoka"; line-height: 1; background: linear-gradient(180deg, #ffffff 10%, var(--lima) 55%, #3ee08f); -webkit-background-clip: text; background-clip: text; color: transparent;
+                        filter: drop-shadow(0 4px 0 #1f7a3d) drop-shadow(0 10px 30px rgba(20, 60, 30, .45)); }
+  #activacion .sub { display: inline-block; margin-top: 12px; font: 600 17px "Fredoka"; padding: 7px 18px; border-radius: 99px; background: var(--vidrio); border: 1px solid var(--borde); }
+  #fin { left: 50%; top: 42%; width: 360px; padding: 18px 22px 16px; text-align: center; transform: translate(-50%, -50%) scale(.5); opacity: 0; pointer-events: none;
+         transition: transform .55s var(--rebote), opacity .25s; }
+  #fin.ver { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+  #fin-tit { font: 700 27px "Fredoka"; line-height: 1.1; }
+  .estrellas { display: flex; justify-content: center; gap: 10px; margin: 10px 0 6px; }
+  .estrellas span { font-size: 42px; color: rgba(255, 255, 255, .14); transform: scale(.4); transition: transform .45s var(--rebote), color .2s; }
+  .estrellas span.on { color: var(--amarillo); text-shadow: 0 0 18px rgba(255, 210, 63, .8), 0 3px 0 #c98a00; transform: scale(1); }
+  .estrellas span.off { transform: scale(.85); }
+  .fin-filas { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; text-align: left; margin: 8px 4px 12px; font-size: 13.5px; }
+  .fin-filas span { color: var(--suave); }
+  .fin-filas b { font-weight: 700; text-align: right; }
+  .fin-barra { height: 6px; border-radius: 6px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+  .fin-barra div { height: 100%; width: 0; background: linear-gradient(90deg, var(--cian), var(--lima)); }
+  #fin.ver .fin-barra div { width: 100%; transition: width 3.6s linear; }
+  #fin small { display: block; margin-top: 5px; color: var(--suave); font-size: 11.5px; }
+
+  @media (max-width: 1250px) { :root { --fpv-w: 300px; --izq-w: 290px; } .energia { grid-template-columns: 96px 1fr 36px; } .insignia { font-size: 13.5px; padding: 4px 11px; } #radio-pie .tit { font-size: 10.5px; letter-spacing: .6px; } }
+  @media (max-height: 760px) { :root { --fpv-w: 290px; } .grafica { height: 110px; } #estado { padding-top: 10px; } .chips { margin-bottom: 8px; } }
+</style>
+</head>
+<body>
+<div id="mundo"></div>
+
+<div id="logo" class="ui panel entra"><h1>DRON <em>vs</em> <span class="l">LADRÓN</span></h1><span class="vivo parado" id="vivo">EN PAUSA</span></div>
+
+<div id="estado" class="ui panel entra">
+  <div class="fila-modo"><span class="tit">Quién manda</span><span id="insignia" class="insignia">–</span></div>
+  <div class="chips">
+    <div class="chip"><span class="ico">👁️</span><div><b id="c-lad">–</b><small>Ladrón</small></div></div>
+    <div class="chip"><span class="ico">⏱️</span><div><b id="c-tvis">–</b><small>Tiempo a la vista</small></div></div>
+    <div class="chip"><span class="ico">📡</span><div><b id="c-lidar">–</b><small>LiDAR al frente</small></div></div>
+    <div class="chip"><span class="ico">🛫</span><div><b id="c-alt">–</b><small>Altura</small></div></div>
+  </div>
+  <div id="espera">
+    <div class="tit">🔒 IA en espera</div>
+    <p>Se activa en la mitad del salón. Hasta entonces vuela el piloto y solo actúa el <b>bloqueo frontal</b> (una regla fija, no la IA).</p>
+    <div class="progreso"><div id="prog-zona"></div></div>
+    <span id="prog-txt">–</span>
+  </div>
+  <div id="cerebro">
+    <div class="tit">🧠 Lo que decide la IA</div>
+    <div id="barras"></div>
+  </div>
+  <div class="pie" id="pie-modelo">–</div>
+</div>
+
+<div id="derecha" class="ui entra">
+  <div class="cab panel"><span class="rec">REC</span><span class="tit" style="color:#fff">Cámara FPV</span><span class="mini" id="fpv-estado">–</span></div>
+  <div id="fpv-vista">
+    <div class="filtro"></div><div class="ruido" id="ruido"></div>
+    <div class="esq a"></div><div class="esq b"></div><div class="esq c"></div><div class="esq d"></div>
+    <div class="mira"></div>
+    <div class="hud-fpv" style="left:36px;top:12px" id="fpv-alt">ALT –</div>
+    <div class="hud-fpv" style="right:36px;top:12px" id="fpv-t">00:00.0</div>
+    <div class="hud-fpv" style="left:36px;bottom:12px" id="fpv-lidar">LiDAR –</div>
+    <div class="hud-fpv" style="right:36px;bottom:12px">YOLO · HFOV 38.9°</div>
+  </div>
+  <div id="radio-panel" class="panel">
+    <svg id="radio" viewBox="0 0 340 150"></svg>
+    <div id="radio-pie"><span class="tit" id="radio-tit">Mando del piloto</span><span id="radio-nota"></span></div>
+  </div>
+</div>
+
+<div id="stats" class="ui panel entra">
+  <div class="stats-cab"><span class="tit">🏆 Entrenamiento</span><button class="tab" id="stats-abrir">📈 Gráficas</button></div>
+  <div class="numeros">
+    <div class="num lima"><i id="t-vista"></i><b id="n-vista">–</b><small>ladrón a la vista</small></div>
+    <div class="num magenta"><i id="t-alc"></i><b id="n-alc">–</b><small>lo alcanza</small></div>
+    <div class="num cian"><b id="n-pasos">–</b><small>pasos simulados</small></div>
+    <div class="num amarillo"><b id="n-tiempo">–</b><small>entrenando</small></div>
+  </div>
+  <div class="tabs">
+    <button class="tab activo" data-tab="vista">👁️ Vista</button>
+    <button class="tab" data-tab="peligros">💥 Peligros</button>
+    <button class="tab" data-tab="decisiones">🧠 Decisiones</button>
+    <button class="tab" data-tab="maniobras">🌀 Esquives</button>
+  </div>
+  <div class="grafica"><canvas id="grafica"></canvas></div>
+  <div id="g-nota"></div>
+</div>
+
+<div class="ui dock">
+  <div id="mensaje" class="panel">Cargando la simulación…</div>
+  <div class="linea-tiempo panel">
+    <span class="et">🧑‍✈️ Piloto</span>
+    <div class="pista-t" id="pista"><div class="s1" id="s1"></div><div class="s2" id="s2"></div><div class="cursor" id="cursor"></div></div>
+    <span class="et">🤖 IA</span>
+    <span id="reloj">0.0 s</span>
+  </div>
+  <div class="controles">
+    <select id="selector" class="btn"></select>
+    <button class="btn" id="pausa" title="Pausa (barra espaciadora)">⏸</button>
+    <select id="velocidad" class="btn"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select>
+    <div class="grupo">
+      <button class="btn activo" data-cam="cine">🎬 Cine</button>
+      <button class="btn" data-cam="seguir">🚁 Dron</button>
+      <button class="btn" data-cam="orbita">🖐️ Libre</button>
+      <button class="btn" data-cam="arriba">🗺️ Mapa</button>
+    </div>
+  </div>
+</div>
+
+<div id="activacion" class="ui"><div class="grande">¡IA ACTIVADA!</div><div class="sub">🎮 El piloto suelta los mandos · CH5 → posición 3</div></div>
+<div id="fin" class="ui panel">
+  <div id="fin-tit">¡MISIÓN CUMPLIDA!</div>
+  <div class="estrellas" id="estrellas"><span>★</span><span>★</span><span>★</span></div>
+  <div class="fin-filas" id="fin-filas"></div>
+  <div class="fin-barra"><div></div></div>
+  <small>Siguiente partida…</small>
+</div>
+
+<script>
+"use strict";
+const NOMBRES = ["Mantener", "Esquivar izq.", "Esquivar der.", "Frenar y subir", "Girar izq.", "Girar der.", "Avanzar"];
+const COLOR_ACC = [["#5dff7a", "#c4ff3e"], ["#ff3dbb", "#ff8ae0"], ["#ff3dbb", "#ff8ae0"], ["#ffa62e", "#ffe14a"], ["#1fb8ff", "#6ef3ff"], ["#1fb8ff", "#6ef3ff"], ["#5b6cff", "#3ee0ff"]];
+const HFOV = 38.9, VFOV = 29.7;
+const mundo = (x, y, z = 0) => new THREE.Vector3(x, z, -y);
+const $ = id => document.getElementById(id);
+const lerp = (a, b, f) => a + (b - a) * f;
+const limitar = (v, a, b) => Math.max(a, Math.min(b, v));
+function lerpAng(a, b, f) { let d = b - a; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return a + d * f; }
+
+// ======================================================================= render
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.02;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.autoUpdate = false;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+$("mundo").appendChild(renderer.domElement);
+const escena = new THREE.Scene();
+escena.fog = new THREE.Fog(0xcfe6ff, 60, 210);
+const camara = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.05, 700);
+camara.position.set(-36, 18, 22);
+const controles = new THREE.OrbitControls(camara, renderer.domElement);
+controles.enableDamping = true;
+controles.maxPolarAngle = Math.PI * 0.49;
+
+const lin = c => new THREE.Color(c).convertSRGBToLinear();     // colores escritos en sRGB, como en CSS
+const est = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: lin(c), roughness: 0.7 }, o));
+function tex(canvas, rep) {
+  const t = new THREE.CanvasTexture(canvas);
+  t.encoding = THREE.sRGBEncoding;
+  t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  if (rep) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep, rep); }
+  return t;
+}
+function lienzo(w, h) { const c = document.createElement("canvas"); c.width = w; c.height = h; return [c, c.getContext("2d")]; }
+// caja con aristas biseladas (atrapan la luz como en el entorno de OpenAI)
+function cajaBisel(w, h, d, b = 0.06) {
+  b = Math.min(b, w / 4, h / 4, d / 4);
+  const s = new THREE.Shape();
+  s.moveTo(-w / 2 + b, -h / 2 + b); s.lineTo(w / 2 - b, -h / 2 + b); s.lineTo(w / 2 - b, h / 2 - b); s.lineTo(-w / 2 + b, h / 2 - b); s.lineTo(-w / 2 + b, -h / 2 + b);
+  const g = new THREE.ExtrudeGeometry(s, { depth: d - 2 * b, bevelEnabled: true, bevelThickness: b, bevelSize: b, bevelSegments: 3, curveSegments: 1 });
+  g.translate(0, 0, -(d - 2 * b) / 2);
+  return g;
+}
+// sombra de contacto suave (oclusión ambiental falsa) bajo una huella w × d
+function sombraAO(w, d, margen = 0.9, fuerza = 0.38) {
+  const ppm = 24, [c, g] = lienzo(Math.max(16, Math.round((w + 2 * margen) * ppm)), Math.max(16, Math.round((d + 2 * margen) * ppm)));
+  g.filter = `blur(${Math.round(margen * ppm * 0.42)}px)`;
+  g.fillStyle = `rgba(22,34,70,${fuerza})`;
+  g.fillRect(margen * ppm * 0.75, margen * ppm * 0.75, c.width - 1.5 * margen * ppm, c.height - 1.5 * margen * ppm);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w + 2 * margen, d + 2 * margen), new THREE.MeshBasicMaterial({ map: tex(c), transparent: true, depthWrite: false }));
+  m.rotation.x = -Math.PI / 2;
+  m.position.y = 0.011;
+  return m;
+}
+
+// cielo
+escena.add(new THREE.Mesh(new THREE.SphereGeometry(450, 32, 16), new THREE.ShaderMaterial({
+  side: THREE.BackSide, depthWrite: false, fog: false,
+  uniforms: { arriba: { value: new THREE.Color(0x2e86ff) }, horizonte: { value: new THREE.Color(0xc8ebff) } },
+  vertexShader: "varying float h; void main(){ h = normalize(position).y; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+  fragmentShader: "uniform vec3 arriba; uniform vec3 horizonte; varying float h; void main(){ float t = pow(clamp(h, 0.0, 1.0), 0.5); gl_FragColor = vec4(mix(horizonte, arriba, t), 1.0); }",
+})));
+escena.add(new THREE.HemisphereLight(0xeef5ff, 0xb3bfd4, 0.68));
+const sol = new THREE.DirectionalLight(0xfff0d6, 1.3);
+sol.position.set(-25, 45, 20);
+sol.castShadow = true;
+sol.shadow.mapSize.set(4096, 4096);
+sol.shadow.bias = -0.0004;
+sol.shadow.radius = 5;
+Object.assign(sol.shadow.camera, { left: -34, right: 34, top: 34, bottom: -34, far: 150 });
+escena.add(sol, sol.target);
+
+// piso de baldosas con relieve y un emblema propio
+{
+  const [c, g] = lienzo(1024, 1024);
+  g.fillStyle = "#c3ccda"; g.fillRect(0, 0, 1024, 1024);
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) {
+    const x = i * 256 + 3, y = j * 256 + 3, L = 250;
+    g.fillStyle = "#f0f3f8"; g.fillRect(x, y, L, L);
+    g.fillStyle = "#ffffff"; g.fillRect(x, y, L, 5); g.fillRect(x, y, 5, L);
+    g.fillStyle = "#d8dfea"; g.fillRect(x, y + L - 6, L, 6); g.fillRect(x + L - 6, y, 6, L);
+    if ((i + j) % 2 === 0) {
+      const cx = x + L / 2, cy = y + L / 2;
+      g.strokeStyle = "rgba(150,165,190,0.28)"; g.lineWidth = 6;
+      g.beginPath(); g.arc(cx, cy, 58, 0, Math.PI * 2); g.stroke();
+      g.beginPath(); g.moveTo(cx - 26, cy - 26); g.lineTo(cx + 26, cy + 26); g.moveTo(cx + 26, cy - 26); g.lineTo(cx - 26, cy + 26); g.stroke();
+      [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => { g.beginPath(); g.arc(cx + a * 28, cy + b * 28, 11, 0, Math.PI * 2); g.stroke(); });
+    }
+  }
+  for (let i = 0; i < 5000; i++) { g.fillStyle = `rgba(30,40,70,${Math.random() * 0.025})`; g.fillRect(Math.random() * 1024, Math.random() * 1024, 2, 2); }
+  const piso = new THREE.Mesh(new THREE.PlaneGeometry(50, 50), est(0xffffff, { map: tex(c, 50 / 8), roughness: 0.8 }));
+  piso.rotation.x = -Math.PI / 2;
+  piso.receiveShadow = true;
+  escena.add(piso);
+  const afuera = new THREE.Mesh(new THREE.PlaneGeometry(900, 900), est(0xdbe3ee, { roughness: 1 }));
+  afuera.rotation.x = -Math.PI / 2; afuera.position.y = -0.02; afuera.receiveShadow = true;
+  escena.add(afuera);
+}
+// muros del salón y el campo de bloques de alrededor
+{
+  const blanco = est(0xeef1f7, { roughness: 0.85 });
+  [[0, 25.4, 51.6, 0.8], [0, -25.4, 51.6, 0.8], [25.4, 0, 0.8, 50], [-25.4, 0, 0.8, 50]].forEach(([x, y, sx, sy]) => {
+    const m = new THREE.Mesh(cajaBisel(sx, 2.0, sy, 0.12), blanco);
+    m.position.set(x, 1.0, -y);
+    m.castShadow = m.receiveShadow = true;
+    const ao = sombraAO(sx, sy, 1.0, 0.32);
+    ao.position.set(x, 0.011, -y);
+    escena.add(m, ao);
+  });
+  const celdas = [];
+  for (let i = -30; i < 30; i++) for (let j = -30; j < 30; j++) {
+    const x = i * 2.5 + 1.25, z = j * 2.5 + 1.25, borde = Math.max(Math.abs(x), Math.abs(z));
+    if (borde < 27.5) continue;
+    const r = Math.abs(Math.sin(i * 12.9898 + j * 78.233) * 43758.5453) % 1;
+    celdas.push([x, z, 0.5 + r * (1.0 + (borde - 27) * 0.1), r]);
+  }
+  const geo = cajaBisel(2.5, 1, 2.5, 0.09); geo.translate(0, 0.5, 0);
+  const bloques = new THREE.InstancedMesh(geo, est(0xffffff, { roughness: 0.9 }), celdas.length);
+  const m = new THREE.Matrix4(), col = new THREE.Color(), q = new THREE.Quaternion();
+  celdas.forEach(([x, z, h, r], i) => {
+    m.compose(new THREE.Vector3(x, 0, z), q, new THREE.Vector3(1, h, 1));
+    bloques.setMatrixAt(i, m);
+    const v = 0.84 + r * 0.1;
+    bloques.setColorAt(i, col.setRGB(v * 0.96, v * 0.98, Math.min(v * 1.04, 1)).convertSRGBToLinear());
+  });
+  bloques.castShadow = bloques.receiveShadow = true;
+  escena.add(bloques);
+}
+// nubes
+const nubes = [];
+{
+  const blanco = est(0xffffff, { roughness: 1, emissive: lin(0xf2f7ff), emissiveIntensity: 0.45 });
+  for (let i = 0; i < 16; i++) {
+    const g = new THREE.Group(), n = 5 + (i % 4);
+    for (let k = 0; k < n; k++) {
+      const s = new THREE.Mesh(new THREE.SphereGeometry(1, 18, 12), blanco);
+      const r = 3 + Math.random() * 4;
+      s.scale.set(r, r * 0.68, r);
+      s.position.set((k - n / 2) * 3.2 + Math.random() * 2, Math.random() * 1.5, Math.random() * 3);
+      g.add(s);
+    }
+    const ang = (i / 16) * Math.PI * 2, R = 130 + Math.random() * 70;
+    g.position.set(Math.cos(ang) * R, 34 + Math.random() * 26, Math.sin(ang) * R);
+    g.userData.vel = 0.4 + Math.random() * 0.6;
+    escena.add(g);
+    nubes.push(g);
+  }
+}
+function sombraBlob(r) {
+  const [c, g] = lienzo(128, 128);
+  const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  gr.addColorStop(0, "rgba(20,30,60,0.4)"); gr.addColorStop(1, "rgba(20,30,60,0)");
+  g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(r * 2, r * 2), new THREE.MeshBasicMaterial({ map: tex(c), transparent: true, depthWrite: false }));
+  m.rotation.x = -Math.PI / 2;
+  m.position.y = 0.013;
+  return m;
+}
+function textoEnCanvas(texto, color, fondo, ancho = 640, alto = 150, tam = 74) {
+  const [c, g] = lienzo(1, 1);
+  if (ancho === null) { g.font = `700 ${tam}px Fredoka, Poppins, sans-serif`; ancho = Math.ceil(g.measureText(texto).width + alto * 0.95); }
+  c.width = ancho; c.height = alto;
+  if (fondo) {
+    g.fillStyle = fondo; g.beginPath();
+    const r = alto / 2 - 8;
+    g.moveTo(8 + r, 8); g.lineTo(ancho - 8 - r, 8); g.arc(ancho - 8 - r, alto / 2, r, -Math.PI / 2, Math.PI / 2); g.lineTo(8 + r, alto - 8); g.arc(8 + r, alto / 2, r, Math.PI / 2, Math.PI * 1.5); g.fill();
+  }
+  g.fillStyle = color; g.font = `700 ${tam}px Fredoka, Poppins, sans-serif`;
+  g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText(texto, ancho / 2, alto / 2 + 4);
+  return c;
+}
+function etiqueta(texto, color, fondo, alto = 0.03) {     // tamaño fijo en pantalla, anclada por abajo
+  const c = textoEnCanvas(texto, color, fondo, null);
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex(c), depthTest: false, transparent: true, sizeAttenuation: false }));
+  s.scale.set(alto * c.width / c.height, alto, 1);
+  s.center.set(0.5, 0);
+  s.renderOrder = 20;
+  return s;
+}
+function texAnillo(guiones) {
+  const [c, g] = lienzo(256, 256);
+  if (guiones) {
+    g.strokeStyle = "#fff"; g.lineWidth = 16; g.lineCap = "round";
+    for (let k = 0; k < guiones; k++) { const a0 = k * 2 * Math.PI / guiones; g.beginPath(); g.arc(128, 128, 106, a0 + 0.12, a0 + 2 * Math.PI / guiones - 0.12); g.stroke(); }
+  } else {
+    const gr = g.createRadialGradient(128, 128, 30, 128, 128, 128);
+    gr.addColorStop(0, "rgba(255,255,255,0)"); gr.addColorStop(0.55, "rgba(255,255,255,0.85)"); gr.addColorStop(0.68, "rgba(255,255,255,0.35)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+  }
+  return tex(c);
+}
+const TEX_BRILLO = texAnillo(0), TEX_MIRA = texAnillo(6);
+function disco(texMap, color, r) {
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(r * 2, r * 2), new THREE.MeshBasicMaterial({ map: texMap, color, transparent: true, depthWrite: false, opacity: 0.9 }));
+  m.rotation.x = -Math.PI / 2;
+  m.position.y = 0.02;
+  return m;
+}
+
+// ======================================================================= obstáculos, paneles y señalización
+const grupoObst = new THREE.Group(), grupoPaneles = new THREE.Group(), helipuerto = new THREE.Group(), lineaIA = new THREE.Group();
+escena.add(grupoObst, grupoPaneles, helipuerto, lineaIA);
+function cuna(sx, h, sy) {      // rampa
+  const f = new THREE.Shape();
+  f.moveTo(-sx / 2, 0); f.lineTo(sx / 2, 0); f.lineTo(sx / 2, h); f.lineTo(-sx / 2, 0);
+  const geo = new THREE.ExtrudeGeometry(f, { depth: sy, bevelEnabled: false });
+  geo.translate(0, 0, -sy / 2);
+  return geo;
+}
+const COLOR_OBST = { muro: 0xd3dbe7, caja: 0xffc93c, columna: 0x5fd0ff, rampa: 0xffc93c };
+function prepararEscenario(pt) {
+  [grupoObst, grupoPaneles, helipuerto, lineaIA].forEach(g => { while (g.children.length) g.remove(g.children[0]); });
+  (pt.obst || []).forEach(([cx, cy, sx, sy, h, tipo]) => {
+    const m = new THREE.Mesh(tipo === "rampa" ? cuna(sx, h, sy) : cajaBisel(sx, h, sy, 0.07), est(COLOR_OBST[tipo] || 0xd3dbe7, { roughness: 0.5 }));
+    m.position.set(cx, tipo === "rampa" ? 0 : h / 2, -cy);
+    m.castShadow = m.receiveShadow = true;
+    const ao = sombraAO(sx, sy);
+    ao.position.set(cx, 0.011, -cy);
+    grupoObst.add(m, ao);
+  });
+  (pt.paneles || []).forEach(([ax, ay, bx, by, h]) => {
+    const L = Math.hypot(bx - ax, by - ay), ang = Math.atan2(by - ay, bx - ax);
+    const m = new THREE.Mesh(cajaBisel(L, h, 0.35, 0.07), est(0xb9c6d8, { roughness: 0.75 }));
+    m.position.set((ax + bx) / 2, h / 2, -(ay + by) / 2);
+    m.rotation.y = ang;
+    m.castShadow = m.receiveShadow = true;
+    const ao = sombraAO(L, 0.35);
+    ao.rotation.set(-Math.PI / 2, 0, ang);
+    ao.position.set((ax + bx) / 2, 0.011, -(ay + by) / 2);
+    grupoPaneles.add(m, ao);
+  });
+  if (pt.mision) {
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.3, 0.06, 48), est(0x4a5a78, { roughness: 0.5 }));
+    base.position.y = 0.03; base.receiveShadow = true;
+    const h = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 1.7), new THREE.MeshBasicMaterial({ map: tex(textoEnCanvas("H", "#ffffff", null, 256, 256, 210)), transparent: true }));
+    h.rotation.x = -Math.PI / 2; h.position.y = 0.065;
+    const aro = new THREE.Mesh(new THREE.RingGeometry(1.05, 1.17, 48), new THREE.MeshBasicMaterial({ color: 0xffd23f }));
+    aro.rotation.x = -Math.PI / 2; aro.position.y = 0.066;
+    helipuerto.add(base, h, aro);
+    helipuerto.position.set(pt.despegue[0], 0, -pt.despegue[1]);
+    const x = pt.entrada_ia_x !== undefined ? pt.entrada_ia_x : pt.entrada_zona_x;
+    const franja = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 50), new THREE.MeshBasicMaterial({ color: 0x7dff4a }));
+    franja.rotation.x = -Math.PI / 2; franja.position.set(x, 0.022, 0);
+    const [cg, gg] = lienzo(64, 4);
+    const gr = gg.createLinearGradient(0, 0, 64, 0);
+    gr.addColorStop(0, "rgba(140,255,80,0)"); gr.addColorStop(0.5, "rgba(140,255,80,0.55)"); gr.addColorStop(1, "rgba(140,255,80,0)");
+    gg.fillStyle = gr; gg.fillRect(0, 0, 64, 4);
+    const resplandor = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 50), new THREE.MeshBasicMaterial({ map: tex(cg), transparent: true, depthWrite: false }));
+    resplandor.rotation.x = -Math.PI / 2; resplandor.position.set(x, 0.018, 0);
+    const letrero = (txt, color, dx) => {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(9, 1.9), new THREE.MeshBasicMaterial({ map: tex(textoEnCanvas(txt, color, null, 900, 190, 150)), transparent: true }));
+      m.rotation.x = -Math.PI / 2; m.rotation.z = -Math.PI / 2;
+      m.position.set(x + dx, 0.025, 0);
+      return m;
+    };
+    lineaIA.add(resplandor, franja, letrero("ZONA IA", "#3fd96a", 1.6), letrero("PILOTO", "#8696b3", -1.6));
+  }
+}
+
+// ======================================================================= el dron (estilizado a partir de las fotos)
+const dron = new THREE.Group();
+const chasis = new THREE.Group();
+dron.add(chasis);
+let carbono;
+{
+  const [c, g] = lienzo(128, 128);
+  g.fillStyle = "#1c1e22"; g.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) { g.fillStyle = (i + j) % 2 ? "#26292e" : "#18191c"; g.fillRect(i * 16, j * 16, 16, 16); }
+  carbono = est(0xffffff, { map: tex(c, 3), roughness: 0.35, metalness: 0.3 });
+}
+const negro = est(0x1b1d21, { roughness: 0.45, metalness: 0.2 });
+const rojo = new THREE.MeshPhysicalMaterial({ color: lin(0xd0222c), roughness: 0.3, metalness: 0.5, clearcoat: 0.6 });
+const dorado = est(0xd9a441, { roughness: 0.3, metalness: 0.8 });
+const amarillo = est(0xf2c230, { roughness: 0.5 });
+[0.0, 0.055].forEach(y => { const p = new THREE.Mesh(new THREE.BoxGeometry(0.21, 0.008, 0.21), carbono); p.position.y = y; chasis.add(p); });
+[[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(([a, b]) => { const s = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.055, 8), dorado); s.position.set(a * 0.085, 0.027, b * 0.085); chasis.add(s); });
+const rotores = [], leds = [];
+[[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(([a, b]) => {
+  const ang = Math.atan2(b, a);
+  const brazo = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.024, 0.032), carbono);
+  brazo.position.set(Math.cos(ang) * 0.15, 0.028, Math.sin(ang) * 0.15);
+  brazo.rotation.y = -ang;
+  const esc = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.014, 0.026), amarillo);
+  esc.position.set(Math.cos(ang) * 0.14, 0.045, Math.sin(ang) * 0.14);
+  esc.rotation.y = -ang;
+  const mx = Math.cos(ang) * 0.275, mz = Math.sin(ang) * 0.275;
+  const motor = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.026, 0.034, 20), rojo);
+  motor.position.set(mx, 0.058, mz);
+  const tapaM = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.02, 0.008, 16), dorado);
+  tapaM.position.set(mx, 0.078, mz);
+  const rotor = new THREE.Group();
+  rotor.position.set(mx, 0.086, mz);
+  [0, Math.PI].forEach(r => {
+    const aspa = new THREE.Mesh(new THREE.BoxGeometry(0.125, 0.004, 0.028), est(0x202226, { roughness: 0.25 }));
+    aspa.position.x = 0.0625; aspa.rotation.x = 0.18;
+    const brazoAspa = new THREE.Group(); brazoAspa.rotation.y = r; brazoAspa.add(aspa);
+    rotor.add(brazoAspa);
+  });
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(0.127, 32), new THREE.MeshBasicMaterial({ color: 0x2a2d33, transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false }));
+  disc.rotation.x = -Math.PI / 2; disc.position.set(mx, 0.088, mz);
+  const led = new THREE.Mesh(new THREE.SphereGeometry(0.009, 8, 8), new THREE.MeshBasicMaterial({ color: a > 0 ? 0x3dff7a : 0xff3b3b }));
+  led.position.set(mx, 0.035, mz);
+  led.userData.frontal = a > 0;
+  chasis.add(brazo, esc, motor, tapaM, rotor, disc, led);
+  rotores.push({ rotor, sentido: a * b });
+  leds.push(led);
+});
+function tubo(a, b, r, mat) {
+  const dir = new THREE.Vector3().subVectors(b, a);
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, dir.length(), 10), mat);
+  m.position.copy(a).addScaledVector(dir, 0.5);
+  m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+  return m;
+}
+[-1, 1].forEach(s => {     // tren de aterrizaje alto con espuma y puntas rojas
+  [-1, 1].forEach(f => chasis.add(tubo(new THREE.Vector3(f * 0.045, -0.004, s * 0.07), new THREE.Vector3(f * 0.085, -0.236, s * 0.13), 0.0065, negro)));
+  const bajo = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.012, 0.014), negro);
+  bajo.position.set(0, -0.004, s * 0.07);
+  const patin = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.34, 10), negro);
+  patin.rotation.z = Math.PI / 2; patin.position.set(0, -0.24, s * 0.13);
+  const espuma = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.22, 12), est(0x26282c, { roughness: 1 }));
+  espuma.rotation.z = Math.PI / 2; espuma.position.set(0, -0.24, s * 0.13);
+  chasis.add(bajo, patin, espuma);
+  [-1, 1].forEach(f => { const p = new THREE.Mesh(new THREE.SphereGeometry(0.013, 10, 8), rojo); p.position.set(f * 0.17, -0.24, s * 0.13); chasis.add(p); });
+});
+const ventilador = new THREE.Group();
+{     // caja de acrílico con la Jetson, antenas, GPS y conectores XT60
+  const caja = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.075, 0.11), new THREE.MeshPhysicalMaterial({ color: 0xdff1ff, roughness: 0.08, metalness: 0, transparent: true, opacity: 0.32, clearcoat: 1 }));
+  caja.position.set(0, 0.1, 0);
+  const placa = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.008, 0.085), est(0x2b6e3f, { roughness: 0.6 }));
+  placa.position.set(0, 0.07, 0);
+  const disipador = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.028, 0.065), est(0x2a2c30, { metalness: 0.6, roughness: 0.4 }));
+  disipador.position.set(0, 0.09, 0);
+  const aro = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.006, 24), negro);
+  aro.position.set(0, 0.106, 0);
+  [0, 1, 2, 3, 4].forEach(k => { const aspa = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.002, 0.008), est(0x55595f)); aspa.position.x = 0.011; const p = new THREE.Group(); p.rotation.y = k * Math.PI * 2 / 5; p.add(aspa); ventilador.add(p); });
+  ventilador.position.set(0, 0.11, 0);
+  chasis.add(caja, placa, disipador, aro, ventilador);
+  [[-0.06, 0.05], [-0.06, -0.05]].forEach(([x, z], i) => {
+    const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.0045, 0.006, 0.15, 8), negro);
+    ant.position.set(x, 0.2, z); ant.rotation.z = 0.12; ant.rotation.x = (i ? -1 : 1) * 0.15;
+    chasis.add(ant);
+  });
+  const mastil = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.07, 8), negro);
+  mastil.position.set(-0.09, 0.17, 0);
+  const gps = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.014, 20), est(0x15161a, { roughness: 0.4 }));
+  gps.position.set(-0.09, 0.21, 0);
+  chasis.add(mastil, gps);
+  [[0.03, 0.07], [-0.04, -0.07], [0.06, -0.06]].forEach(([x, z]) => { const xt = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.011, 0.01), amarillo); xt.position.set(x, 0.035, z); chasis.add(xt); });
+}
+const gimbalPitch = new THREE.Group();
+{     // gimbal con cámara, LiDAR y la placa de la IMU
+  const g = new THREE.Group();
+  g.position.set(0.07, -0.03, 0);
+  const soporte = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.01, 0.07), negro);
+  const motorRoll = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.02, 16), negro);
+  motorRoll.rotation.z = Math.PI / 2; motorRoll.position.set(0, -0.03, 0);
+  const brazoG = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.06, 0.008), negro);
+  brazoG.position.set(0, -0.055, 0.045);
+  gimbalPitch.position.set(0, -0.085, 0);
+  const cam = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.04, 0.045), est(0x202227, { roughness: 0.5 }));
+  const lente = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.014, 0.012, 16), est(0x0b0c0e, { metalness: 0.7, roughness: 0.2 }));
+  lente.rotation.z = Math.PI / 2; lente.position.set(0.028, 0.004, -0.008);
+  const lidar = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.026, 0.03), est(0x111216, { roughness: 0.5 }));
+  lidar.position.set(0.006, 0.033, 0);
+  const imu = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.004, 0.022), est(0x2e8b3e));
+  imu.position.set(-0.005, 0.05, 0);
+  gimbalPitch.add(cam, lente, lidar, imu);
+  g.add(soporte, motorRoll, brazoG, gimbalPitch);
+  chasis.add(g);
+}
+const estrobo = new THREE.Mesh(new THREE.SphereGeometry(0.008, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+estrobo.position.set(-0.1, 0.07, 0.08);
+chasis.add(estrobo);
+chasis.traverse(o => { if (o.isMesh && !o.material.transparent) o.castShadow = true; });
+const halo = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.012, 8, 64), new THREE.MeshBasicMaterial({ color: 0x7dff4a, transparent: true, opacity: 0.85 }));
+halo.rotation.x = Math.PI / 2; halo.position.y = 0.06;
+dron.add(halo);
+let etqDron = null;
+escena.add(dron);
+const sombraDron = sombraBlob(0.45);
+escena.add(sombraDron);
+const pulso = new THREE.Mesh(new THREE.TorusGeometry(1, 0.06, 8, 64), new THREE.MeshBasicMaterial({ color: 0x7dff4a, transparent: true, opacity: 0 }));
+pulso.rotation.x = Math.PI / 2;
+escena.add(pulso);
+
+// campo de visión, láser del LiDAR y línea de vista
+const cono = new THREE.Mesh((() => {
+  const R = 14, seg = 28, v = [0, 0, 0], a = [0.34], idx = [];
+  for (let i = 0; i <= seg; i++) { const t = (-HFOV / 2 + HFOV * i / seg) * Math.PI / 180; v.push(R * Math.cos(t), 0, R * Math.sin(t)); a.push(0.0); }
+  for (let i = 1; i <= seg; i++) idx.push(0, i, i + 1);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(v, 3));
+  g.setAttribute("alfa", new THREE.Float32BufferAttribute(a, 1));
+  g.setIndex(idx);
+  return g;
+})(), new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, side: THREE.DoubleSide,
+  uniforms: { color: { value: new THREE.Color(0x2ee6ff) }, fuerza: { value: 1.0 } },
+  vertexShader: "attribute float alfa; varying float va; void main(){ va = alfa; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+  fragmentShader: "uniform vec3 color; uniform float fuerza; varying float va; void main(){ gl_FragColor = vec4(color, va * fuerza); }",
+}));
+escena.add(cono);
+const linea = m => new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]), m);
+const laser = linea(new THREE.LineBasicMaterial({ color: 0xff2a4a }));
+const puntoLaser = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 12), new THREE.MeshBasicMaterial({ color: 0xff3b5c }));
+const lineaVista = linea(new THREE.LineDashedMaterial({ color: 0x7dff4a, dashSize: 0.35, gapSize: 0.2 }));
+escena.add(laser, puntoLaser, lineaVista);
+
+// ======================================================================= personajes tipo gomita
+function personaje(color, nombre, fondoEtq, conBrillo) {
+  const g = new THREE.Group(), cuerpo = new THREE.Group();
+  g.add(cuerpo);
+  const piel = new THREE.MeshPhysicalMaterial({ color: lin(color), roughness: 0.3, clearcoat: 0.8, clearcoatRoughness: 0.2, sheen: 0 });
+  const torso = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 20), piel);
+  torso.scale.set(0.27, 0.36, 0.22); torso.position.y = 1.0;
+  const cadera = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14), piel);
+  cadera.scale.set(0.23, 0.16, 0.19); cadera.position.y = 0.74;
+  const cabeza = new THREE.Group();
+  cabeza.position.y = 1.55;
+  const craneo = new THREE.Mesh(new THREE.SphereGeometry(0.34, 32, 24), piel);
+  craneo.scale.set(1, 0.94, 0.95);
+  cabeza.add(craneo);
+  const ojoMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  [-1, 1].forEach(s => {
+    const ojo = new THREE.Mesh(new THREE.TorusGeometry(0.056, 0.018, 8, 20, Math.PI), ojoMat);
+    ojo.rotation.y = Math.PI / 2;
+    ojo.position.set(0.315, 0.03, s * 0.11);
+    cabeza.add(ojo);
+  });
+  const mano = new THREE.SphereGeometry(0.075, 16, 12);
+  const extremidad = (r, l) => { const p = new THREE.Group(); const e = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.8, l, 14), piel); e.position.y = -l / 2; p.add(e); return p; };
+  const bi = extremidad(0.07, 0.4), bd = extremidad(0.07, 0.4);
+  [bi, bd].forEach((b, k) => { const m = new THREE.Mesh(mano, piel); m.position.y = -0.43; b.add(m); b.position.set(0, 1.2, (k ? -1 : 1) * 0.29); b.rotation.x = (k ? 1 : -1) * 0.12; });
+  const pi = extremidad(0.085, 0.5), pd = extremidad(0.085, 0.5);
+  [pi, pd].forEach((p, k) => { const pie = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), piel); pie.scale.set(0.13, 0.065, 0.09); pie.position.set(0.04, -0.52, 0); p.add(pie); p.position.set(0, 0.68, (k ? -1 : 1) * 0.12); });
+  cuerpo.add(torso, cadera, cabeza, bi, bd, pi, pd);
+  cuerpo.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  g.add(sombraBlob(0.5));
+  const brillo = conBrillo ? disco(TEX_BRILLO, 0xff3d7a, 0.95) : null;
+  if (brillo) g.add(brillo);
+  const mira = disco(TEX_MIRA, conBrillo ? 0x9dff3e : 0x2ee6ff, 0.78);
+  mira.material.opacity = 0;
+  g.add(mira);
+  g.userData = { cuerpo, cabeza, bi, bd, pi, pd, brillo, mira, fase: Math.random() * 6, nombre, fondoEtq, etq: null };
+  g.visible = false;
+  escena.add(g);
+  return g;
+}
+const ladron = personaje(0xff3b4e, "LADRÓN", "rgba(255,59,78,0.96)", true);
+const peatones = [personaje(0x2f8bff, "Peatón", "rgba(47,139,255,0.96)"), personaje(0x2f8bff, "Peatón", "rgba(47,139,255,0.96)")];
+function crearEtiquetas() {
+  [ladron, ...peatones].forEach(p => { const u = p.userData; u.etq = etiqueta(u.nombre, "#ffffff", u.fondoEtq, 0.03); u.etq.position.y = 2.12; p.add(u.etq); });
+  etqDron = etiqueta("DRON", "#ffffff", "rgba(13,19,38,0.92)", 0.027);
+  etqDron.position.y = 0.36;
+  dron.add(etqDron);
+}
+function rastro(color) {
+  const n = 60, g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(new Array(n * 3).fill(0), 3));
+  const l = new THREE.Line(g, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.55 }));
+  l.userData.n = n;
+  escena.add(l);
+  return l;
+}
+const rastroDron = rastro(0x2a3a66), rastroLadron = rastro(0xff3b4e);
+function actualizarRastro(lin_, puntos) {
+  const pos = lin_.geometry.attributes.position, n = lin_.userData.n;
+  for (let i = 0; i < n; i++) { const p = puntos[Math.max(0, puntos.length - n + i)] || puntos[0] || [0, -5, 0]; pos.setXYZ(i, p[0], p[1], p[2]); }
+  pos.needsUpdate = true;
+  lin_.geometry.computeBoundingSphere();
+}
+
+// ======================================================================= interfaz: barras, radio y ruido de la FPV
+$("barras").innerHTML = NOMBRES.map((n, i) => `<div class="energia" style="--a:${COLOR_ACC[i][0]};--b:${COLOR_ACC[i][1]}"><span>${n}</span><div class="pista"><div class="lleno"></div></div><span class="pct">0%</span></div>`).join("");
+const filasBarras = [...document.querySelectorAll(".energia")];
+{
+  const [c, g] = lienzo(160, 160);
+  const im = g.createImageData(160, 160);
+  for (let i = 0; i < im.data.length; i += 4) { const v = Math.random() * 255; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255; }
+  g.putImageData(im, 0, 0);
+  $("ruido").style.backgroundImage = `url(${c.toDataURL()})`;
+}
+$("radio").innerHTML = `
+  <defs>
+    <linearGradient id="cuerpoR" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3d4866"/><stop offset="1" stop-color="#1a2036"/></linearGradient>
+    <radialGradient id="bolaR" cx=".35" cy=".3" r=".85"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#93a6c8"/></radialGradient>
+    <filter id="resplandor" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <line x1="170" y1="24" x2="170" y2="4" stroke="#1a2036" stroke-width="7" stroke-linecap="round"/>
+  <rect x="6" y="20" width="328" height="126" rx="48" fill="url(#cuerpoR)" stroke="rgba(255,255,255,.18)" stroke-width="1.5"/>
+  <rect x="14" y="26" width="312" height="10" rx="5" fill="rgba(255,255,255,.07)"/>
+  ${[["L", 70], ["R", 270]].map(([k, x]) => `
+  <g transform="translate(${x},88)">
+    <circle id="aro${k}" r="41" fill="#0e1325" stroke="#4b5a80" stroke-width="2.5"/>
+    <circle r="30" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="2"/>
+    <path d="M-30 0H30M0 -30V30" stroke="rgba(255,255,255,.1)" stroke-width="2"/>
+    <line id="tallo${k}" x1="0" y1="0" x2="0" y2="0" stroke="#7f8fb4" stroke-width="8" stroke-linecap="round"/>
+    <circle id="bola${k}" r="13" fill="url(#bolaR)" stroke="rgba(0,0,0,.25)"/>
+  </g>`).join("")}
+  <text x="70" y="146" text-anchor="middle" font-family="Fredoka" font-size="10" font-weight="600" fill="rgba(222,232,255,.6)">subir · girar</text>
+  <text x="270" y="146" text-anchor="middle" font-family="Fredoka" font-size="10" font-weight="600" fill="rgba(222,232,255,.6)">avanzar · lateral</text>
+  <rect x="120" y="44" width="100" height="42" rx="11" fill="#070b18" stroke="#4b5a80" stroke-width="1.5"/>
+  <text id="lcd1" x="170" y="62" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="14" fill="#a8ff3e" filter="url(#resplandor)">PILOTO</text>
+  <text id="lcd2" x="170" y="78" text-anchor="middle" font-family="Poppins" font-size="9.5" fill="rgba(222,232,255,.75)">CH5 · posición 1</text>
+  <g transform="translate(106,30)">
+    <text x="0" y="0" text-anchor="middle" font-family="Fredoka" font-size="9" font-weight="600" fill="rgba(222,232,255,.6)">CH5</text>
+    <rect x="-18" y="5" width="36" height="12" rx="6" fill="#0e1325" stroke="#4b5a80"/>
+    <circle id="ch5" cx="-11" cy="11" r="6.5" fill="#cfd8ea"/>
+  </g>
+  <g transform="translate(234,30)">
+    <text x="0" y="0" text-anchor="middle" font-family="Fredoka" font-size="9" font-weight="600" fill="rgba(222,232,255,.6)">CH8 · PARADA</text>
+    <rect x="-18" y="5" width="36" height="12" rx="6" fill="#0e1325" stroke="#4b5a80"/>
+    <circle cx="-11" cy="11" r="6.5" fill="#cfd8ea"/>
+  </g>
+  ${[["ledE", 140, "ESQUIVA"], ["ledS", 170, "SUBE"], ["ledV", 200, "VIGILA"]].map(([id, x, t]) => `
+  <circle id="${id}" cx="${x}" cy="100" r="5.5" fill="#2a3352"/>
+  <text x="${x}" y="117" text-anchor="middle" font-family="Fredoka" font-size="8.5" font-weight="600" fill="rgba(222,232,255,.6)">${t}</text>`).join("")}`;
+const radio = { L: [0, 0], R: [0, 0] };
+function moverRadio(objL, objR, fase, bloq, estado) {
+  radio.L = [lerp(radio.L[0], objL[0], 0.25), lerp(radio.L[1], objL[1], 0.25)];
+  radio.R = [lerp(radio.R[0], objR[0], 0.25), lerp(radio.R[1], objR[1], 0.25)];
+  [["L", radio.L], ["R", radio.R]].forEach(([k, [x, y]]) => {
+    const px = limitar(x, -1, 1) * 24, py = -limitar(y, -1, 1) * 24;
+    $("bola" + k).setAttribute("cx", px); $("bola" + k).setAttribute("cy", py);
+    $("tallo" + k).setAttribute("x2", px); $("tallo" + k).setAttribute("y2", py);
+  });
+  const ia = fase === 2;
+  $("aroL").setAttribute("stroke", ia ? "#2ee6ff" : "#4b5a80");
+  $("aroR").setAttribute("stroke", bloq ? "#ff4d5e" : ia ? "#2ee6ff" : "#4b5a80");
+  $("aroR").setAttribute("filter", bloq || ia ? "url(#resplandor)" : "");
+  $("ch5").setAttribute("cx", ia ? 11 : -11);
+  $("ch5").setAttribute("fill", ia ? "#a8ff3e" : "#cfd8ea");
+  $("ch5").setAttribute("filter", ia ? "url(#resplandor)" : "");
+  $("lcd1").textContent = ia ? "IA · GUIDED" : bloq ? "BLOQUEO" : "PILOTO";
+  $("lcd1").setAttribute("fill", ia ? "#2ee6ff" : bloq ? "#ff4d5e" : "#a8ff3e");
+  $("lcd2").textContent = ia ? "CH5 · posición 3" : "CH5 · posición 1";
+  [["ledE", estado.esquiva, "#ff3dbb"], ["ledS", estado.sube, "#ffd23f"], ["ledV", estado.vigila, "#a8ff3e"]].forEach(([id, on, col]) => {
+    $(id).setAttribute("fill", on ? col : "#2a3352");
+    $(id).setAttribute("filter", on ? "url(#resplandor)" : "");
+  });
+  $("radio-tit").textContent = ia ? "🤖 Mandos virtuales de la IA" : "🎮 Mando del piloto";
+  $("radio-nota").textContent = ia ? "la IA envía comandos MAVLink" : bloq ? "avance anulado por el sistema" : "el piloto vuela";
+  $("radio-nota").style.color = bloq ? "#ff8a95" : "";
+}
+
+function redimensionar() {
+  renderer.setSize(innerWidth, innerHeight);
+  camara.aspect = innerWidth / innerHeight;
+  camara.updateProjectionMatrix();
+  acomodarStats();
+}
+let statsAbierto = false;
+function acomodarStats() {
+  const st = $("stats");
+  st.classList.remove("compacto");
+  const der = $("derecha");     // medidas de layout (sin las animaciones de entrada)
+  if (!statsAbierto && st.offsetTop < der.offsetTop + der.offsetHeight + 10) st.classList.add("compacto");
+}
+$("stats-abrir").addEventListener("click", () => {
+  statsAbierto = !statsAbierto;
+  $("stats").classList.toggle("abierto", statsAbierto);
+  $("stats-abrir").textContent = statsAbierto ? "✕ Cerrar" : "📈 Gráficas";
+  acomodarStats();
+  if (statsAbierto) grafica.resize();
+});
+addEventListener("resize", redimensionar);
+
+// ======================================================================= reproducción
+const sel = $("selector");
+let partida = null, tPartida = 0, pausa = false, vel = 1, modoCam = "cine", recargando = false, faseAnterior = 0, tActivacion = -1e9, angCine = 0;
+async function cargarJSON(ruta) {
+  const r = await fetch(ruta + "?t=" + Date.now(), { cache: "no-store" });
+  if (!r.ok) throw new Error(ruta);
+  return r.json();
+}
+function normalizar(pt) {
+  pt.cuadros.forEach(c => { if (!c.pers) c.pers = [{ rol: pt.adversaria ? "ladron" : "peaton", p: c.p, v: c.pv, vis: c.vis, tap: false, run: c.run }]; if (!c.fase) c.fase = 2; });
+  return pt;
+}
+async function cargarPartida(fuente) {
+  try {
+    partida = normalizar(await cargarJSON(fuente));
+    tPartida = 0; faseAnterior = 0;
+    prepararEscenario(partida);
+    $("fin").classList.remove("ver");
+    const C = partida.cuadros, n1 = C.filter(c => c.fase === 1).length;
+    $("s1").style.width = (100 * n1 / C.length) + "%";
+    $("s2").style.left = (100 * n1 / C.length) + "%";
+    $("pie-modelo").textContent = (partida.mision ? "Misión completa" : "Partida en el salón") + ` · IA con ${(partida.pasos / 1e6).toFixed(1)} M pasos de entrenamiento`;
+    if (modoCam === "arriba" || modoCam === "orbita") ponerCamara(modoCam);
+  } catch (e) {}
+}
+async function llenarSelector() {
+  const actual = sel.value;
+  const opciones = [["salida/replay_mision.json", "▶ Misión completa · en vivo"], ["salida/replay_adv.json", "▶ Partida en el salón · en vivo"]];
+  try {
+    const hitos = await cargarJSON("salida/hitos/lista.json");
+    hitos.slice().reverse().forEach(h => opciones.push(["salida/hitos/" + h.archivo, `Hito · ${(h.pasos / 1e6).toFixed(1)} M pasos · ${h.mision ? "misión" : "partida"}`]));
+  } catch (e) {}
+  sel.innerHTML = opciones.map(([v, t]) => `<option value="${v}">${t}</option>`).join("");
+  if (actual && opciones.some(o => o[0] === actual)) sel.value = actual;
+}
+sel.addEventListener("change", () => cargarPartida(sel.value));
+function alternarPausa() { pausa = !pausa; $("pausa").textContent = pausa ? "▶" : "⏸"; $("pausa").classList.toggle("activo", pausa); }
+$("pausa").addEventListener("click", alternarPausa);
+addEventListener("keydown", e => { if (e.code === "Space" && e.target.tagName !== "SELECT") { e.preventDefault(); alternarPausa(); } });
+$("velocidad").addEventListener("change", e => vel = +e.target.value);
+$("pista").addEventListener("click", e => {
+  if (!partida) return;
+  const r = e.currentTarget.getBoundingClientRect();
+  tPartida = limitar((e.clientX - r.left) / r.width, 0, 1) * (partida.cuadros.length - 1) * partida.dt;
+  faseAnterior = 0;
+  $("fin").classList.remove("ver");
+});
+function ponerCamara(modo) {
+  document.querySelectorAll("[data-cam]").forEach(x => x.classList.toggle("activo", x.dataset.cam === modo));
+  modoCam = modo;
+  if (modo === "arriba") { camara.position.set(0, 62, 26); controles.target.set(0, 0, 0); }
+  if (modo === "orbita") { camara.position.set(-34, 24, 30); controles.target.set(0, 0, 0); }
+}
+document.querySelectorAll("[data-cam]").forEach(b => b.addEventListener("click", () => ponerCamara(b.dataset.cam)));
+
+function mensajeFase(c) {
+  if (c.fase === 1) return c.msg;
+  if (c.est === 1) return "⚡ ¡Alguien se le viene encima! La IA esquiva: " + NOMBRES[c.cl].toLowerCase();
+  if (c.est === 2) return "🛑 La IA frena después de esquivar";
+  const lad = (c.pers || []).find(p => p.rol === "ladron");
+  if (!c.vis) {
+    if (lad && lad.tap) return "🧱 El ladrón se escondió detrás de un panel: la IA lo busca";
+    return c.a === 6 ? "🔍 La IA busca al ladrón desplazándose" : "🔍 La IA busca al ladrón girando (paneo)";
+  }
+  if ((c.pers || []).some(p => p.rol === "peaton" && p.vis)) return "🎯 Ladrón a la vista · hay un peatón cerca y la IA lo tiene en cuenta";
+  if (c.a === 6) return "🎯 El ladrón se aleja: la IA lo sigue sin acercarse a menos de 8 m";
+  return "🎯 Ladrón a la vista: la IA lo sigue con la nariz";
+}
+let insigniaActual = "", mensajeActual = "";
+function dibujarPanel(c, b, info) {
+  let txt, color;
+  if (c.fase === 1) [txt, color] = c.bloq ? ["⛔ BLOQUEO FRONTAL", "#ff4d5e"] : ["🧑‍✈️ PILOTO", "#8fb3ff"];
+  else if (c.est === 1) [txt, color] = ["⚡ IA · ESQUIVANDO", "#ff3dbb"];
+  else if (c.est === 2) [txt, color] = ["🛑 IA · FRENANDO", "#ffd23f"];
+  else if (c.vis) [txt, color] = ["🎯 IA · VIGILANDO", "#a8ff3e"];
+  else [txt, color] = ["🔍 IA · BUSCANDO", "#2ee6ff"];
+  const ins = $("insignia");
+  if (insigniaActual !== txt) {
+    insigniaActual = txt;
+    ins.textContent = txt;
+    ins.style.setProperty("--c", color);
+    ins.classList.remove("sacude"); void ins.offsetWidth;
+    if (c.bloq || c.est === 1) ins.classList.add("sacude");
+  }
+  const lad = (c.pers || []).find(p => p.rol === "ladron");
+  $("c-lad").textContent = c.fase === 1 || !lad ? "–" : c.vis ? `a ${c.dh.toFixed(1)} m` : lad.tap ? "escondido" : "no lo ve";
+  $("c-tvis").textContent = info.vista === null ? "–" : (info.vista * 100).toFixed(0) + "%";
+  $("c-lidar").textContent = c.lid && c.lid < 19.9 ? c.lid.toFixed(1) + " m" : "libre";
+  $("c-alt").textContent = c.d[2].toFixed(1) + " m";
+  const f1 = c.fase === 1;
+  $("espera").style.display = f1 ? "block" : "none";
+  $("cerebro").style.display = f1 ? "none" : "block";
+  if (f1 && partida.mision) {
+    const x0 = partida.despegue[0], x1 = partida.entrada_ia_x !== undefined ? partida.entrada_ia_x : 0;
+    const p = limitar((c.d[0] - x0) / (x1 - x0), 0, 1);
+    $("prog-zona").style.width = (p * 100).toFixed(1) + "%";
+    $("prog-txt").textContent = `Camino a la zona IA · faltan ${Math.max(x1 - c.d[0], 0).toFixed(0)} m`;
+  }
+  if (!f1) {
+    const pr = c.pr && c.pr.length ? c.pr : (b.pr || []);
+    const top = pr.length ? pr.indexOf(Math.max(...pr)) : -1;
+    filasBarras.forEach((fila, i) => {
+      const p = pr[i] || 0;
+      fila.querySelector(".lleno").style.width = (p * 100).toFixed(0) + "%";
+      fila.querySelector(".pct").textContent = (p * 100).toFixed(0) + "%";
+      fila.classList.toggle("top", i === top);
+    });
+  }
+  const msg = mensajeFase(c) || "";
+  if (msg !== mensajeActual) {
+    mensajeActual = msg;
+    const m = $("mensaje");
+    m.textContent = msg;
+    m.className = "panel" + (c.fase === 1 && c.bloq ? " bloqueo" : c.fase === 2 ? " ia" : "");
+  }
+}
+
+function animarPersona(g, d, dtReal, ahora, aDron, visto) {
+  const u = g.userData;
+  const rap = Math.hypot(d.v[0], d.v[1]);
+  if (rap > 0.12) g.rotation.y = lerpAng(g.rotation.y, Math.atan2(d.v[1], d.v[0]), 0.25);
+  u.fase += dtReal * (d.run ? 12 : 7.5) * Math.min(rap / 1.3, 1.5);
+  const amp = Math.min(rap / 1.3, 1) * (d.run ? 0.95 : 0.6);
+  u.pi.rotation.z = Math.sin(u.fase) * amp;
+  u.pd.rotation.z = -Math.sin(u.fase) * amp;
+  u.bi.rotation.z = -Math.sin(u.fase) * amp * 0.9;
+  u.bd.rotation.z = Math.sin(u.fase) * amp * 0.9;
+  u.cuerpo.position.y = Math.abs(Math.sin(u.fase)) * 0.05 * Math.min(rap, 1) + Math.sin(ahora / 600) * 0.008;
+  u.cuerpo.rotation.z = lerp(u.cuerpo.rotation.z, -(d.run ? 0.22 : 0.06) * Math.min(rap, 1), 0.2);
+  if (aDron) {
+    const rel = Math.atan2(-(aDron.z - g.position.z), aDron.x - g.position.x) - g.rotation.y;
+    u.cabeza.rotation.y = lerp(u.cabeza.rotation.y, limitar(Math.atan2(Math.sin(rel), Math.cos(rel)), -1, 1), 0.15);
+  }
+  if (u.brillo) { const s = 1 + 0.1 * Math.sin(ahora / 220); u.brillo.scale.set(s, s, s); u.brillo.material.opacity = 0.65 + 0.25 * Math.sin(ahora / 220); }
+  u.mira.material.opacity = lerp(u.mira.material.opacity, visto ? 0.95 : 0, 0.2);
+  u.mira.rotation.z += dtReal * 1.6;
+}
+
+// cámara del dron (FPV) y cajas de detección
+const camDron = new THREE.PerspectiveCamera(VFOV, Math.tan(HFOV / 2 * Math.PI / 180) / Math.tan(VFOV / 2 * Math.PI / 180), 0.1, 700);
+const fpvVista = $("fpv-vista");
+const cajasDet = [];
+function dibujarDetecciones(c, pers) {
+  const W = fpvVista.clientWidth, H = fpvVista.clientHeight;
+  let n = 0, hayLadron = false;
+  const adelante = new THREE.Vector3();
+  camDron.getWorldDirection(adelante);
+  pers.forEach(pp => {
+    // en la fase 1 la simulación no marca la detección: se usa el campo de visión de la cámara
+    const enCampo = Math.abs(((Math.atan2(pp.p[1] - c.d[1], pp.p[0] - c.d[0]) - c.d[3]) * 180 / Math.PI + 540) % 360 - 180) < HFOV / 2;
+    const visto = pp.rol === "ladron" ? c.vis : c.fase === 1 ? enCampo : pp.vis;
+    if (!visto) return;
+    const base = mundo(pp.p[0], pp.p[1], 0);
+    if (base.clone().sub(camDron.position).dot(adelante) <= 0.3) return;
+    let x0 = 1, x1 = -1, y0 = 1, y1 = -1;
+    [[-0.32, -0.32], [0.32, -0.32], [-0.32, 0.32], [0.32, 0.32]].forEach(([ox, oz]) => [0.0, 1.95].forEach(hy => {
+      const q = new THREE.Vector3(base.x + ox, hy, base.z + oz).project(camDron);
+      x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y);
+    }));
+    x0 = Math.max(x0, -1); x1 = Math.min(x1, 1); y0 = Math.max(y0, -1); y1 = Math.min(y1, 1);
+    if (x1 <= x0 || y1 <= y0) return;
+    if (!cajasDet[n]) { const d = document.createElement("div"); d.className = "caja-det"; d.innerHTML = "<span></span>"; fpvVista.appendChild(d); cajasDet[n] = d; }
+    const d = cajasDet[n++], esL = pp.rol === "ladron", col = esL ? "#ff4d6d" : "#2ee6ff";
+    if (esL) hayLadron = true;
+    Object.assign(d.style, { display: "block", borderColor: col, color: col, left: (x0 + 1) / 2 * W + "px", width: (x1 - x0) / 2 * W + "px", top: (1 - y1) / 2 * H + "px", height: (y1 - y0) / 2 * H + "px" });
+    const dentro = (1 - y1) / 2 * H < 18;     // si la caja toca el borde de arriba, la etiqueta va por dentro
+    Object.assign(d.firstChild.style, { background: col, left: x0 > 0.2 ? "auto" : "-2.5px", right: x0 > 0.2 ? "-2.5px" : "auto",
+      top: dentro ? "-2.5px" : "auto", bottom: dentro ? "auto" : "100%",
+      borderRadius: dentro ? (x0 > 0.2 ? "0 5px 0 5px" : "5px 0 5px 0") : x0 > 0.2 ? "5px 5px 0 5px" : "5px 5px 5px 0" });
+    d.firstChild.textContent = esL ? `🎯 ladrón · ${c.dh.toFixed(1)} m` : "persona";
+  });
+  for (let k = n; k < cajasDet.length; k++) cajasDet[k].style.display = "none";
+  const e = $("fpv-estado");
+  if (c.fase === 1) { e.textContent = n ? "persona al frente" : "sin personas"; e.style.background = n ? "#2ee6ff" : "#9fb0cc"; }
+  else if (hayLadron) { e.textContent = "🎯 objetivo fijado"; e.style.background = "#a8ff3e"; }
+  else { e.textContent = "🔍 buscando…"; e.style.background = "#ffd23f"; }
+}
+
+function mostrarFin() {
+  const C = partida.cuadros, f2 = C.filter(q => q.fase !== 1);
+  const pv = f2.length ? f2.filter(q => q.vis).length / f2.length : 0;
+  const titulos = { "a salvo": "¡MISIÓN CUMPLIDA!", "alcanzado": "¡EL LADRÓN LO ALCANZÓ!", "choque_peaton": "¡CHOQUE CON UN PEATÓN!", "panel": "¡CHOQUE CON UN OBSTÁCULO!", "geocerca": "¡SALIÓ DEL SALÓN!" };
+  const ok = partida.resultado === "a salvo" || !partida.resultado;
+  const estrellas = ok ? 1 + (pv >= 0.3) + (pv >= 0.6) : 0;
+  $("fin-tit").textContent = titulos[partida.resultado] || titulos["a salvo"];
+  $("fin-tit").style.color = ok ? "#a8ff3e" : "#ff6b78";
+  $("fin-filas").innerHTML = `<span>👁️ Ladrón a la vista</span><b>${(pv * 100).toFixed(0)}% del tiempo</b>
+    <span>⚡ Maniobras de evasión</span><b>${partida.maniobras ?? "–"}</b>
+    <span>⏱️ Duración</span><b>${((C.length - 1) * partida.dt).toFixed(0)} s</b>
+    <span>🧠 Entrenamiento de la IA</span><b>${(partida.pasos / 1e6).toFixed(1)} M pasos</b>`;
+  const spans = [...$("estrellas").children];
+  spans.forEach(s => s.className = "");
+  $("fin").classList.add("ver");
+  spans.forEach((s, i) => setTimeout(() => s.className = i < estrellas ? "on" : "off", 350 + i * 260));
+}
+
+let tPrevio = performance.now();
+function animar(ahora) {
+  requestAnimationFrame(animar);
+  const dtReal = Math.min((ahora - tPrevio) / 1000, 0.1);
+  tPrevio = ahora;
+  rotores.forEach(r => r.rotor.rotation.y += r.sentido * dtReal * 80);
+  ventilador.rotation.y += dtReal * 25;
+  estrobo.visible = Math.floor(ahora / 110) % 12 === 0;
+  nubes.forEach(n => { n.position.x += n.userData.vel * dtReal; if (n.position.x > 220) n.position.x = -220; });
+  if (partida && partida.cuadros.length > 1) {
+    const C = partida.cuadros, dt = partida.dt;
+    if (!pausa) tPartida += dtReal * vel;
+    const total = (C.length - 1) * dt;
+    if (tPartida >= total) {
+      tPartida = total;
+      if (!$("fin").classList.contains("ver") && !recargando) {
+        mostrarFin();
+        recargando = true;
+        setTimeout(async () => { await cargarPartida(sel.value); recargando = false; }, 4200);
+      }
+    }
+    const k = Math.min(Math.floor(tPartida / dt), C.length - 2), f = (tPartida - k * dt) / dt;
+    const a = C[k], b = C[k + 1];
+    if (faseAnterior === 1 && a.fase === 2) tActivacion = ahora;
+    faseAnterior = a.fase;
+    const ta = (ahora - tActivacion) / 1000;
+    $("activacion").classList.toggle("ver", ta >= 0 && ta < 2.4);
+    pulso.material.opacity = ta >= 0 && ta < 1.5 ? 0.85 * (1 - ta / 1.5) : 0;
+    pulso.scale.setScalar(0.5 + Math.max(ta, 0) * 7);
+    const dx = lerp(a.d[0], b.d[0], f), dy = lerp(a.d[1], b.d[1], f), dz = lerp(a.d[2], b.d[2], f), psi = lerpAng(a.d[3], b.d[3], f);
+    dron.position.copy(mundo(dx, dy, dz + Math.sin(ahora / 380) * 0.012));
+    dron.rotation.y = psi;
+    pulso.position.copy(mundo(dx, dy, 0.05));
+    const dv = a.dv || [0, 0];
+    const vAdel = dv[0] * Math.cos(psi) + dv[1] * Math.sin(psi), vDer = dv[0] * Math.sin(psi) - dv[1] * Math.cos(psi);
+    chasis.rotation.z = lerp(chasis.rotation.z, -vAdel * 0.11, 0.12);
+    chasis.rotation.x = lerp(chasis.rotation.x, vDer * 0.11, 0.12);
+    const colEstado = a.fase === 1 ? (a.bloq ? 0xff4d5e : 0x8fb3ff) : a.est === 1 ? 0xff3dbb : a.est === 2 ? 0xffd23f : a.vis ? 0x7dff4a : 0x2ee6ff;
+    halo.material.color.set(colEstado);
+    leds.forEach(l => l.visible = l.userData.frontal || Math.floor(ahora / 450) % 2 === 0);
+    cono.position.copy(mundo(dx, dy, dz - 0.09));
+    cono.rotation.y = psi;
+    cono.material.uniforms.fuerza.value = a.fase !== 1 && a.vis ? 1.2 : 0.65;
+    cono.material.uniforms.color.value.set(a.fase !== 1 && a.vis ? 0x7dff4a : 0x2ee6ff);
+    sombraDron.position.set(dx, 0.013, -dy);
+    sombraDron.material.opacity = Math.max(0.15, 1 - dz / 6);
+    // personas
+    const pa = a.pers || [], pb = b.pers || [];
+    let iPea = 0;
+    ladron.visible = false;
+    peatones.forEach(p => p.visible = false);
+    pa.forEach((pp, i) => {
+      const q = pb[i] && pb[i].rol === pp.rol ? pb[i] : pp;
+      const g = pp.rol === "ladron" ? ladron : peatones[iPea++];
+      if (!g) return;
+      g.visible = true;
+      g.position.copy(mundo(lerp(pp.p[0], q.p[0], f), lerp(pp.p[1], q.p[1], f), 0));
+      animarPersona(g, pp, dtReal, ahora, pp.rol === "ladron" ? dron.position : null, pp.rol === "ladron" ? a.fase === 2 && a.vis : pp.vis);
+    });
+    const lad = pa.find(p => p.rol === "ladron");
+    gimbalPitch.rotation.z = lerp(gimbalPitch.rotation.z, lad && a.vis ? -Math.atan2(dz - 1.0, Math.max(a.dh, 0.5)) : -0.17, 0.2);
+    // láser del LiDAR
+    const origen = mundo(dx, dy, dz - 0.12);
+    let fin;
+    if (a.las && lad) fin = mundo(lad.p[0], lad.p[1], 1.1);
+    else { const L = a.lid ? Math.min(a.lid, 20) : 20; fin = mundo(dx + L * Math.cos(psi), dy + L * Math.sin(psi), a.lid && a.lid < 19.9 ? dz - 0.12 : Math.max(dz - 1.6, 0.05)); }
+    laser.geometry.setFromPoints([origen, fin]);
+    puntoLaser.position.copy(fin);
+    // línea de vista: verde si lo ve, roja si un panel lo tapa
+    if (lad && a.fase !== 1 && (a.vis || lad.tap)) {
+      lineaVista.visible = true;
+      lineaVista.material.color.set(a.vis ? 0x7dff4a : 0xff4d5e);
+      lineaVista.geometry.setFromPoints([origen, mundo(lad.p[0], lad.p[1], 1.3)]);
+      lineaVista.computeLineDistances();
+    } else lineaVista.visible = false;
+    const hist = C.slice(Math.max(0, k - 60), k + 1);
+    actualizarRastro(rastroDron, hist.map(c => [c.d[0], 0.03, -c.d[1]]));
+    const histL = hist.filter(c => c.fase !== 1 && c.pers && c.pers[0] && c.pers[0].rol === "ladron").map(c => [c.pers[0].p[0], 0.03, -c.pers[0].p[1]]);
+    rastroLadron.visible = histL.length > 1;
+    if (histL.length > 1) actualizarRastro(rastroLadron, histL);
+    // panel, radio y línea de tiempo
+    const f2h = C.slice(0, k + 1).filter(q => q.fase !== 1);
+    dibujarPanel(a, b, { vista: f2h.length ? f2h.filter(q => q.vis).length / f2h.length : null });
+    const dpsi = ((b.d[3] - a.d[3]) * 180 / Math.PI + 540) % 360 - 180;
+    const giro = -dpsi / dt / 60, subida = (b.d[2] - a.d[2]) / dt;
+    let palL, palR;
+    if (a.fase === 1) {
+      const [adel, der] = a.piloto || [0, 0];
+      palL = [giro, a.d[2] < 2.2 ? 0.9 : subida];
+      palR = [der, adel];
+    } else {
+      palL = [giro, subida];
+      palR = [vDer / 1.5, vAdel / 1.5];
+    }
+    moverRadio(palL, palR, a.fase, !!a.bloq, { esquiva: a.est === 1, sube: subida > 0.15 || a.cl === 3 && a.est === 1, vigila: a.fase === 2 && a.vis });
+    $("cursor").style.left = (100 * k / (C.length - 1)) + "%";
+    $("reloj").textContent = (k * dt).toFixed(1) + " s";
+    $("fpv-alt").textContent = "ALT " + dz.toFixed(1) + " m";
+    $("fpv-lidar").textContent = "LiDAR " + (a.lid && a.lid < 19.9 ? a.lid.toFixed(1) + " m" : "libre");
+    const tt = k * dt;
+    $("fpv-t").textContent = String(Math.floor(tt / 60)).padStart(2, "0") + ":" + (tt % 60).toFixed(1).padStart(4, "0");
+    // cámara FPV
+    const pitch = gimbalPitch.rotation.z;
+    camDron.position.copy(mundo(dx + 0.08 * Math.cos(psi), dy + 0.08 * Math.sin(psi), dz - 0.12));
+    camDron.lookAt(camDron.position.clone().add(new THREE.Vector3(Math.cos(psi) * Math.cos(pitch), Math.sin(pitch), -Math.sin(psi) * Math.cos(pitch))));
+    camDron.updateMatrixWorld();
+    dibujarDetecciones(a, pa);
+    // cámaras de la escena
+    const objDron = new THREE.Vector3(dx, dz, -dy);
+    if (modoCam === "seguir") {
+      controles.target.lerp(objDron, 0.12);
+      camara.position.lerp(new THREE.Vector3(dx - 3.0 * Math.cos(psi), dz + 1.0, -(dy - 3.0 * Math.sin(psi))), 0.06);
+    } else if (modoCam === "cine") {
+      // fase 1: cerca del dron; fase 2: detrás del dron mirando hacia el ladrón
+      let rumbo = psi, dist = 4.4, alto = 1.8;
+      const foco = objDron.clone();
+      if (lad && a.fase === 2) {
+        const rx = lad.p[0] - dx, ry = lad.p[1] - dy, L = Math.hypot(rx, ry);
+        rumbo = Math.atan2(ry, rx);
+        dist = Math.min(4.6 + L * 0.3, 11);
+        alto = 2.1 + L * 0.16;
+        foco.lerp(new THREE.Vector3(lad.p[0], 1.0, -lad.p[1]), 0.4);
+      }
+      angCine = lerpAng(angCine, rumbo, 0.03);
+      controles.target.lerp(foco, 0.07);
+      camara.position.lerp(new THREE.Vector3(dx - dist * Math.cos(angCine) + 1.6 * Math.sin(angCine), dz + alto, -(dy - dist * Math.sin(angCine) - 1.6 * Math.cos(angCine))), 0.04);
+    }
+    sol.position.set(dx - 25, 45, -dy + 20);
+    sol.target.position.set(dx, 0, -dy);
+  }
+  controles.update();
+  renderer.setScissorTest(false);
+  renderer.setViewport(0, 0, innerWidth, innerHeight);
+  renderer.shadowMap.needsUpdate = true;
+  renderer.render(escena, camara);
+  if (partida) {
+    const rv = fpvVista.getBoundingClientRect(), x = rv.left, y = innerHeight - rv.bottom;
+    const ocultos = [dron, cono, laser, puntoLaser, lineaVista, pulso, rastroDron, rastroLadron, sombraDron,
+                     ...[ladron, ...peatones].flatMap(p => [p.userData.etq, p.userData.mira, p.userData.brillo])].filter(o => o && o.visible);
+    ocultos.forEach(o => o.visible = false);
+    renderer.setScissorTest(true);
+    renderer.setViewport(x, y, rv.width, rv.height);
+    renderer.setScissor(x, y, rv.width, rv.height);
+    renderer.render(escena, camDron);
+    ocultos.forEach(o => o.visible = true);
+  }
+}
+
+// ======================================================================= estadísticas del entrenamiento
+Chart.defaults.font.family = "Poppins, system-ui, sans-serif";
+Chart.defaults.font.size = 10.5;
+Chart.defaults.color = "rgba(222,232,255,.6)";
+const degradado = (arriba, abajo) => ctx => {
+  const ch = ctx.chart, a = ch.chartArea;
+  if (!a) return arriba;
+  const g = ch.ctx.createLinearGradient(0, a.top, 0, a.bottom);
+  g.addColorStop(0, arriba); g.addColorStop(1, abajo);
+  return g;
+};
+const resplandor = { id: "resplandor",
+  beforeDatasetDraw(ch, args) { const ds = ch.data.datasets[args.index]; ch.ctx.save(); ch.ctx.shadowColor = ds.brillo || "transparent"; ch.ctx.shadowBlur = 12; },
+  afterDatasetDraw(ch) { ch.ctx.restore(); } };
+const rejilla = { color: "rgba(255,255,255,.06)", drawTicks: false };
+const grafica = new Chart($("grafica"), {
+  type: "line", data: { datasets: [] }, plugins: [resplandor],
+  options: {
+    maintainAspectRatio: false, animation: { duration: 900, easing: "easeOutQuart" },
+    interaction: { mode: "index", intersect: false },
+    elements: { line: { cubicInterpolationMode: "monotone", borderWidth: 3 }, point: { radius: 0, hoverRadius: 4 } },
+    scales: { x: { type: "linear", grid: rejilla, border: { display: false }, ticks: { padding: 6, maxTicksLimit: 6, callback: v => v + " M" } },
+              y: { min: 0, grid: rejilla, border: { display: false }, ticks: { padding: 6, maxTicksLimit: 5 } } },
+    plugins: { legend: { display: false, labels: { usePointStyle: true, pointStyle: "circle", boxWidth: 7, boxHeight: 7, padding: 10, color: "rgba(222,232,255,.8)", font: { size: 10.5 } } },
+               tooltip: { backgroundColor: "rgba(13,19,40,.92)", titleFont: { family: "Fredoka", size: 12 }, padding: 10, cornerRadius: 10,
+                          callbacks: { title: it => it.length ? it[0].parsed.x.toFixed(1) + " M pasos" : "" } } },
+  },
+});
+let M = [], pestana = "vista";
+const pct = v => Math.round(v * 100) + "%";
+function suavizar(serie, k = 8) {
+  return serie.map((p, i) => { const v = serie.slice(Math.max(0, i - k), i + 1).filter(q => q.y !== null && q.y !== undefined); return { x: p.x, y: v.length ? v.reduce((s, q) => s + q.y, 0) / v.length : null }; });
+}
+const serie = fn => suavizar(M.map(m => ({ x: m.pasos / 1e6, y: fn(m) })));
+const area = (label, c, alfa = 0.5, extra = {}) => Object.assign({ label, borderColor: c, brillo: c, fill: "origin",
+  backgroundColor: degradado(c + Math.round(alfa * 255).toString(16).padStart(2, "0"), c + "00") }, extra);
+function pintarGrafica() {
+  const g = grafica, y = g.options.scales.y;
+  y.stacked = false; y.max = undefined; y.ticks.callback = v => v;
+  g.options.plugins.legend.display = false;
+  let nota = "";
+  if (pestana === "vista") {
+    g.data.datasets = [Object.assign(area("ladrón a la vista", "#a8ff3e", 0.55), { data: serie(m => m.adv.vista) })];
+    y.max = 1; y.ticks.callback = pct;
+    nota = "Fracción del tiempo con el ladrón en la cámara: el objetivo principal del dron.";
+  } else if (pestana === "peligros") {
+    g.data.datasets = [Object.assign(area("lo alcanza el ladrón", "#ff3dbb", 0.5), { data: serie(m => m.adv.alcanzado) }),
+                       Object.assign(area("lo choca un peatón", "#2ee6ff", 0.3), { data: serie(m => m.adv.peaton) }),
+                       Object.assign(area("choca o sale del salón", "#ffd23f", 0.25), { data: serie(m => (m.adv.panel || 0) + (m.adv.fuera || 0)) })];
+    y.ticks.callback = pct;
+    g.options.plugins.legend.display = true;
+    nota = "Partidas que terminan mal (menos es mejor).";
+  } else if (pestana === "decisiones") {
+    g.data.datasets = NOMBRES.map((n, i) => Object.assign(area(n, COLOR_ACC[i][1], 0.75, { fill: i === 0 ? "origin" : "-1", borderWidth: 1.5, brillo: "transparent",
+      backgroundColor: COLOR_ACC[i][i % 2 ? 0 : 1] + "bb" }), { data: serie(m => m.acciones[i] ?? null) }));
+    y.stacked = true; y.max = 1; y.ticks.callback = pct;
+    nota = "Cómo reparte el dron sus decisiones a lo largo del entrenamiento.";
+  } else {
+    g.data.datasets = [Object.assign(area("esquives por partida", "#2ee6ff", 0.5), { data: serie(m => m.adv.maniobras) })];
+    nota = "Maniobras de evasión por partida (pocas y a tiempo es lo ideal).";
+  }
+  $("g-nota").textContent = nota;
+  g.update();
+}
+document.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => {
+  pestana = b.dataset.tab;
+  document.querySelectorAll("[data-tab]").forEach(x => x.classList.toggle("activo", x === b));
+  pintarGrafica();
+}));
+function contar(el, hasta, fmt) {
+  const desde = el._v ?? 0, t0 = performance.now();
+  el._v = hasta;
+  const paso = t => { const k = Math.min((t - t0) / 900, 1), e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(desde + (hasta - desde) * e); if (k < 1) requestAnimationFrame(paso); };
+  el.textContent = fmt(desde);
+  requestAnimationFrame(paso);
+  setTimeout(() => el.textContent = fmt(hasta), 1000);
+}
+const durCorta = s => { s = Math.round(s); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60); return h ? `${h}h ${m}m` : `${m}m`; };
+const durLarga = s => { s = Math.round(s); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60); return h ? `${h} h ${m} min` : `${m} min`; };
+function tendencia(el, fn, bueno) {
+  const prom = arr => { const v = arr.map(fn).filter(z => z !== null && z !== undefined); return v.length ? v.reduce((s, z) => s + z, 0) / v.length : null; };
+  const u = prom(M.slice(-10)), p = prom(M.slice(-30, -10));
+  if (u === null || p === null) { el.textContent = ""; return; }
+  const d = Math.round((u - p) * 100);
+  el.textContent = d === 0 ? "" : (d > 0 ? "▲" : "▼") + Math.abs(d);
+  el.style.color = (d > 0) === bueno ? "#a8ff3e" : "#ff6b9a";
+}
+async function actualizarMetricas() {
+  // el entrenamiento reescribe estos archivos cada pocos segundos: si una lectura falla, se reintenta en la próxima
+  try {
+    M = (await cargarJSON("salida/metricas.json")).filter(m => m.adv);
+    const u = M.slice(-10), prom = fn => { const v = u.map(fn).filter(z => z !== null && z !== undefined); return v.length ? v.reduce((s, z) => s + z, 0) / v.length : null; };
+    const pv = prom(m => m.adv.vista), pa = prom(m => m.adv.alcanzado);
+    if (pv !== null) contar($("n-vista"), pv * 100, v => v.toFixed(0) + "%");
+    if (pa !== null) contar($("n-alc"), pa * 100, v => v.toFixed(0) + "%");
+    tendencia($("t-vista"), m => m.adv.vista, true);
+    tendencia($("t-alc"), m => m.adv.alcanzado, false);
+    pintarGrafica();
+  } catch (err) {
+    if (!M.length) $("g-nota").textContent = "Esperando datos del entrenamiento…";
+  }
+  try {
+    const e = await cargarJSON("salida/estado.json");
+    contar($("n-pasos"), e.pasos / 1e6, v => v.toFixed(1) + "M");
+    $("n-tiempo").textContent = durCorta(e.seg);
+    const vivo = Date.now() / 1000 - e.t < 60;
+    const resta = (e.objetivo - e.pasos) / Math.max(e.pasos_s, 1);
+    $("vivo").textContent = vivo ? "EN VIVO" : "EN PAUSA";
+    $("vivo").classList.toggle("parado", !vivo);
+    if (vivo && M.length) $("g-nota").textContent += ` · iteración ${e.it}, ${Math.round(e.pasos_s).toLocaleString("es")} pasos/s, faltan ~${durLarga(resta)}`;
+  } catch (err) {}
+}
+
+(async () => {
+  try { await Promise.all([document.fonts.load("700 40px Fredoka"), document.fonts.load("700 20px Poppins")]); } catch (e) {}
+  crearEtiquetas();
+  redimensionar();
+  requestAnimationFrame(animar);
+  await llenarSelector();
+  await cargarPartida(sel.value || "salida/replay_mision.json");
+  await actualizarMetricas();
+  acomodarStats();
+  setInterval(actualizarMetricas, 5000);
+  setInterval(llenarSelector, 30000);
+})();
+</script>
+</body>
+</html>
