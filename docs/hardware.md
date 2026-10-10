@@ -15,7 +15,7 @@ componentes, cómo están conectados y los problemas de hardware que se resolvie
 | Gimbal | BaseCam SimpleBGC v1.0 (8 bits, firmware 2.2 b2) | 2 ejes activos: roll (solo estabiliza) y pitch (estabiliza y lo comanda la Jetson). Motor de yaw desactivado. |
 | Radio | Emisora Futaba + receptor | CH5 = modo de vuelo, CH8 = parada de emergencia. |
 | Energía | LiPo 4S + Power Module PM05-V1.0 | Buck DC-DC a 12.02 V para la Jetson. |
-| GPS | Módulo GPS de la Pixhawk | La tesis es en **exteriores** (modo GUIDED con GPS). |
+| GPS | Módulo GPS de la Pixhawk | El proyecto de grado es en **exteriores** (modo GUIDED con GPS). |
 
 ## Diagrama de conexiones
 

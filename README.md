@@ -4,7 +4,7 @@ Sistema experimental de **detección y seguimiento de personas con evasión de o
 cuadricóptero autónomo en exteriores. La IA corre a bordo en una NVIDIA Jetson Orin Nano y le da
 órdenes a una Pixhawk con ArduPilot por MAVLink.
 
-Tesis de grado en Ingeniería Aeronáutica · Brahian Orrego ([@brahianorrego](https://github.com/brahianorrego)) y Tania.
+Proyecto de grado en Ingeniería Aeronáutica · Brahian Orrego ([@brahianorrego](https://github.com/brahianorrego)) y Tania.
 
 ## La misión
 

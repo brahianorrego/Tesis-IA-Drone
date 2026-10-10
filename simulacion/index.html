@@ -8,6 +8,13 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+  // Tailwind solo con tema y utilidades: sin el preflight, que reiniciaría los estilos propios del visor.
+  // Se inserta desde JS porque, escritos en el HTML, el navegador intenta descargar esos @import como archivos (404).
+  document.head.insertAdjacentHTML("beforeend", '<style type="text/tailwindcss">@layer theme, base, components, utilities; '
+    + '@import "tailwindcss/theme.css" layer(theme); @import "tailwindcss/utilities.css" layer(utilities);</style>');
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.18/dist/index.global.js"></script>
 <style>
   :root {
     --fondo: #0a0e13; --panel: rgba(12, 17, 24, .88); --panel2: rgba(255, 255, 255, .025); --borde: #243243; --linea: #1a2431;
@@ -151,7 +158,12 @@
   <div class="ind"><span>Objetivo</span><b id="i-obj">–</b></div>
   <div class="ind"><span>Árbitro</span><b id="i-arb">–</b></div>
   <div class="ind opc"><span>Entrenamiento</span><b id="i-ent">–</b></div>
-  <div class="der"><select id="selector" title="Repetición a mostrar"></select></div>
+  <div class="der">
+    <div class="flex items-center gap-1.5 whitespace-nowrap rounded-md border border-sky-400/35 bg-slate-950/60 px-2.5 py-1 text-[11px] text-slate-300 shadow-[0_0_12px_rgba(45,183,255,0.25)] backdrop-blur-sm">
+      Desarrollado por <span class="font-semibold tracking-wide text-sky-300">Brahian Andrés Orrego Osorio</span>
+    </div>
+    <select id="selector" title="Repetición a mostrar"></select>
+  </div>
 </div>
 
 <div id="izq" class="ui">
@@ -366,6 +378,18 @@ escena.add(sol, sol.target);
   const afuera = new THREE.Mesh(new THREE.PlaneGeometry(900, 900), est(0xc9d1db, { roughness: 1 }));
   afuera.rotation.x = -Math.PI / 2; afuera.position.y = -0.02; afuera.receiveShadow = true;
   escena.add(piso, afuera);
+}
+{     // autoría grabada en el piso, en la franja sur (se lee desde las vistas cenital y libre)
+  // droid_sans_bold y no helvetiker: helvetiker no trae la "É" y three.js la omitiría sin avisar
+  new THREE.FontLoader().load("https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/droid/droid_sans_bold.typeface.json", fuente => {
+    const geo = new THREE.TextGeometry("BRAHIAN ANDRÉS ORREGO OSORIO", { font: fuente, size: 1.1, height: 0.03, curveSegments: 6 });
+    geo.center();
+    const texto = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: lin(0x0b2a3a), emissive: lin(0x2db7ff), emissiveIntensity: 0.6, roughness: 0.5, fog: false }));
+    texto.rotation.x = -Math.PI / 2;
+    texto.position.set(0, 0.02, 21.5);
+    texto.receiveShadow = true;
+    escena.add(texto);
+  });
 }
 {     // muros del salón y bloques de alrededor
   const blanco = est(0xdfe4ea, { roughness: 0.85 });
