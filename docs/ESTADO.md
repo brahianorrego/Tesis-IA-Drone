@@ -31,15 +31,15 @@ El hardware está configurado y probado en banco; la IA se entrena en simulació
 
 ## Git
 
-- Rama de trabajo: `docs/proyecto-completo-v6` (PR #2 abierto, sin fusionar).
-- Hay 2 commits locales sin subir y 1 commit en `origin` que falta traer.
-- Etiqueta `v10-master-759M` (estado de la V10) y rama `v11-hibrido` (trabajo nuevo): creadas el 2026-10-10.
+- Rama de trabajo nueva: `v11-hibrido` (parte de la etiqueta `v10-master-759M`). La rama `docs/proyecto-completo-v6` sigue con el PR #2 abierto, sin fusionar.
+- Todo lo local está subido a GitHub (2026-10-10); no hay commits pendientes.
+- Etiqueta `v10-master-759M` creada y subida (congela el código de la V10, 759 M pasos).
 
 ## Pendientes (por prioridad)
 
 1. Decidir el límite del gimbal: el código usa -60° y la regla dura dice -45° (D-014).
 3. Respaldar `modelos_master/` fuera de Git (Google Drive o un Release de GitHub).
-4. Traer y fusionar los commits pendientes, y fusionar el PR #2.
+4. Fusionar el PR #2 a `main` (lo hace Brahian en GitHub).
 5. Copiar el código de la Jetson (`~/Escritorio/dron_ia`) a `jetson/` cuando esté encendida.
 6. Llevar la política a la Jetson: sus entradas deben calcularse igual que en `entorno.py`.
 7. Validación sim-to-real con datos de campo; evaluar la cuadrícula de la cámara al sol.
