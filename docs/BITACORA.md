@@ -4,10 +4,13 @@ Registro cronológico, lo más reciente arriba. Lo agrega la skill `/cierre-sesi
 Fechas de 2026.
 
 ## 10 de octubre
+- v11-hibrido: gimbal estricto en -45° (D-014) y búsqueda determinista `PERDIDA_IA = False` (D-015), por decisión de Brahian. Antes se había ajustado la regla al código (-60°, IA); se revirtió el mismo día. Pruebas de reglas duras actualizadas (17, pasan).
+- Ciclo de mejora: agentes `supervisor-rl` e `implementador`, `resumir_metricas.py` y `evaluar_politica.py` (4 escenarios fijos); barrido de toda la V10.
+- Release `v10-master-759M` en GitHub con los modelos esenciales (10 archivos, 12 MB). El entrenamiento viejo sigue corriendo con las reglas anteriores (766.8 M pasos).
 - El entrenamiento master (Stable-Baselines3) sigue corriendo: 759 M pasos, 761 archivos de modelo (1.1 GB).
 - Se ordenó el repositorio: `.gitignore` con modelos, salidas y secretos; `CLAUDE.md` y `docs/` nuevos.
 - Se detectó que `.zip` no estaba ignorado: un `git add .` habría subido 759 checkpoints.
-- Hallazgos pendientes: gimbal -60° en el código vs -45° en la regla; etiqueta nombrada `v10-master-759M` (la corrida ya iba en 759 M, no en 350 M).
+- Etiqueta nombrada `v10-master-759M` (la corrida ya iba en 759 M, no en 350 M).
 
 ## 8 de octubre
 - Se subió al repositorio la simulación v6 y la documentación del hardware (PR #2).

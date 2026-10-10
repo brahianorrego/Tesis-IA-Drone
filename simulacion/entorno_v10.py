@@ -111,11 +111,11 @@ DIST_PROTECCION_FRONTAL = 3.0  # el LiDAR bloquea el avance si hay algo a menos 
 D_CRITICA, D_AMENAZA, V_ACERCA = 3.0, 8.0, 0.4
 Z_NOMINAL, Z_MIN, Z_MAX = 2.3, 1.8, 7.0
 # gimbal (pitch de la cámara; BaseCam por PWM desde AUX1, ±45°): hace el seguimiento VERTICAL
-# LÍMITE FÍSICO DURO del pitch de la cámara (v9): nunca por debajo de -45° ni por encima de +15°, pase lo que pase
-# (comando, filtro, cabeceo del chasis). En el dron real: pwm = 1500 + θ·500/45 con el mismo recorte (la BaseCam física solo cubre ±45°).
-GIMBAL_MIN, GIMBAL_MAX = -45.0, 15.0
-GIMBAL_NADIR = -45.0           # al sobrevolar un panel (recortado al límite duro)
-GIMBAL_TACTICO = -45.0         # barrido desde la altura táctica (recortado al límite duro)
+# LÍMITE FÍSICO DURO del pitch de la cámara (v9): nunca por debajo de -60° ni por encima de +15°, pase lo que pase
+# (comando, filtro, cabeceo del chasis). En el dron real: pwm = 1500 + θ·500/90 con el mismo recorte.
+GIMBAL_MIN, GIMBAL_MAX = -60.0, 15.0
+GIMBAL_NADIR = -60.0           # al sobrevolar un panel (recortado al límite duro)
+GIMBAL_TACTICO = -60.0         # barrido desde la altura táctica (recortado al límite duro)
 D_NADIR = 2.5                  # a menos de esto (horizontal) de un panel detectado, sobrevolando, se mira en nadir
 GIMBAL_VEL, GIMBAL_KP = 30.0, 4.0   # v9: los motores brushless del gimbal giran a lo sumo 30°/s
 # filtro físico del gimbal: EMA en la salida del actuador (el ángulo que se manda por PWM). Cada paso de 0.1 s la
@@ -135,8 +135,8 @@ BUSQUEDA_IA = 7                # pérdida del objetivo con la política al mando
 # PÉRDIDA POR APRENDIZAJE: al perder el objetivo la política conserva el control de motores y gimbal (BUSQUEDA_IA) en
 # vez del protocolo determinista (PREDECIR -> INVESTIGAR/flanqueo profundo -> ASOMO -> VENTAJA_ALTURA). Ve la última
 # posición conocida, el tiempo sin verlo y el mapa del LiDAR, y aprende a buscar por el bono de re-adquisición.
-# v11-hibrido: PERDIDA_IA = False (decisión D-015). Con True la política busca por aprendizaje y se compara con el protocolo.
-PERDIDA_IA = False
+# Con False vuelve el protocolo determinista (para comparar los dos en la tesis).
+PERDIDA_IA = True
 T_BUSQUEDA_IA = 60.0           # s buscando sin re-adquirirlo -> misión fallida (v9: 20 -> 60 s, margen para revisar
                                # varios muros como un operador real; perderlo ya no termina la misión)
 VEL_IA_AVANCE, VEL_IA_LATERAL = 3.0, 1.5     # m/s de las consignas de avance y desplazamiento lateral
@@ -1440,7 +1440,7 @@ class EntornoDronPersona(object):
         self.gimbal_cmd = np.clip(self.gimbal_cmd + tasa_g * DT, np.maximum(GIMBAL_MIN, self.gimbal - G_ADELANTO),
                                   np.minimum(GIMBAL_MAX, self.gimbal + G_ADELANTO))
         # ================= Jetson -> PWM (AUX1) -> gimbal BaseCam =================
-        # consigna filtrada (EMA) -> PID de ángulo del gimbal -> motor brushless (30°/s, -45°..+15°); su IMU compensa
+        # consigna filtrada (EMA) -> PID de ángulo del gimbal -> motor brushless (30°/s, -60°..+15°); su IMU compensa
         # el cabeceo del chasis con retardo (control.GimbalBaseCam)
         self.cam_pitch = self.gb.paso(self.gimbal_cmd, self.chasis_pitch - ch_p0, DT)
         self.gimbal, self.err_gmb = self.gb.ang.copy(), self.gb.err.copy()

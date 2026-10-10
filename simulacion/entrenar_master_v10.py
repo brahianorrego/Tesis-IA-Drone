@@ -6,7 +6,7 @@ Arquitectura de control (la red NO estabiliza nada):
     observación (sensores + mapa SLAM + memoria) ─▶ política PPO (Jetson) ─▶ acción táctica (10 clases)
         ─▶ lógica de la Jetson: consignas de velocidad X/Y/Z, tasa de guiñada y ángulo del gimbal
         ─▶ MAVLink ─▶ PID de ArduPilot en la Pixhawk (control.AutopilotoArduPilot: PSC + ATC, roll/pitch/yaw/Z)
-        ─▶ PWM AUX1 ─▶ PID del gimbal BaseCam (control.GimbalBaseCam: 30°/s, -45°..+15°)
+        ─▶ PWM AUX1 ─▶ PID del gimbal BaseCam (control.GimbalBaseCam: 30°/s, -60°..+15°)
 
 Transferencia de aprendizaje: la política base es la red PPO entrenada hasta la V9 (autojuego propio). La primera
 vez se convierte a un modelo SB3 y se guarda (PPO.save); después siempre se arranca con PPO.load. Se CONGELA la capa

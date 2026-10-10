@@ -19,7 +19,7 @@ AutopilotoArduPilot reproduce la cascada de ArduPilot Copter (vectorizada para N
 Seis grados de libertad: X, Y, Z (lazos de velocidad), roll y pitch (lazo de actitud) y yaw (lazo de tasa).
 
 GimbalBaseCam: consigna de ángulo filtrada en la Jetson (EMA) ──▶ PID de ángulo del gimbal ──▶ motor brushless con la
-velocidad limitada a 30°/s y el recorrido a [-45°, +15°]; su IMU compensa el cabeceo del chasis con un retardo.
+velocidad limitada a 30°/s y el recorrido a [-60°, +15°]; su IMU compensa el cabeceo del chasis con un retardo.
 
 Las ganancias tienen el nombre de su parámetro equivalente en ArduPilot; están ajustadas para el dron de la tesis
 (respuesta de velocidad sin sobrepaso, actitud en ~0.2 s), no copiadas de los valores por defecto.
@@ -144,7 +144,7 @@ class AutopilotoArduPilot(object):
 
 class GimbalBaseCam(object):
     VEL_MAX = 30.0                 # °/s: motor brushless del pitch
-    MIN, MAX = -45.0, 15.0         # recorrido (límite duro; la BaseCam física no pasa de ±45°)
+    MIN, MAX = -60.0, 15.0         # recorrido (límite duro)
     ALPHA_CONSIGNA = 0.2           # EMA de la consigna en la Jetson (antes del PWM)
     KP, KI = 4.0, 0.6              # PID de ángulo del gimbal (1/s y 1/s²)
     TAU_MOTOR = 0.03               # s: respuesta del motor a la tasa pedida

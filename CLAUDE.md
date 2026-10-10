@@ -26,14 +26,16 @@ autojuego), con reglas deterministas alrededor y un operador humano que confirma
 
 ## Reglas duras del sistema (no negociables)
 
-1. **Gimbal: nunca por debajo de -45°.** Es el límite real de la BaseCam (±45°) y del mapeo PWM de AUX1
-   (`pwm = 1500 + θ·500/45`). ⚠ El código actual NO lo cumple: `entorno.py` y `control.py` usan -60°..+15°
-   (ver D-014 en docs/DECISIONES.md). No arreglar sin que Brahian lo decida.
+1. **Gimbal: nunca por debajo de -45° (entre -45° y +15°), pase lo que pase** (comando, filtro o cabeceo del
+   chasis). La BaseCam física no da para más y forzarla quema los motores. Se aplica en `GIMBAL_MIN`,
+   `GIMBAL_NADIR` y `GIMBAL_TACTICO` de `entorno.py` y en `control.GimbalBaseCam.MIN` (D-014). El mapeo PWM
+   de AUX1 del dron real se queda en `pwm = 1500 + θ·500/45`. Prohibido volver a -60° o ampliar el mapeo.
 2. **Geocerca:** el dron no sale de la arena (`ARENA = 25 m` en simulación). Salir = misión fallida y
    recompensa `R_GEOCERCA = -5`. En el dron real la geocerca la fija ArduPilot.
-3. **Búsqueda determinista al perder el objetivo** (meta de la rama `v11-hibrido`): investigar la última
-   posición → asomo/barrido de 360° → ventaja de altura → recién ahí "perdido". ⚠ Hoy `PERDIDA_IA = True`
-   en `entorno.py` deja esa búsqueda a la política; con `False` vuelve el protocolo determinista.
+3. **Búsqueda determinista al perder el objetivo** (`PERDIDA_IA = False` en `entorno.py`, D-015, rama
+   `v11-hibrido`): predecir → investigar la última posición → asomo/barrido de 360° → ventaja de altura →
+   recién ahí "perdido". La política solo decide con el objetivo fijado. Meta de la rama: reforzar esa máquina
+   de estados con el mapa LiDAR (SLAM) para rodear los muros. `PERDIDA_IA = True` solo sirve para comparar.
 4. **Humano en el lazo:** la IA nunca decide quién es el sospechoso. Lo confirma el operador con un clic
    y nunca cambia de objetivo por su cuenta.
 5. **Árbitro de seguridad:** solo autoriza evadir ante amenaza real (persona a < 3 m, o a < 8 m
@@ -54,6 +56,10 @@ autojuego), con reglas deterministas alrededor y un operador humano que confirma
 | `simulacion/entrenar.py` | PPO propio en torch (versiones v1–v9) y utilidades que reutiliza el master |
 | `simulacion/mision.py` | Misión completa para el visor (fase 1 piloto + fase 2 IA) |
 | `simulacion/evaluar.py` | Comparación IA vs reglas (desactualizado: revisar antes de usar) |
+| `simulacion/herramientas/` | `resumir_metricas.py` (informe corto de un entrenamiento) y `evaluar_politica.py` (escenarios fijos) |
+| `simulacion/informes/` | Resúmenes, evaluaciones y diagnósticos (`resumen_*`, `evaluacion_*`, `barrido_*`, `diagnostico_*`) |
+| `simulacion/tests/` | Pruebas: reglas duras, el entorno arranca, episodio corto, herramientas |
+| `.claude/agents/` | `supervisor-rl` (diagnostica, no toca código) e `implementador` (aplica cambios aprobados) |
 | `simulacion/index.html` | Visor 3D tipo estación de tierra (three.js) |
 | `simulacion/*_vN.*` | Versiones anteriores de cada archivo (no editar) |
 | `simulacion/modelos/dron_politica.json` | Pesos de la política para la Jetson (sí se versiona) |
@@ -78,12 +84,23 @@ ABRIR_VISOR.bat
 
 :: evaluar (IA vs reglas): revisar antes, usa claves de versiones viejas
 .venv\Scripts\python.exe evaluar.py --partidas 2000
+
+:: pruebas (reglas duras, entorno, herramientas; ~30 s)
+.venv\Scripts\python.exe -m unittest discover -s tests
+
+:: ciclo de mejora: resumen del entrenamiento y evaluación en escenarios fijos -> informes\
+.venv\Scripts\python.exe herramientas\resumir_metricas.py
+.venv\Scripts\python.exe herramientas\evaluar_politica.py --barrido 25 --version v10-master
 ```
+
+Ciclo de mejora: `resumir_metricas.py` + `evaluar_politica.py` → agente `supervisor-rl` (diagnóstico, máximo 3
+cambios) → Brahian aprueba → agente `implementador` (cambio, pruebas, bitácora, commit) → reentrenar.
 
 - Con el entrenamiento en marcha, `modelos_master\ultimo.zip` y `salida\` cambian a cada rato: no copiarlos
   ni moverlos sin pararlo antes.
 - `CONTINUAR_ENTRENAMIENTO.bat` sigue llamando al `entrenar.py` viejo; el master se lanza a mano.
-- No hay tests automáticos. Para validar un cambio: importar `entorno`, correr unos pasos y mirar el visor.
+- Para validar un cambio: correr las pruebas de `tests/` y mirar el visor. Si falla una prueba de reglas duras,
+  no se relaja la prueba: se consulta a Brahian.
 - El `.venv` no está en Git. Si falta: `py -m venv .venv` e instalar `torch numpy gymnasium stable-baselines3`.
 
 ## Git
