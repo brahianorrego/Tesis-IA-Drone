@@ -1,0 +1,36 @@
+# --- Secretos (nunca se suben) ---
+.env
+.env.*
+*.env
+*.key
+*.pem
+id_rsa*
+id_ed25519*
+
+# --- Entornos virtuales y cachés ---
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+
+# --- Modelos y tensores (pesan cientos de MB; se respaldan fuera de Git, ver docs/ESTADO.md) ---
+*.zip
+*.pt
+*.pth
+*.npy
+*.npz
+*.engine
+*.onnx
+
+# --- Salidas pesadas, logs y TensorBoard ---
+salida*/
+*.log
+runs/
+tb_logs/
+tensorboard/
+events.out.tfevents.*
+
+# --- Sistema ---
+.DS_Store
+Thumbs.db
