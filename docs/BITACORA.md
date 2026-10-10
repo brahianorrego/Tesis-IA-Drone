@@ -4,6 +4,7 @@ Registro cronológico, lo más reciente arriba. Lo agrega la skill `/cierre-sesi
 Fechas de 2026.
 
 ## 10 de octubre
+- Diagnóstico de la V10 (`simulacion/informes/diagnostico_v10.md`): 767 M pasos estancados (cumplida ~31 %); la búsqueda por IA nunca gira ni avanza. Con las reglas v11 el mismo modelo sube en escenarios fijos: tras muro 0 → 94 %, cambio brusco 0 → 60 %; "debajo" sigue en 0 %. Propone 3 cambios (registro de métricas, separación según la altura, multa solo a lo que comanda la red).
 - v11-hibrido: gimbal estricto en -45° (D-014) y búsqueda determinista `PERDIDA_IA = False` (D-015), por decisión de Brahian. Antes se había ajustado la regla al código (-60°, IA); se revirtió el mismo día. Pruebas de reglas duras actualizadas (17, pasan).
 - Ciclo de mejora: agentes `supervisor-rl` e `implementador`, `resumir_metricas.py` y `evaluar_politica.py` (4 escenarios fijos); barrido de toda la V10.
 - Release `v10-master-759M` en GitHub con los modelos esenciales (10 archivos, 12 MB). El entrenamiento viejo sigue corriendo con las reglas anteriores (766.8 M pasos).

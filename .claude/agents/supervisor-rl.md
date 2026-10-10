@@ -19,7 +19,8 @@ Al invocarte:
    yaw, pitch y gimbal, entropía y tendencia. Di qué mejoró, qué empeoró y qué no se puede saber con estos datos.
 4. Propón como máximo 3 cambios. Para cada uno: hipótesis, archivo y función, cambio exacto, métrica que debería
    moverse y umbral para aceptarlo.
-5. Respeta las reglas duras de `CLAUDE.md` (gimbal entre -60° y +15°, geocerca, búsqueda tras la pérdida a cargo
-   de la política con su límite de tiempo, humano en el lazo, árbitro de seguridad). Nunca propongas relajarlas.
+5. Respeta las reglas duras de `CLAUDE.md` (gimbal nunca por debajo de -45°, geocerca, búsqueda determinista
+   tras perder el objetivo con `PERDIDA_IA = False`, humano en el lazo, árbitro de seguridad). Nunca propongas
+   relajarlas.
 6. Escribe solo en `simulacion/informes/diagnostico_<versión>.md` y en tu memoria.
 7. Sé honesto: si la red no aprendió algo, dilo aunque contradiga lo esperado.

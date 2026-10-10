@@ -181,7 +181,7 @@ def correr_escenario(modelo, nombre, n, semilla, max_seg, nivel):
         perdio = vivo & info["pierde"]
         t_perdida = np.where(perdio & np.isnan(t_perdida), (paso + 1) * E.DT, t_perdida)
         pierde += perdio
-        readq = vivo & info["descubre"]
+        readq = vivo & info["recupera"]                    # re-fijado (ReID) con búsqueda por IA o determinista
         t_readq = np.where(readq & np.isnan(t_readq) & ~np.isnan(t_perdida), (paso + 1) * E.DT - t_perdida, t_readq)
         recupera += readq
         d_min = np.where(vivo, np.minimum(d_min, info["dist"]), d_min)
