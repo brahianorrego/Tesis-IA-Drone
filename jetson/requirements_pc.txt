@@ -1,0 +1,7 @@
+# PC de entrenamiento. Use Python 3.8 a 3.12 (scikit-learn 1.3.2 no instala en 3.13).
+# Las versiones deben coincidir con la Jetson para que decision.pkl cargue allá.
+scikit-learn==1.3.2
+numpy<2
+pandas
+matplotlib
+joblib

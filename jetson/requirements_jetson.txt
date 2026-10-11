@@ -1,0 +1,9 @@
+# Jetson Orin Nano - Ubuntu 20.04 - Python 3.8
+# Instalar DENTRO del venv creado con:  python3 -m venv --system-site-packages venv
+# (así se hereda el OpenCV del sistema con GStreamer; NO instale opencv-python con pip)
+# Ultralytics ya está instalado (yolo_tracking.py funciona).
+pyserial>=3.5
+pymavlink
+scikit-learn==1.3.2   # último compatible con Python 3.8; debe ser igual al del PC
+joblib
+pandas
