@@ -142,6 +142,48 @@
   #resumen .barra-sig i { display: block; height: 100%; width: 0; background: var(--nominal); }
   #resumen.ver .barra-sig i { width: 100%; transition: width 4s linear; }
 
+  /* ---------- V14 · dominio táctico (tira y afloja) y currículo ---------- */
+  #duelo { top: 52px; left: 50%; transform: translateX(-50%); width: min(460px, calc(100% - var(--izq) - var(--der) - 60px)); padding: 7px 12px 8px; z-index: 3; }
+  #duelo .fila { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; white-space: nowrap; }
+  #duelo .lado { font: 600 10px var(--mono); letter-spacing: 1px; }
+  #duelo .lado b { font: 700 13px var(--mono); margin: 0 3px; font-variant-numeric: tabular-nums; }
+  #duelo .lado.dron { color: var(--nominal); }
+  #duelo .lado.ladron { color: var(--peligro); }
+  #duelo .tit { font: 600 9.5px var(--sans); letter-spacing: 1.4px; text-transform: uppercase; color: var(--suave); overflow: hidden; text-overflow: ellipsis; }
+  .tira { position: relative; height: 10px; margin: 5px 0 6px; border-radius: 5px; overflow: hidden; background: #17212c; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .04); }
+  .tira i { position: absolute; top: 0; bottom: 0; transition: width .9s cubic-bezier(.22, .8, .25, 1); }
+  .tira i.d { left: 0; width: 50%; background: linear-gradient(90deg, rgba(45, 183, 255, .35), #2db7ff); box-shadow: 0 0 12px rgba(45, 183, 255, .45); }
+  .tira i.l { right: 0; width: 50%; background: linear-gradient(270deg, rgba(255, 77, 79, .35), #ff6a3d); box-shadow: 0 0 12px rgba(255, 77, 79, .4); }
+  .tira .div { position: absolute; top: -2px; bottom: -2px; left: 50%; width: 3px; margin-left: -1.5px; background: #e3eaf3; border-radius: 2px;
+               box-shadow: 0 0 8px rgba(227, 234, 243, .8); transition: left .9s cubic-bezier(.22, .8, .25, 1); }
+  .tira .medio { position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: rgba(10, 14, 19, .9); }
+  #duelo .pie { display: flex; align-items: center; justify-content: space-between; gap: 8px; font: 500 9.5px var(--mono); color: var(--tenue); }
+  .niveles { display: flex; gap: 3px; }
+  .niveles span { padding: 1px 6px; border: 1px solid var(--linea); border-radius: 3px; color: var(--tenue); transition: all .4s; }
+  .niveles span.hecho { color: var(--ok); border-color: rgba(51, 209, 122, .35); }
+  .niveles span.actual { color: #0a0e13; background: var(--precaucion); border-color: var(--precaucion); font-weight: 700; box-shadow: 0 0 10px rgba(245, 197, 66, .45); }
+  #aviso { top: 122px; }
+  @media (max-width: 1100px) { #duelo .pie .txt { display: none; } }
+
+  /* ---------- V12 · mapa SLAM y máquina de búsqueda ---------- */
+  #slam-lienzo { width: 100%; height: 232px; display: block; border: 1px solid var(--linea); border-radius: 4px; background: #070b10; cursor: crosshair; }
+  .slam-barra { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 6px; }
+  .slam-barra .seg button { padding: 3px 8px; font-size: 10.5px; }
+  .slam-ley { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 6px; font: 500 9.5px var(--mono); color: var(--tenue); }
+  .slam-ley i { display: inline-block; width: 7px; height: 7px; margin-right: 4px; border-radius: 50%; vertical-align: 0; }
+  .slam-ley i.l { border-radius: 0; height: 2px; width: 10px; vertical-align: 2px; }
+  .kv.lidar { margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--linea); }
+  .fsm { display: flex; flex-direction: column; gap: 2px; }
+  .fsm .paso { display: grid; grid-template-columns: 16px 1fr auto; gap: 7px; align-items: center; padding: 3px 6px; border-radius: 3px; font: 500 10.5px var(--mono); color: var(--tenue); letter-spacing: .3px; }
+  .fsm .paso .num { width: 16px; height: 16px; border-radius: 50%; border: 1px solid currentColor; display: grid; place-items: center; font-size: 9px; }
+  .fsm .paso.hecho { color: var(--suave); }
+  .fsm .paso.activo { color: #fff; background: rgba(255, 159, 26, .14); box-shadow: inset 2px 0 0 var(--c, var(--alerta)); }
+  .fsm .paso.activo .num { background: var(--c, var(--alerta)); border-color: var(--c, var(--alerta)); color: #0a0e13; font-weight: 700; }
+  .fsm-pie { margin-top: 7px; display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; font: 500 10.5px var(--mono); color: var(--suave); }
+  .fsm-pie b { color: var(--texto); font-weight: 500; text-align: right; }
+  .reloj90 { grid-column: 1 / -1; height: 4px; background: #17212c; border-radius: 1px; overflow: hidden; }
+  .reloj90 i { display: block; height: 100%; width: 0; background: var(--alerta); transition: width .15s linear; }
+
   @media (max-width: 1280px) { :root { --izq: 270px; --der: 330px; } .decision { grid-template-columns: 10px 98px 1fr 32px; } .ind.opc { display: none; } }
 </style>
 </head>
@@ -176,6 +218,48 @@
       <span>Tasa de guiñada</span><b id="t-yaw">–</b>
       <span>LiDAR frontal</span><b id="t-lid">–</b>
       <span>Objetivo en vista</span><b id="t-vista">–</b>
+      <span>Currículo (entrenamiento)</span><b id="t-cur">–</b>
+      <span>Nivel de esta partida</span><b id="t-niv">–</b>
+    </div>
+  </section>
+  <section class="panel" id="p-fsm">
+    <div class="cab"><h3>Búsqueda · estados</h3><span class="tag" id="fsm-tag" style="color:var(--suave)">–</span><button class="chev" title="Plegar / desplegar"><svg viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none"/></svg></button></div>
+    <div class="cuerpo">
+      <div class="fsm" id="fsm-pasos"></div>
+      <div class="fsm-pie">
+        <span>Sin ver al objetivo</span><b id="fsm-t">–</b>
+        <div class="reloj90"><i id="fsm-barra"></i></div>
+        <span title="d = h / tan(45° + FOV vertical / 2) + margen">Zona ciega (d)</span><b id="fsm-ciego">–</b>
+        <span>Muros revisados</span><b id="fsm-insp">–</b>
+        <span>Escenario (currículo)</span><b id="fsm-esc">–</b>
+        <span>Seguimiento continuo</span><b id="fsm-tc">–</b>
+        <div class="reloj90"><i id="fsm-tcb" style="background:var(--ok)"></i></div>
+        <span>Ladrón · pulso · reserva</span><b id="fsm-hr">–</b>
+        <span>Identidad (ReID)</span><b id="fsm-id">–</b>
+      </div>
+    </div>
+  </section>
+  <section class="panel" id="p-slam">
+    <div class="cab"><h3>Mapa SLAM · LiDAR 1D</h3><span class="tag" id="slam-tag" style="color:var(--suave)">–</span><button class="chev" title="Plegar / desplegar"><svg viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none"/></svg></button></div>
+    <div class="cuerpo">
+      <div class="slam-barra">
+        <div class="seg" id="slam-vista"><button data-v="dron" class="activo">Dron 12 m</button><button data-v="arena">Arena</button></div>
+        <span class="mono" style="color:var(--tenue);font-size:10px">norte arriba</span>
+      </div>
+      <canvas id="slam-lienzo"></canvas>
+      <div class="slam-ley">
+        <span><i style="background:#ff9f1a"></i>nube (obstáculo)</span><span><i style="background:#2b6f99"></i>barrido (suelo)</span>
+        <span><i class="l" style="background:#2db7ff"></i>muro detectado</span><span><i class="l" style="background:#ff4d4f"></i>rayo LiDAR</span>
+        <span><i style="background:#33d17a"></i>objetivo</span><span><i style="background:#f5c542"></i>última pos.</span>
+        <span><i style="background:#c478ff"></i>nube (dónde puede estar)</span>
+      </div>
+      <div class="kv lidar">
+        <span>Rayo (eje de la cámara)</span><b id="sl-rayo">–</b>
+        <span>Impacto (x, y, z)</span><b id="sl-imp">–</b>
+        <span>Puntos en la nube</span><b id="sl-npts">–</b>
+        <span>Muros agrupados</span><b id="sl-det">–</b>
+        <span>Gimbal (límite −45°)</span><b id="sl-gmb">–</b>
+      </div>
     </div>
   </section>
   <section class="panel" id="p-obj">
@@ -240,6 +324,15 @@
   </div>
 </div>
 
+<section id="duelo" class="ui panel" title="Partidas decisivas del nivel actual: gana el dron si cumple la misión; gana el ladrón si alcanza al dron, si el dron lo pierde (90 s) o si nunca lo encuentra. Choques con muros o civiles y geocerca no cuentan para nadie.">
+  <div class="fila">
+    <span class="lado dron">DRON<b id="du-d">–</b></span>
+    <span class="tit" id="du-tit">Dominio táctico</span>
+    <span class="lado ladron"><b id="du-l">–</b>LADRÓN</span>
+  </div>
+  <div class="tira"><i class="d" id="du-bd"></i><i class="l" id="du-bl"></i><span class="medio"></span><span class="div" id="du-div"></span></div>
+  <div class="pie"><div class="niveles" id="du-niv"><span>N0</span><span>N1</span><span>N2</span><span>N3</span><span>N4</span></div><span class="txt" id="du-pie">–</span></div>
+</section>
 <div id="aviso" class="ui panel"></div>
 <section id="resumen" class="ui panel">
   <div class="cab"><h3>Resumen de la misión</h3><span class="tag" id="res-tag">–</span></div>
@@ -255,17 +348,23 @@ const NOMBRES_BUSQ = ["HOVER", "LATERAL IZQ", "LATERAL DER", "SUBIR", "GIRAR IZQ
 const COL = { nominal: "#2db7ff", ok: "#33d17a", alerta: "#ff9f1a", peligro: "#ff4d4f", precaucion: "#f5c542", tenue: "#56667a", suave: "#8b9bb0" };
 const COL_ACC = [COL.nominal, COL.alerta, COL.alerta, COL.precaucion, COL.nominal, COL.nominal, COL.nominal, COL.precaucion, COL.nominal, COL.nominal];
 const TRK = [["BÚSQUEDA 360°", COL.suave], ["FIJADO", COL.ok], ["MEMORIA", COL.nominal], ["PERDIDO", COL.alerta], ["RE-ID", COL.precaucion], ["VERIFICANDO", COL.precaucion]];
-const MODOS = ["SEARCH", "VERIFICA", "TRACK", "INVESTIGA", "ASOMO", "ALTURA", "PREDICCIÓN", "BÚSQUEDA IA"];
+const MODOS = ["SEARCH", "VERIFICA", "TRACK", "INVESTIGA", "ASOMO", "ALTURA", "PREDICCIÓN", "BÚSQUEDA IA", "SIG. OBSTÁCULO",
+               "RECONFIRMAR", "MURO DE CANTO"];
+// V12 · máquina de estados de la búsqueda determinista (en orden) y el modo del entorno que corresponde a cada estado
+const FSM = [["PERSECUCIÓN", 2], ["PÉRDIDA", 6], ["FLANQUEO PROFUNDO", 3], ["GIRO 360°", 4], ["MURO DE CANTO", 10],
+             ["SIGUIENTE OBSTÁCULO", 8], ["ALTURA TÁCTICA", 5], ["MISIÓN PERDIDA", -1]];
+const I_FIN = FSM.length - 1;
+const T_MISION_PERDIDA = () => (partida && partida.t_mision_perdida) || 90;
 const ladoTxt = c => (c.bd ?? 1) < 0 ? "izquierda" : "derecha";
 const RESULTADOS = {
-  "cumplida": ["MISIÓN CUMPLIDA · rastreo mantenido durante toda la prueba", COL.ok, true],
-  "perdido": ["MISIÓN FALLIDA · protocolo de búsqueda agotado: objetivo no recuperado", COL.peligro, false],
+  "cumplida": ["MISIÓN CUMPLIDA · el ladrón SE RINDE (no lo dejó esconderse)", COL.ok, true],
+  "perdido": ["MISIÓN PERDIDA · 90 s de búsqueda sin recuperar al objetivo", COL.peligro, false],
   "no_encontrado": ["MISIÓN FALLIDA · el sospechoso no se confirmó a tiempo", COL.peligro, false],
   "alcanzado": ["MISIÓN FALLIDA · el ladrón alcanzó al dron", COL.peligro, false],
   "choque_peaton": ["MISIÓN FALLIDA · choque con un peatón", COL.peligro, false],
   "panel": ["MISIÓN FALLIDA · choque con un obstáculo", COL.peligro, false],
   "geocerca": ["MISIÓN FALLIDA · salida de la geocerca", COL.peligro, false],
-  "tiempo": ["MISIÓN INCONCLUSA · tiempo agotado", COL.alerta, false],
+  "tiempo": ["MISIÓN FALLIDA · 5 minutos sin rendición: gana el ladrón", COL.alerta, false],
   "a salvo": ["Criterio anterior (v4): dron a salvo", COL.suave, false],
 };
 // ¿el objetivo ya fue designado por el operador? (en repeticiones v4 no existe el modo)
@@ -293,6 +392,7 @@ document.querySelectorAll(".panel[id]").forEach(p => {
   let v = null;
   try { v = localStorage.getItem("plegado-" + p.id); } catch (e) {}
   if (v === "1" || (v === null && p.id === "monitor" && innerHeight < 900)) p.classList.add("plegado");
+  else if (v === "0") p.classList.remove("plegado");
 });
 
 // ======================================================================= render
@@ -750,6 +850,22 @@ const flechaEscape = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE
 flechaEscape.visible = false;
 escena.add(flechaEscape);
 // paneles tal como los mapeó el LiDAR del dron (segmentos a ras de piso)
+// V15: nube de probabilidad del ladrón en el piso (las hipótesis del filtro de partículas)
+const nube3d = new THREE.Points(new THREE.BufferGeometry(), new THREE.PointsMaterial({ color: 0xc478ff, size: 0.28, transparent: true, opacity: 0.8, depthWrite: false }));
+nube3d.geometry.setAttribute("position", new THREE.Float32BufferAttribute(new Array(64 * 3).fill(0), 3));
+nube3d.visible = false;
+escena.add(nube3d);
+function dibujarNube(pf) {
+  nube3d.visible = !!(pf && pf.length);
+  if (!nube3d.visible) return;
+  const pos = nube3d.geometry.attributes.position;
+  for (let i = 0; i < 64; i++) {
+    const q = pf[Math.min(i, pf.length - 1)];
+    pos.setXYZ(i, q[0], 0.06, -q[1]);
+  }
+  pos.needsUpdate = true;
+  nube3d.geometry.computeBoundingSphere();
+}
 const mapaLidar = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x2db7ff, transparent: true, opacity: 0.95 }));
 mapaLidar.geometry.setAttribute("position", new THREE.Float32BufferAttribute(new Array(4 * 3 * 2 * 3).fill(0), 3));
 escena.add(mapaLidar);
@@ -923,7 +1039,53 @@ async function actualizarMetricas() {
     $("mon-der").textContent = vivo ? `${(e.pasos_s / 1000).toFixed(1)}k PASOS/s · ETA ${durTxt((e.objetivo - e.pasos) / Math.max(e.pasos_s, 1))}` : "DETENIDO";
     $("i-ent").innerHTML = vivo ? `<span style="color:${COL.ok}">●</span> EN VIVO · IT ${e.it}` : `<span style="color:${COL.tenue}">●</span> DETENIDO`;
     $("mon-resumen").textContent = (M && M.length ? $("mon-resumen").textContent + " · " : "") + `${(e.pasos / 1e6).toFixed(1)} M`;
-  } catch (err) {}
+    ponerDuelo(e, M);
+  } catch (err) { ponerDuelo(null, M); }
+}
+// V14 · tira y afloja dron vs ladrón y nivel del currículo (lo escribe entrenar_master.py en salida/estado.json; con
+// entrenamientos anteriores a la V14 se estima con las métricas de las últimas iteraciones)
+const NIVELES_TXT_V14 = ["Duelo abierto", "Muro único", "Ruido visual", "Misión completa"];
+const NIVELES_TXT_V15 = ["Duelo abierto", "Duelo con civil", "Muro", "Muro y civil", "Misión completa"];
+let NIVELES_TXT = NIVELES_TXT_V15;
+function ponerDuelo(e, M) {
+  let dron = null, ladron = null, otros = null, n = 0, est = false, cur = e && e.curriculo;
+  if (cur && cur.niveles) NIVELES_TXT = cur.niveles;
+  const nNiv = (cur && cur.niveles) ? cur.niveles.length : 5;
+  [...$("du-niv").children].forEach((sp, i) => sp.style.display = i < nNiv ? "" : "none");
+  if (e && e.competencia && e.competencia.dron !== null && e.competencia.dron !== undefined) {
+    ({ dron, ladron, otros, n } = e.competencia);
+  } else if (M && M.length) {
+    const u = M.slice(-10), prom = f => u.reduce((s, m) => s + (f(m) || 0), 0) / u.length;
+    const d = prom(m => m.adv.cumplida), l = prom(m => m.adv.alcanzado + m.adv.perdido + m.adv.no_encontrado);
+    if (d + l > 0) { dron = d / (d + l); ladron = l / (d + l); otros = Math.max(0, 1 - d - l); est = true; }
+  }
+  if (dron !== null) {
+    const pd = Math.round(100 * dron);
+    $("du-d").textContent = pd + "%"; $("du-l").textContent = (100 - pd) + "%";
+    $("du-bd").style.width = (100 * dron) + "%"; $("du-bl").style.width = (100 * ladron) + "%";
+    $("du-div").style.left = (100 * dron) + "%";
+  }
+  const nv = cur ? cur.nivel : null;
+  $("du-tit").textContent = nv === null ? "Dominio táctico" : `Dominio táctico · N${nv} ${cur.nombre}`;
+  [...$("du-niv").children].forEach((sp, i) => {
+    sp.classList.toggle("actual", i === nv); sp.classList.toggle("hecho", nv !== null && i < nv);
+    sp.title = `Nivel ${i} · ${NIVELES_TXT[i]}`;
+  });
+  $("du-pie").textContent = dron === null ? "sin datos de entrenamiento"
+    : est ? "estimado con las últimas iteraciones"
+    : `${n} partidas` + (otros ? ` · ${Math.round(100 * otros)} % otras fallas` : "")
+      + (cur && cur.exito !== null && cur.nivel < nNiv - 1 ? ` · rendición ${Math.round(100 * cur.exito)} / ${Math.round(100 * ((cur.criterios || {}).rinde ?? cur.umbral))} %` : "")
+      + custodiaTxt(cur, nNiv);
+  $("t-cur").textContent = nv === null ? "–" : `N${nv} · ${cur.nombre}`;
+  $("t-cur").style.color = nv === null ? "" : COL.precaucion;
+}
+
+// C3 (diagnóstico del nivel 4): en la misión completa el número principal es la CUSTODIA, la vista acumulada en los 5 min
+function custodiaTxt(cur, nNiv) {
+  const r = cur && cur.por_nivel && cur.por_nivel[String(nNiv - 1)];
+  if (!r || r.custodia_60 === undefined) return "";
+  return ` · N${nNiv - 1} CUSTODIA ≥60 s ${Math.round(100 * r.custodia_60)} % · ≥90 s ${Math.round(100 * r.custodia_90)} %`
+    + ` (rendición ${Math.round(100 * r.rinde)} %)`;
 }
 
 // ======================================================================= repeticiones
@@ -960,7 +1122,7 @@ function calcularEventos(pt) {     // eventos de la misión para la bitácora y 
       const nDet = (c.det || []).length;
       if (c.modo === 0 && p.modo === 0 && c.bf === 1 && p.bf !== 1) ev.push({ k, txt: nDet ? `BARRIDO SIN RESULTADO · FLANQUEO PROFUNDO: rodea la esquina del panel ${(c.pj ?? 0) + 1} (visto por el LiDAR) y queda detrás del muro${c.va ? " · por encima: la ruta no tenía margen" : ""}` : "BARRIDO SIN RESULTADO · el LiDAR no detectó paneles: vuela al centro de la zona", col: COL.nominal, marca: true });
       if (c.modo === 0 && c.bf === 2 && p.bf !== 2) ev.push({ k, txt: `DETRÁS DEL PANEL · rota hacia la ${ladoTxt(c)}, hacia el interior de la zona que estaba oculta`, col: COL.nominal });
-      if (c.nadir && !p.nadir) ev.push({ k, txt: "SOBREVUELO DE PANEL · cámara en nadir (−85°) para ver la base del muro", col: COL.nominal });
+      if (c.nadir && !p.nadir) ev.push({ k, txt: "SOBREVUELO DE PANEL · cámara a −45° (su límite físico) para ver detrás del muro", col: COL.nominal });
       if (c.modo === 6 && p.modo !== 6) ev.push({ k, txt: "OBJETIVO SALIÓ DEL CUADRO · intercepción predictiva: sigue su trayectoria 2 s con la nariz y el gimbal en el punto predicho", col: COL.alerta, marca: true });
       if (c.modo === 3 && p.modo !== 3) ev.push({ k, txt: (p.modo === 6 ? "INTERCEPCIÓN SIN ÉXITO · " : "OBJETIVO PERDIDO · ") + (c.flq ? "FLANQUEO PROFUNDO: rodea la esquina por la que desapareció y queda detrás del muro" : `en campo abierto: punto de separación antes de su última posición (${c.ux.toFixed(1)}, ${c.uy.toFixed(1)})`), col: COL.alerta, marca: true });
       if (c.modo === 4 && p.modo !== 4) ev.push({ k, txt: c.flq ? `DETRÁS DEL MURO · rota hacia la ${ladoTxt(c)}, hacia la zona que estaba oculta (por donde entró el ladrón)` : `ASOMO · gira primero hacia la ${ladoTxt(c)}, por donde iba el ladrón`, col: COL.alerta });
@@ -969,8 +1131,16 @@ function calcularEventos(pt) {     // eventos de la misión para la bitácora y 
       if (c.modo === 7 && p.modo !== 7) ev.push({ k, txt: `OBJETIVO PERDIDO · BÚSQUEDA POR IA: la política conserva motores y gimbal y lo busca con su última posición (${c.ux.toFixed(1)}, ${c.uy.toFixed(1)}), sin ruta fija`, col: COL.alerta, marca: true });
       if (c.dsc && !p.dsc) ev.push({ k, txt: "RE-ADQUISICIÓN · el ladrón volvió a entrar en el cuadro: bono de descubrimiento para la táctica que lo logró", col: COL.ok, marca: true });
       if (c.rfx && !p.rfx) ev.push({ k, txt: "ESQUIVE REFLEJO · alguien corre hacia el dron para tumbarlo: el árbitro sube y se aparta", col: COL.peligro, marca: true });
+      if (c.modo === 9 && p.modo !== 9) ev.push({ k, txt: `RECONFIRMAR · ¿sigue siendo él? cruce con otra persona: el operador decide (confianza ${(c.conf ?? 0).toFixed(2)})`, col: COL.precaucion, marca: true });
+      if (p.modo === 9 && c.modo === 6) ev.push({ k, txt: "OPERADOR: «NO ES ÉL» · el dron seguía a otra persona: vuelve a buscarlo desde el cruce", col: COL.peligro, marca: true });
+      if (p.modo === 9 && c.modo === 2) ev.push({ k, txt: "OPERADOR: «SÍ ES ÉL» · identidad confirmada", col: COL.ok });
+      if (c.modo === 10 && p.modo !== 10) ev.push({ k, txt: "MURO DE CANTO · se para en la prolongación del muro para ver sus dos caras a la vez", col: COL.alerta, marca: true });
+      if (c.rinde && !p.rinde) ev.push({ k, txt: `SE RINDE · ${c.tc.toFixed(0)} s seguidos sin poder esconderse`, col: COL.ok, marca: true });
+      if (c.modo === 8 && p.modo !== 8) ev.push({ k, txt: `GIRO SIN RESULTADO · SIGUIENTE OBSTÁCULO: el mapa LiDAR indica otro muro sin revisar; vuela detrás de él`, col: COL.alerta, marca: true });
+      if (c.ciego && !p.ciego) ev.push({ k, txt: `PUNTO CIEGO · el objetivo iba a quedar debajo del dron: retrocede a ${(c.dcg ?? 0).toFixed(1)} m (gimbal en su límite de −45°)`, col: COL.precaucion });
       if (c.modo === 5 && p.modo !== 5) ev.push({ k, txt: `SIN RESULTADO · VENTAJA DE ALTURA: sube a ${(pt.z_alto ?? 6.5).toFixed(1)} m sobre la zona de pérdida en vez de rodear el panel`, col: COL.peligro, marca: true });
-      if (c.modo === 2 && p.modo >= 3) ev.push({ k, txt: `OBJETIVO RECUPERADO · ID ${idDe(ladDe(k))} reconfirmado (ReID)${p.modo === 5 ? " desde la altura" : p.modo === 4 ? " en el asomo" : p.modo === 6 ? " con la intercepción predictiva" : p.modo === 7 ? " con la búsqueda de la IA" : ""}: la IA retoma la persecución`, col: COL.ok, marca: true });
+      if (c.modo === 2 && p.modo >= 3 && p.modo !== 7 && c.eb !== undefined && c.um !== undefined) ev.push({ k, txt: `INTERRUPCIÓN TÁCTICA · YOLO detectó al ID ${idDe(ladDe(k))} ${(ladDe(k) || {}).fv !== undefined && ladDe(k).fv < 0.9 ? `(asoma el ${Math.round(100 * ladDe(k).fv)} % del cuerpo) ` : ""}durante ${({ 3: "el flanqueo", 4: "el giro 360°", 5: "la altura táctica", 6: "la pérdida", 8: "el vuelo al siguiente obstáculo" })[p.modo] || "la búsqueda"}: búsqueda cancelada, persecución en el mismo cuadro`, col: COL.ok, marca: true });
+      else if (c.modo === 2 && p.modo >= 3) ev.push({ k, txt: `OBJETIVO RECUPERADO · ID ${idDe(ladDe(k))} reconfirmado (ReID)${p.modo === 5 ? " desde la altura" : p.modo === 4 ? " en el asomo" : p.modo === 6 ? " con la intercepción predictiva" : p.modo === 7 ? " con la búsqueda de la IA" : p.modo === 8 ? " detrás del siguiente obstáculo" : p.modo === 3 ? " en el flanqueo" : ""}: la IA retoma la persecución`, col: COL.ok, marca: true });
       if (c.trk === 4 && p.trk !== 4 && c.modo >= 2) ev.push({ k, txt: "OBJETIVO EN CÁMARA · confirmando su identidad por apariencia (ReID)", col: COL.precaucion });
     } else if (c.modo === undefined && c.trk !== undefined && c.trk !== p.trk && c.trk === 1 && !p.trk) {
       ev.push({ k, txt: `OBJETIVO DESIGNADO · ID ${idDe(ladDe(k))} por el operador`, col: COL.ok, marca: true });
@@ -984,6 +1154,7 @@ async function cargarPartida(fuente) {
   try {
     partida = normalizar(await cargarJSON(fuente));
     eventos = calcularEventos(partida);
+    prepararSLAM(partida);
     tPartida = 0; kAnterior = -1;
     clicsK = partida.cuadros.map((c, k) => k).filter(k => partida.cuadros[k + 1] && partida.cuadros[k + 1].op === 1);
     confirmados = new Set(); esperaClic = null; fpvVista.style.cursor = "";
@@ -997,14 +1168,37 @@ async function cargarPartida(fuente) {
   } catch (e) {}
 }
 async function llenarSelector() {
+  // V15: una opción por nivel ("Nivel K · ... · en vivo (it N)"), la misión completa con despegue e hitos agrupados por
+  // nivel. Con los archivos de entrenamientos anteriores (sin replay_nivel_K.json) queda como antes.
   const actual = sel.value;
-  const opciones = [["salida/replay_mision.json", "Misión completa · en vivo"], ["salida/replay_adv.json", "Partida en zona · en vivo"]];
-  try {
-    const hitos = await cargarJSON("salida/hitos/lista.json");
-    hitos.slice().reverse().forEach(h => opciones.push(["salida/hitos/" + h.archivo, `Hito ${(h.pasos / 1e6).toFixed(1)} M · ${h.mision ? "misión" : "partida"}`]));
-  } catch (e) {}
-  sel.innerHTML = opciones.map(([v, t]) => `<option value="${v}">${t}</option>`).join("");
-  if (actual && opciones.some(o => o[0] === actual)) sel.value = actual;
+  let est = null, hitos = [];
+  try { est = await cargarJSON("salida/estado.json"); } catch (e) {}
+  try { hitos = await cargarJSON("salida/hitos/lista.json"); } catch (e) {}
+  const rn = est && est.replays_nivel, nombres = (est && est.niveles) || NIVELES_TXT;
+  const grupos = [];
+  if (rn) {
+    const vivo = nombres.map((nm, k) => rn[k] !== undefined
+      ? `<option value="salida/replay_nivel_${k}.json">Nivel ${k} · ${nm} · en vivo (it ${rn[k]})</option>`
+      : `<option disabled>Nivel ${k} · ${nm} · aún no entrenado</option>`);
+    vivo.push(`<option value="salida/replay_mision.json">Misión completa (despegue) · en vivo${rn.mision !== undefined ? ` (it ${rn.mision})` : ""}</option>`);
+    grupos.push(`<optgroup label="En vivo">${vivo.join("")}</optgroup>`);
+  } else {
+    grupos.push(`<option value="salida/replay_mision.json">Misión completa · en vivo</option><option value="salida/replay_adv.json">Partida en zona · en vivo</option>`);
+  }
+  const porNivel = {};
+  hitos.slice().reverse().forEach(h => { const g = h.mision ? "Misión completa" : h.nivel !== undefined ? `Nivel ${h.nivel} · ${nombres[h.nivel] ?? ""}` : "Hitos"; (porNivel[g] = porNivel[g] || []).push(h); });
+  Object.keys(porNivel).sort().forEach(g => grupos.push(`<optgroup label="Hitos · ${g}">${porNivel[g].map(h =>
+    `<option value="salida/hitos/${h.archivo}">${h.nivel !== undefined && !h.mision ? `Nivel ${h.nivel} · ` : ""}it ${h.it} · ${(h.pasos / 1e6).toFixed(1)} M${h.mision ? " · misión" : ""}</option>`).join("")}</optgroup>`));
+  // mínimo indispensable del proyecto de grado (minimo_tesis/protocolo_comite.py): piloto al mando, el sistema solo frena y sube
+  // fase G: el mismo protocolo (y los escenarios de discriminación) con cada decisor
+  grupos.push(`<optgroup label="Proyecto de grado"><option value="minimo_tesis/replay/replay_protocolo.json">Mínimo indispensable · protocolo del comité</option>`
+    + `<option value="minimo_tesis/replay/replay_protocolo_reglas.json">Mínimo indispensable · decisor: reglas</option>`
+    + `<option value="minimo_tesis/replay/replay_protocolo_ia.json">Mínimo indispensable · decisor: IA sola</option>`
+    + `<option value="minimo_tesis/replay/replay_protocolo_ia_env.json">Mínimo indispensable · decisor: IA + envolvente</option>`
+    + `<option value="minimo_tesis/replay/replay_protocolo_ia_env_estricta.json">Mínimo indispensable · decisor: IA + envolvente estricta</option></optgroup>`);
+  sel.innerHTML = grupos.join("");
+  const valores = [...sel.querySelectorAll("option:not([disabled])")].map(o => o.value);
+  if (actual && valores.includes(actual)) sel.value = actual;
 }
 sel.addEventListener("change", () => cargarPartida(sel.value));
 function alternarPausa() { pausa = !pausa; $("pausa").textContent = pausa ? "▶" : "❚❚"; $("pausa").classList.toggle("activo", pausa); }
@@ -1041,14 +1235,20 @@ function lineaEstado(c, lad) {
   if (c.fase === 1) return [c.bloq ? "BLOQUEO" : "MANUAL", c.bloq ? COL.peligro : COL.suave, c.msg];
   const ped = (c.pers || []).find(p => p.rol === "peaton" && p.vis && !p.cand);
   if (c.rfx) return ["ESQUIVE", COL.peligro, "Ataque detectado: alguien corre hacia el dron · el árbitro sube y se aparta hacia el lado contrario sin esperar a la IA"];
-  if (c.modo === 6) return ["PREDICCIÓN", COL.alerta, `Salió del cuadro corriendo · el dron sigue su trayectoria extrapolada (${Math.hypot(c.wx - c.d[0], c.wy - c.d[1]).toFixed(1)} m al punto predicho) mientras el gimbal intenta re-encuadrarlo`];
+  if (c.ciego && (c.modo === 2 || c.modo === 6)) return ["PUNTO CIEGO", COL.precaucion, `El objetivo va a quedar debajo del dron (fuera del cuadro aun con el gimbal en −45°) · paso táctico atrás hasta ${(c.dcg ?? 0).toFixed(1)} m${c.vis ? "" : " y giro hacia su vector de escape"}`];
+  if (c.rinde) return ["SE RINDE", COL.ok, `El ladrón se rinde: ${c.tc.toFixed(0)} s seguidos a la vista, sin poder esconderse (con su reserva necesitaba ${c.trd.toFixed(0)} s)`];
+  if (c.modo === 9) return ["RECONFIRMAR", COL.precaucion, `¿SIGUE SIENDO ÉL? · hubo un cruce con otra persona (confianza ${(c.conf ?? 0).toFixed(2)}): hover con el objetivo en cuadro, esperando el clic del operador`];
+  if (c.modo === 10) return ["MURO DE CANTO", COL.alerta, `Mira el muro de canto desde su prolongación: ve las dos caras a la vez · se corre 1 m al lado de la predicción y 1 m al otro, con la nariz a lo largo del muro`];
+  if (c.modo === 8) return ["SIG. OBSTÁCULO", COL.alerta, `Memoria espacial · vuela detrás del siguiente muro del mapa LiDAR aún sin revisar (${(c.ruta || []).length} punto${(c.ruta || []).length === 1 ? "" : "s"} de ruta)` + (c.va ? " · por encima de los paneles" : "")];
+  if (c.modo === 6) return ["PÉRDIDA", COL.alerta, `Salió del cuadro · el dron sigue su vector de escape (${Math.hypot(c.wx - c.d[0], c.wy - c.d[1]).toFixed(1)} m al punto predicho) mientras el gimbal intenta re-encuadrarlo`];
   if (c.est === 1) return ["EVASIÓN", COL.alerta, "Amenaza confirmada: " + (fijado(c) ? "la IA ejecuta" : "la regla de seguridad ejecuta") + " «" + NOMBRES_TXT[c.cl] + "»" + (c.vis ? " sin dejar de apuntar al objetivo" : " · la guiñada sigue su curso")];
   if (c.est === 2) return ["ESTABILIZA", COL.precaucion, "Estabilizando después de la evasión"];
   if (c.fase === 2 && c.per && (c.modo === 0 || c.modo >= 4)) return ["PERÍMETRO", COL.peligro, "Persona a menos de 2 m: el giro de búsqueda queda en pausa hasta que se aleje"];
   if (c.modo === 7) return ["BÚSQUEDA IA", COL.alerta, `La IA busca al objetivo perdido hace ${(c.tsv ?? 0).toFixed(1)} / ${partida.t_busqueda_ia ?? 60} s · última posición a ${Math.hypot(c.ux - c.d[0], c.uy - c.d[1]).toFixed(1)} m · altura ${c.d[2].toFixed(1)} m · gimbal ${(c.gmb ?? 0).toFixed(0)}°`];
   if (c.modo === 3) return ["INVESTIGA", COL.alerta, (c.flq ? `Flanqueo profundo · rodea la esquina por la que desapareció, sin rozarla, para quedar detrás del muro (${(c.ruta || []).length} punto${(c.ruta || []).length === 1 ? "" : "s"} de ruta)` : `Objetivo perdido en campo abierto · se detiene ${Math.hypot(c.wx - c.d[0], c.wy - c.d[1]).toFixed(1)} m antes de su última posición`) + (c.va ? " · por encima de los paneles" : "")];
+  if (c.modo === 4 && c.um !== undefined) return ["GIRO 360°", COL.alerta, `Barrido de 360° a ${c.d[2].toFixed(1)} m con el gimbal fijo en ${(c.gmb ?? 0).toFixed(0)}° y ${Math.abs(c.yaw ?? 0).toFixed(0)}°/s (tope de la Pixhawk: 120°/s) · el LiDAR completa el mapa · si YOLO lo ve, interrumpe y persigue`];
   if (c.modo === 4) return ["ASOMO", COL.alerta, c.flq ? `Detrás del muro · paneo de 360° que empieza hacia la ${ladoTxt(c)}, hacia el interior de la zona que estaba oculta` : `Paneo de 360° que empieza hacia la ${ladoTxt(c)}, por donde iba el ladrón`];
-  if (c.modo === 5) return ["ALTURA", COL.peligro, c.d[2] < (partida.z_alto ?? 6.5) - 0.2 ? `Ventaja de altura · sube rápido a ${(partida.z_alto ?? 6.5).toFixed(1)} m sobre la zona de pérdida (no rodea el panel)` : "Barrido de 360° desde la altura con la cámara a −65°: el panel ya no tapa · si no lo reconfirma, misión fallida"];
+  if (c.modo === 5) return ["ALTURA", COL.peligro, c.d[2] < (partida.z_alto ?? 6.5) - 0.2 ? `Ventaja de altura · sube rápido a ${(partida.z_alto ?? 6.5).toFixed(1)} m sobre la zona de pérdida (no rodea el panel)` : "Barrido de 360° desde la altura con la cámara a −45° (límite físico): el panel tapa menos · después, otra ronda por los muros del mapa"];
   if (c.modo === 0) {
     if (c.bf === 1) return ["INSPECCIÓN", COL.nominal, `Búsqueda activa · flanqueo profundo del panel ${(c.pj ?? 0) + 1} visto por el LiDAR: rodea su esquina y queda detrás (${(c.ruta || []).length} punto${(c.ruta || []).length === 1 ? "" : "s"} de ruta)` + (c.va ? " · por encima de los paneles" : "") + (c.nadir ? " · cámara en nadir" : "")];
     if (c.bf === 2) return ["INSPECCIÓN", COL.nominal, `Detrás del panel ${(c.pj ?? 0) + 1} · paneo de 360° hacia la ${ladoTxt(c)} primero (${c.ninsp ?? 0} revisado${(c.ninsp ?? 0) === 1 ? "" : "s"} en esta ronda)`];
@@ -1079,7 +1279,7 @@ function actualizarPaneles(c, b, k, info) {
   $("i-modo").textContent = f1 ? "MANUAL" : "GUIDED";
   $("i-modo").style.color = f1 ? COL.texto : COL.nominal;
   $("i-fuente").textContent = f1 ? "PILOTO · RC" : c.modo === 0 ? (c.bf ? "AUTO · INSPECCIÓN" : "AUTO · SEARCH") : c.modo === 1 ? "AUTO · HOVER"
-    : c.modo === 3 ? "AUTO · INVESTIGA" : c.modo === 4 ? "AUTO · ASOMO" : c.modo === 5 ? "AUTO · ALTURA" : c.modo === 6 ? "AUTO · PREDICCIÓN" : c.modo === 7 ? "IA · BÚSQUEDA" : "IA · MAVLink";
+    : c.modo === 3 ? "AUTO · FLANQUEO" : c.modo === 4 ? "AUTO · GIRO 360°" : c.modo === 5 ? "AUTO · ALTURA" : c.modo === 6 ? "AUTO · PÉRDIDA" : c.modo === 7 ? "IA · BÚSQUEDA" : c.modo === 8 ? "AUTO · OBSTÁCULO" : c.ciego ? "AUTO · CIEGO" : "IA · MAVLink";
   const [trkTxt, trkCol] = f1 ? ["IA INACTIVA", COL.tenue] : TRK[c.trk ?? (c.vis ? 1 : 0)];
   const cnd = candidato(c);
   $("i-obj").textContent = trkTxt + (fijado(c) && lad ? " · ID " + pad2(lad.id ?? 0) : c.modo === 1 && cnd ? " · ID " + pad2(cnd.id) : "");
@@ -1096,6 +1296,9 @@ function actualizarPaneles(c, b, k, info) {
   $("t-yaw").textContent = (yawRate >= 0 ? "+" : "") + yawRate.toFixed(0) + " °/s";
   $("t-lid").textContent = lidarTxt(c);
   $("t-vista").textContent = info.vista === null ? "–" : (info.vista * 100).toFixed(0) + " %";
+  actualizarFSM(c, k);
+  $("t-niv").textContent = c.niv === undefined ? "–" : partida.mision ? "misión" : `N${c.niv} · ${NIVELES_TXT[c.niv] ?? ""}` + (c.lgu === 2 ? " (cenit)" : "");
+  if (!$("p-slam").classList.contains("plegado")) dibujarSLAM(c, k);
   // objetivo y pistas del tracker
   const tag = $("obj-tag");
   tag.textContent = trkTxt; tag.style.color = trkCol;
@@ -1114,7 +1317,7 @@ function actualizarPaneles(c, b, k, info) {
     else if (p.cand) { rol = "candidato"; col = COL.precaucion; estado = "VERIFICANDO"; }
     else if (p.ign) { rol = "persona"; col = COL.tenue; estado = "DESCARTADO"; }
     else { rol = "persona"; col = COL.nominal; estado = "OBSTÁCULO"; }
-    filas.push(`<div class="pista ${esObj ? "objetivo" : ""}" data-cand="${p.cand ? 1 : 0}"><span class="led on" style="--c:${col}"></span><span>ID ${pad2(p.id ?? 61)}</span><span class="rol">${rol} · ${d.toFixed(1)} m</span><span class="tag" style="color:${col}">${estado}</span></div>`);
+    filas.push(`<div class="pista ${esObj ? "objetivo" : ""}" data-cand="${p.cand ? 1 : 0}"><span class="led on" style="--c:${col}"></span><span>ID ${pad2(p.id ?? 61)}</span><span class="rol">${rol} · ${d.toFixed(1)} m${det && p.fv !== undefined && p.fv < 0.9 ? ` · asoma ${Math.round(100 * p.fv)} %` : ""}</span><span class="tag" style="color:${col}">${estado}</span></div>`);
   });
   $("pistas").innerHTML = filas.join("") || `<div class="pista"><span class="led"></span><span>—</span><span class="rol">sin personas en cámara</span><span></span></div>`;
   // decisiones
@@ -1181,6 +1384,144 @@ function lidarTxt(c) {
   if (!c.lt) return "> 20 m";
   const d = Math.hypot(c.lh[0] - c.d[0], c.lh[1] - c.d[1], c.lh[2] - c.d[2]).toFixed(1);
   return (c.lt === 1 ? "suelo " : c.lt === 2 ? "obstáculo " : "persona ") + d + " m";
+}
+// ======================================================================= V12 · mapa SLAM y máquina de búsqueda
+// la nube de puntos llega por partes (cada cuadro trae los impactos nuevos en "nube"); aquí se acumula una vez con el
+// índice del cuadro, para dibujar en cada instante solo lo que el dron había mapeado hasta entonces
+let slam = { pts: [], barrido: [], vista: "dron" };
+function prepararSLAM(pt) {
+  slam.pts = []; slam.barrido = [];
+  pt.cuadros.forEach((c, k) => {
+    (c.nube || []).forEach(q => slam.pts.push([q[0], q[1], k]));
+    if (c.fase === 2 && c.lt && c.lh) slam.barrido.push([c.lh[0], c.lh[1], k, c.lt]);
+  });
+}
+document.querySelectorAll("#slam-vista button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("#slam-vista button").forEach(x => x.classList.toggle("activo", x === b));
+  slam.vista = b.dataset.v;
+}));
+function hastaK(arr, k) { let lo = 0, hi = arr.length; while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m][2] <= k) lo = m + 1; else hi = m; } return lo; }
+const TIPO_LIDAR = ["sin retorno", "suelo", "obstáculo", "persona"];
+function dibujarSLAM(c, k) {
+  const cv = $("slam-lienzo"), r = cv.getBoundingClientRect(), dpr = Math.min(devicePixelRatio, 2);
+  if (r.width < 10) return;
+  if (cv.width !== Math.round(r.width * dpr) || cv.height !== Math.round(r.height * dpr)) { cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); }
+  const g = cv.getContext("2d"), W = r.width, H = r.height;
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.fillStyle = "#070b10"; g.fillRect(0, 0, W, H);
+  const f2 = c.fase === 2, cerca = slam.vista === "dron";
+  const R = cerca ? 12 : 26, ox = cerca ? c.d[0] : 0, oy = cerca ? c.d[1] : 0, esc = Math.min(W, H) / (2 * R);
+  const X = x => W / 2 + (x - ox) * esc, Y = y => H / 2 - (y - oy) * esc;
+  // cuadrícula de 5 m y borde de la geocerca
+  g.lineWidth = 1; g.strokeStyle = "rgba(86, 102, 122, .16)"; g.beginPath();
+  for (let v = Math.ceil((ox - W / 2 / esc) / 5) * 5; v <= ox + W / 2 / esc; v += 5) { g.moveTo(X(v), 0); g.lineTo(X(v), H); }
+  for (let v = Math.ceil((oy - H / 2 / esc) / 5) * 5; v <= oy + H / 2 / esc; v += 5) { g.moveTo(0, Y(v)); g.lineTo(W, Y(v)); }
+  g.stroke();
+  g.strokeStyle = "rgba(255, 77, 79, .35)"; g.setLineDash([4, 4]); g.strokeRect(X(-25), Y(25), 50 * esc, 50 * esc); g.setLineDash([]);
+  // barrido del LiDAR: los impactos de los últimos 4 s (raycasting en vivo), más tenues cuanto más viejos
+  const kb = hastaK(slam.barrido, k), k0 = k - Math.round(4 / (partida.dt || 0.1));
+  for (let i = kb - 1; i >= 0 && slam.barrido[i][2] >= k0; i--) {
+    const [x, y, kk, t] = slam.barrido[i], a = 0.15 + 0.6 * (kk - k0) / (k - k0 || 1);
+    g.fillStyle = t === 2 ? `rgba(255, 77, 79, ${a})` : t === 3 ? `rgba(51, 209, 122, ${a})` : `rgba(43, 111, 153, ${a})`;
+    g.fillRect(X(x) - 1.5, Y(y) - 1.5, 3, 3);
+  }
+  // nube de puntos persistente (lo que el dron mapeó hasta este instante)
+  const kp = hastaK(slam.pts, k);
+  g.fillStyle = "#ff9f1a"; g.shadowColor = "rgba(255, 159, 26, .6)"; g.shadowBlur = 4;
+  for (let i = 0; i < kp; i++) { const [x, y] = slam.pts[i]; g.beginPath(); g.arc(X(x), Y(y), 2, 0, 2 * Math.PI); g.fill(); }
+  g.shadowBlur = 0;
+  // muros agrupados por el LiDAR (los que usa la máquina de búsqueda)
+  g.strokeStyle = "#2db7ff"; g.lineWidth = 2.5; g.lineCap = "round";
+  (c.det || []).forEach(s => { g.beginPath(); g.moveTo(X(s[0]), Y(s[1])); g.lineTo(X(s[2]), Y(s[3])); g.stroke(); });
+  g.lineCap = "butt";
+  // ruta de la búsqueda y destino
+  if (f2 && c.ruta && c.ruta.length) {
+    g.strokeStyle = "rgba(255, 159, 26, .8)"; g.setLineDash([5, 4]); g.lineWidth = 1.5; g.beginPath(); g.moveTo(X(c.d[0]), Y(c.d[1]));
+    c.ruta.forEach(q => g.lineTo(X(q[0]), Y(q[1]))); g.stroke(); g.setLineDash([]);
+  }
+  // última posición conocida
+  if (f2 && c.modo >= 3 && c.ux !== undefined) {
+    g.strokeStyle = "#f5c542"; g.lineWidth = 2; const u = X(c.ux), v = Y(c.uy);
+    g.beginPath(); g.moveTo(u - 5, v - 5); g.lineTo(u + 5, v + 5); g.moveTo(u + 5, v - 5); g.lineTo(u - 5, v + 5); g.stroke();
+  }
+  // zona ciega debajo del dron (con el objetivo fijado)
+  if (f2 && c.dcg && (c.modo === 2 || c.modo === 6)) {
+    g.strokeStyle = c.ciego ? "rgba(245, 197, 66, .95)" : "rgba(245, 197, 66, .3)"; g.setLineDash([3, 3]); g.lineWidth = 1.2;
+    g.beginPath(); g.arc(X(c.d[0]), Y(c.d[1]), c.dcg * esc, 0, 2 * Math.PI); g.stroke(); g.setLineDash([]);
+  }
+  // campo de visión horizontal de la cámara y rayo del LiDAR (sobre el eje óptico)
+  const psi = c.d[3], dx = X(c.d[0]), dy = Y(c.d[1]), hf = HFOV / 2 * Math.PI / 180, alc = 9 * esc;
+  g.fillStyle = "rgba(45, 183, 255, .08)"; g.strokeStyle = "rgba(45, 183, 255, .35)"; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(dx, dy); g.arc(dx, dy, alc, -(psi + hf), -(psi - hf)); g.closePath(); g.fill(); g.stroke();
+  if (c.lh && c.lt) {
+    g.strokeStyle = c.lt === 2 ? "#ff4d4f" : c.lt === 3 ? "#33d17a" : "rgba(255, 77, 79, .55)"; g.lineWidth = 1.4;
+    g.beginPath(); g.moveTo(dx, dy); g.lineTo(X(c.lh[0]), Y(c.lh[1])); g.stroke();
+    g.fillStyle = g.strokeStyle; g.beginPath(); g.arc(X(c.lh[0]), Y(c.lh[1]), 2.6, 0, 2 * Math.PI); g.fill();
+  }
+  // V15: nube de probabilidad (dónde puede estar sin verlo) y punto de canto
+  if (f2 && c.pf && c.pf.length) {
+    g.fillStyle = "rgba(196, 120, 255, .75)";
+    c.pf.forEach(q => g.fillRect(X(q[0]) - 1.2, Y(q[1]) - 1.2, 2.4, 2.4));
+    if (c.pfm) { g.strokeStyle = "#c478ff"; g.lineWidth = 1.5; g.beginPath(); g.arc(X(c.pfm[0]), Y(c.pfm[1]), 5, 0, 2 * Math.PI); g.stroke(); }
+  }
+  if (f2 && c.cnt) {
+    g.strokeStyle = "#f5c542"; g.lineWidth = 1.5; const u = X(c.cnt[0]), v = Y(c.cnt[1]);
+    g.strokeRect(u - 4, v - 4, 8, 8); g.beginPath(); g.moveTo(u, v); g.lineTo(u + 14 * Math.cos(c.cnt[2]), v - 14 * Math.sin(c.cnt[2])); g.stroke();
+  }
+  // objetivo (solo si la cámara lo ve: el mapa muestra lo que sabe el dron)
+  const lad = (c.pers || []).find(p => p.rol === "ladron");
+  if (lad && (lad.vis || c.vis)) { g.fillStyle = "#33d17a"; g.beginPath(); g.arc(X(lad.p[0]), Y(lad.p[1]), 4, 0, 2 * Math.PI); g.fill(); }
+  // el dron: triángulo con la nariz hacia el rumbo
+  g.save(); g.translate(dx, dy); g.rotate(-psi);
+  g.fillStyle = "#e3eaf3"; g.strokeStyle = "#070b10"; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(8, 0); g.lineTo(-5, 5); g.lineTo(-2.5, 0); g.lineTo(-5, -5); g.closePath(); g.fill(); g.stroke();
+  g.restore();
+  // escala
+  g.fillStyle = "rgba(139, 155, 176, .8)"; g.font = "500 9.5px Roboto Mono, monospace";
+  g.fillRect(8, H - 10, 5 * esc, 2); g.fillText("5 m", 8, H - 14);
+  // datos brutos del LiDAR
+  const tipo = c.lt !== undefined ? TIPO_LIDAR[c.lt] ?? "–" : "–";
+  $("sl-rayo").textContent = c.ldt !== undefined ? `${tipo} · ${c.lt ? c.ldt.toFixed(2) + " m" : "> 20 m"}` : lidarTxt(c);
+  $("sl-imp").textContent = c.lh && c.lt ? `${c.lh[0].toFixed(1)}, ${c.lh[1].toFixed(1)}, ${c.lh[2].toFixed(1)}` : "–";
+  $("sl-npts").textContent = `${kp}${c.npts !== undefined ? " · " + c.npts + " en memoria" : ""}`;
+  $("sl-det").textContent = String((c.det || []).length);
+  $("sl-gmb").textContent = c.gmb !== undefined ? c.gmb.toFixed(1) + "°" : "–";
+  $("sl-gmb").style.color = c.gmb !== undefined && c.gmb <= -44.9 ? COL.precaucion : "";
+  const st = $("slam-tag"); st.textContent = `${kp} pts`; st.style.color = kp ? COL.alerta : COL.tenue;
+}
+function actualizarFSM(c, k) {
+  const f2 = c.fase === 2, fin = k >= partida.cuadros.length - 1 && partida.resultado === "perdido";
+  let idx = fin ? I_FIN : f2 ? FSM.findIndex(e => e[1] === c.modo) : -1;
+  const tag = $("fsm-tag");
+  const nombre = !f2 ? "FASE 1 · PILOTO" : c.modo === 0 ? "BUSCAR" : c.modo === 1 ? "VERIFICAR" : c.modo === 7 ? "BÚSQUEDA IA"
+    : c.modo === 9 ? "¿SIGUE SIENDO ÉL?" : c.rinde ? "SE RINDE" : idx >= 0 ? FSM[idx][0] : (c.eb || "–");
+  const col = fin ? COL.peligro : idx === 0 ? (c.ciego ? COL.precaucion : COL.ok) : idx > 0 ? COL.alerta : COL.suave;
+  tag.textContent = nombre + (idx === 0 && c.ciego ? " · CIEGO" : ""); tag.style.color = col;
+  const pasos = $("fsm-pasos");
+  if (!pasos.children.length) pasos.innerHTML = FSM.map((e, i) => `<div class="paso"><span class="num">${i === I_FIN ? "×" : i + 1}</span><span>${e[0]}</span><span class="x"></span></div>`).join("");
+  [...pasos.children].forEach((d, i) => {
+    d.classList.toggle("activo", i === idx); d.classList.toggle("hecho", idx > 0 && i > 0 && i < idx);
+    d.style.setProperty("--c", i === 0 ? COL.ok : i === I_FIN ? COL.peligro : COL.alerta);
+    d.lastChild.textContent = i === idx && idx >= 1 && idx < I_FIN ? `${(c.tpd ?? 0).toFixed(1)} s`
+      : i === 0 && idx === 0 && c.tc !== undefined ? `${c.tc.toFixed(0)} s seguidos` : i === 0 && idx === 0 && c.tf !== undefined ? `rastreo ${c.tf.toFixed(0)} s` : "";
+  });
+  const enB = f2 && idx >= 1;
+  $("fsm-t").textContent = enB ? `${(c.tpd ?? c.tsv ?? 0).toFixed(1)} / ${T_MISION_PERDIDA()} s` : f2 && c.modo === 2 ? "a la vista / memoria" : "–";
+  $("fsm-barra").style.width = enB ? Math.min(100, 100 * (c.tpd ?? 0) / T_MISION_PERDIDA()) + "%" : "0%";
+  $("fsm-ciego").textContent = c.dcg !== undefined && f2 ? `${c.dcg.toFixed(1)} m · ${c.ciego ? "RETROCEDE" : "libre"}` : "–";
+  $("fsm-ciego").style.color = c.ciego ? COL.precaucion : "";
+  $("fsm-insp").textContent = enB ? String(c.ninsp ?? 0) : "–";
+  $("fsm-esc").textContent = c.um === undefined ? "–" : partida.mision ? "misión" : c.um ? "UN SOLO MURO" : "completo";
+  $("fsm-esc").style.color = c.um ? COL.precaucion : "";
+  // V15: contador continuo hacia la rendición, pulso y reserva del ladrón, confianza del ID
+  const lad = (c.pers || []).find(p => p.rol === "ladron");
+  $("fsm-tc").textContent = c.tc === undefined ? "–" : c.rinde ? `SE RINDE (${c.tc.toFixed(0)} s)` : `${c.tc.toFixed(0)} / ${c.trd.toFixed(0)} s`;
+  $("fsm-tc").style.color = c.rinde ? COL.ok : "";
+  $("fsm-tcb").style.width = c.tc === undefined ? "0%" : Math.min(100, 100 * c.tc / Math.max(c.trd, 1)) + "%";
+  $("fsm-hr").textContent = lad && lad.hr != null ? `♥ ${lad.hr} · ${Math.round(100 * lad.res)} %` : "–";
+  $("fsm-hr").style.color = lad && lad.res != null && lad.res < 0.3 ? COL.precaucion : "";
+  $("fsm-id").textContent = c.conf === undefined || !f2 || c.modo < 2 ? "–" : c.modo === 9 ? `RECONFIRMAR · ${c.conf.toFixed(2)}` : `confianza ${c.conf.toFixed(2)}`;
+  $("fsm-id").style.color = c.modo === 9 ? COL.precaucion : c.conf !== undefined && c.conf < 0.85 ? COL.alerta : "";
 }
 function enCampo(c, p) { return Math.abs(difAngGrados(Math.atan2(p.p[1] - c.d[1], p.p[0] - c.d[0]), c.d[3])) < HFOV / 2; }
 
@@ -1495,6 +1836,7 @@ function animar(ahora) {
     if (marcaUlt.visible) { marcaUlt.position.set(a.ux, 0.03, -a.uy); marcaUlt.rotation.y += dtReal * 0.8; }
     marcaWp.visible = a.fase === 2 && ((a.modo === 0 && a.bf >= 1) || a.modo === 3 || a.modo === 4 || a.modo === 5);
     dibujarMapaLidar(a.fase === 2 ? a.det : null);
+    dibujarNube(a.fase === 2 ? a.pf : null);
     lineaRuta.visible = a.fase === 2 && !!(a.ruta && a.ruta.length);
     if (lineaRuta.visible) {
       lineaRuta.geometry.setFromPoints([mundo(dx, dy, 0.06), ...a.ruta.map(q => mundo(q[0], q[1], 0.06))]);
@@ -1589,7 +1931,7 @@ function animar(ahora) {
   renderer.render(escena, camara);
   if (partida) {     // la cámara del dron se dibuja dentro del recuadro FPV
     const rv = fpvVista.getBoundingClientRect(), x = rv.left, y = innerHeight - rv.bottom;
-    const ocultos = [dron, cono, laser, puntoLaser, lineaVista, pulso, rastroDron, rastroLadron, sombraDron, marcaUlt, marcaWp, mapaLidar, flechaEscape, lineaRuta,
+    const ocultos = [dron, cono, laser, puntoLaser, lineaVista, pulso, rastroDron, rastroLadron, sombraDron, marcaUlt, marcaWp, mapaLidar, flechaEscape, lineaRuta, nube3d,
                      ...[ladron, ...peatones].flatMap(p => [p.userData.etq, p.userData.marca])].filter(o => o && o.visible);
     ocultos.forEach(o => o.visible = false);
     renderer.setScissorTest(true);

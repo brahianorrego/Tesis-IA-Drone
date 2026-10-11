@@ -17,15 +17,17 @@ FASE 1 · Piloto al mando, con bloqueo frontal (regla fija, no IA)
 FASE 2 · IA activada a la mitad del salón (ver entorno.py)
   BUSCAR (giro de 360° y, si no hay nadie, revisar detrás de cada panel) -> VERIFICAR (hover + alerta; el
   operador confirma con un clic sobre el sospechoso) -> FIJADO (la política aprendida rastrea a ese ID; yaw con
-  banda muerta y gimbal para lo vertical). Si lo pierde: con PERDIDA_IA la política lo busca (BUSQUEDA_IA); si no,
-  el protocolo determinista INVESTIGAR (flanqueo) -> ASOMO -> VENTAJA DE ALTURA.
+  banda muerta y gimbal para lo vertical). Si lo pierde: con PERDIDA_IA la política lo busca (BUSQUEDA_IA); si no
+  (V12, por defecto), la búsqueda determinista con memoria espacial: PÉRDIDA -> FLANQUEO_PROFUNDO -> GIRO_360 ->
+  SIGUIENTE_OBSTÁCULO -> ... -> ALTURA_TÁCTICA -> MISIÓN_PERDIDA a los 90 s. El reflejo de punto ciego lo aparta si el
+  objetivo va a quedar debajo del dron.
 """
 import math
 
 import numpy as np
 
-from entorno import (DT, GUIONES, L_DEAMBULAR, N_PANELES, PASOS_EPISODIO, T_BUSQUEDA_IA, T_BUSQUEDA_MAX,
-                     T_ESPERA_CLIC, T_RASTREO, Z_NOMINAL, Z_TACTICO, Z_TRANSITO, EntornoDronPersona,
+from entorno import (DT, GUIONES, L_DEAMBULAR, N_NIVELES, N_PANELES, PASOS_EPISODIO, T_BUSQUEDA_IA, T_BUSQUEDA_MAX, T_MISION_PERDIDA,
+                     T_ESPERA_CLIC, T_RASTREO, T_RINDE_BASE, T_RINDE_RESERVA, Z_NOMINAL, Z_PILOTO, Z_TACTICO, Z_TRANSITO, EntornoDronPersona,
                      dist_punto_segmento, resultado_de)
 
 X_DESPEGUE = -21.0
@@ -106,13 +108,16 @@ def preparar(rng, semilla):
     """Crea el salón con TODOS sus actores ya en su lugar (y moviéndose desde el primer cuadro)."""
     y0 = float(rng.uniform(-8, 8))
     obst = obstaculos_al_azar(rng, y0)
-    env = EntornoDronPersona(1, semilla=semilla)
+    env = EntornoDronPersona(1, semilla=semilla, nivel=N_NIVELES - 1)      # la misión es siempre el escenario completo (V15: nivel 4)
     env.zona[0] = ZONA
     # paneles de la zona, en la mitad derecha del salón
-    for j in range(N_PANELES):
-        c = np.array([rng.uniform(6, 18), rng.uniform(-15, 15)])
-        if j and np.hypot(*(c - (env.pa[0, 0] + env.pb[0, 0]) / 2)) < 7:
-            c[1] = -c[1]
+    centros = []
+    for j in range(N_PANELES):                  # V15: 4 muros en la zona, separados entre sí
+        for _ in range(40):
+            c = np.array([rng.uniform(6, 20), rng.uniform(-17, 17)])
+            if all(np.hypot(*(c - c2)) > 7 for c2 in centros):
+                break
+        centros.append(c)
         ang = rng.uniform(0, np.pi)
         u = np.array([np.cos(ang), np.sin(ang)]) * rng.uniform(4.5, 6.5) / 2
         env.pa[0, j], env.pb[0, j] = c - u, c + u
@@ -190,9 +195,9 @@ def fase1(env, rng, obst, y0, ruta):
         ovx = ovy = 0.0
         bloq = False
         if estado == "despegue":
-            z = min(z + 0.7 * DT, Z_NOMINAL)
+            z = min(z + 0.7 * DT, Z_PILOTO)
             msg = "Fase 1 · el piloto despega"
-            if z >= Z_NOMINAL:
+            if z >= Z_PILOTO:
                 estado, t_estado = "avance", 0.0
         elif estado == "avance":
             msg = "Fase 1 · el piloto lleva el dron hacia la mitad del salón"
@@ -310,7 +315,7 @@ def grabar_mision(red_d, red_p, actuar, iteracion, pasos_tot, semilla):
     return {"iteracion": iteracion, "pasos": pasos_tot, "adversaria": True, "mision": True, "guion": None,
             "resultado": resultado, "maniobras": maniobras, "vista": round(vista, 3), "dt": DT,
             "obst": obst, "paneles": paneles, "despegue": [X_DESPEGUE, y0], "entrada_ia_x": ENTRADA_IA_X,
-            "t_rastreo": T_RASTREO, "t_busqueda": T_BUSQUEDA_MAX, "t_clic": T_ESPERA_CLIC,
-            "z_transito": Z_TRANSITO, "z_alto": Z_TACTICO, "t_busqueda_ia": T_BUSQUEDA_IA,
+            "t_rastreo": T_RASTREO, "t_rinde": [T_RINDE_BASE, T_RINDE_RESERVA], "t_busqueda": T_BUSQUEDA_MAX, "t_clic": T_ESPERA_CLIC,
+            "z_transito": Z_TRANSITO, "z_alto": Z_TACTICO, "t_busqueda_ia": T_BUSQUEDA_IA, "t_mision_perdida": T_MISION_PERDIDA, "version": "V15",
             "autor": "BRAHIAN ORREGO",
             "cuadros": c1 + c2}

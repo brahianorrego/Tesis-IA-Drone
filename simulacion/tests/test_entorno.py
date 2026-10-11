@@ -11,7 +11,9 @@ import entorno as E
 SIM = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CLAVES_INFO = ["choque", "choque_ladron", "choque_peaton", "panel", "fuera", "tiempo", "perdido", "no_encontrado", "exito",
                "inicia", "pierde", "recupera", "reflejo", "dist", "visto", "fijado", "peatones", "jitter", "esfuerzo",
-               "al_mando", "descubre", "busqueda_ia", "salto"]
+               "al_mando", "descubre", "busqueda_ia", "salto",
+               "t_ep", "r_comp", "du", "gmb_min", "ciego", "estado_busq", "t_perdida", "un_muro", "interrumpe",
+               "nivel_ep", "cenit_ep"]
 
 
 class TestEntorno(unittest.TestCase):
@@ -28,7 +30,7 @@ class TestEntorno(unittest.TestCase):
         rng = np.random.default_rng(3)
         env = E.EntornoDronPersona(16, semilla=3)
         terminadas = 0
-        for _ in range(400):
+        for _ in range(1500):       # V15: a la altura segura (3.30 m) casi no lo alcanzan: la primera termina hacia 134 s
             acc = rng.integers(0, len(E.CLASES), env.n)
             ap = rng.integers(0, E.N_ACC_PERSONA, env.n)
             r, rp, done, info = env.step(acc, ap)
@@ -39,6 +41,30 @@ class TestEntorno(unittest.TestCase):
             self.assertIn(k, info)
         self.assertTrue(((np.abs(env.dx) <= E.ARENA + 1) & (np.abs(env.dy) <= E.ARENA + 1)).all())
         self.assertGreater(terminadas, 0)
+
+    def test_recompensa_por_componente(self):
+        # V12: la suma de los componentes es exactamente la recompensa del dron; el bono y la multa salen del mismo evento
+        rng = np.random.default_rng(5)
+        env = E.EntornoDronPersona(32, semilla=5)
+        n_desc = n_pierde = 0
+        for _ in range(500):
+            r, _, done, info = env.step(rng.integers(0, len(E.CLASES), env.n), np.full(env.n, E.N_ACC_PERSONA - 1))
+            self.assertEqual(info["r_comp"].shape, (env.n, len(E.R_COMP)))
+            np.testing.assert_allclose(info["r_comp"].sum(1), r, atol=1e-9)
+            n_desc += int((info["r_comp"][:, E.R_COMP.index("descubre")] > 0).sum())
+            n_pierde += int((info["r_comp"][:, E.R_COMP.index("pierde")] < 0).sum())
+        self.assertLessEqual(n_desc, n_pierde)
+
+    def test_multa_solo_a_lo_que_comanda_la_red(self):
+        # V12: si la red elige siempre MANTENER, nada de lo que mueven el seguimiento automático, el acercamiento o el
+        # reflejo de punto ciego se le cobra (antes eran ~-19 por partida)
+        env = E.EntornoDronPersona(32, semilla=6)
+        al_mando = 0
+        for _ in range(600):
+            _, _, _, info = env.step(np.zeros(env.n, int), np.full(env.n, E.N_ACC_PERSONA - 1))
+            al_mando += int(info["al_mando"].sum())
+            self.assertTrue(np.all(info["jitter"] == 0.0) and np.all(info["esfuerzo"] == 0.0))
+        self.assertGreater(al_mando, 0, "la prueba no llegó a darle el mando a la red")
 
     def test_vecenv_del_master(self):
         from entrenar import ActorCritico

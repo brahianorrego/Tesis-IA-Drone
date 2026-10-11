@@ -61,20 +61,28 @@ autojuego), con reglas deterministas alrededor y un operador humano que confirma
 | `simulacion/tests/` | Pruebas: reglas duras, el entorno arranca, episodio corto, herramientas |
 | `.claude/agents/` | `supervisor-rl` (diagnostica, no toca código) e `implementador` (aplica cambios aprobados) |
 | `simulacion/index.html` | Visor 3D tipo estación de tierra (three.js) |
+| `simulacion/minimo_tesis/` | Mínimo indispensable del proyecto de grado (congelado, independiente del entrenamiento) y `protocolo_comite.py` |
 | `simulacion/*_vN.*` | Versiones anteriores de cada archivo (no editar) |
 | `simulacion/modelos/dron_politica.json` | Pesos de la política para la Jetson (sí se versiona) |
-| `simulacion/modelos_master/` | Modelos SB3 (`ultimo.zip`, `base_v9.zip`, un checkpoint por millón de pasos). **No va a Git** |
+| `simulacion/modelos_master/` | Modelos SB3 de la V10 (`ultimo.zip`, `base_v9.zip`, un checkpoint por millón de pasos). **No va a Git** |
+| `simulacion/modelos_v15/` | Modelos SB3 de la V15 (5 niveles y rendición, desde la V14). **No va a Git** |
+| `simulacion/modelos_v14/` | Modelos SB3 de la V14 (currículo progresivo, desde la V12). **No va a Git** |
+| `simulacion/modelos_v12/` | Modelos SB3 de la V12 (fine-tuning desde la V10: `base_v12.zip`, `ultimo.zip`, checkpoints). **No va a Git** |
 
 `parche_master_humanos.py` se mencionó en un encargo pero **no existe** en el repositorio.
 
 ## Comandos (Windows, desde `simulacion\`)
 
 ```
-:: entrenar (retoma modelos_master\ultimo.zip)
-.venv\Scripts\python.exe -u entrenar_master.py --continuar
+:: entrenar la V15 (plan docs\PLAN_V15_CURRICULO.md): la primera vez arranca del checkpoint más nuevo de modelos_v14\ en
+:: el nivel 0 y guarda la salida de la V14 en salida_v14\; después retoma solo modelos_v15\ultimo.zip con su nivel
+.venv\Scripts\python.exe -u entrenar_master.py
 
 :: primera vez desde una política propia
 .venv\Scripts\python.exe -u entrenar_master.py --base modelos\ultimo.pt --pasos 1e9
+
+:: mínimo indispensable: protocolo del comité -> informes\minimo_tesis_protocolo.md, CSV y repetición en el visor
+.venv\Scripts\python.exe -m minimo_tesis.protocolo_comite
 
 :: visor 3D en http://127.0.0.1:8765/
 ABRIR_VISOR.bat

@@ -1,0 +1,158 @@
+{
+ "capas": [
+  32,
+  16
+ ],
+ "iteraciones": 30,
+ "n_ent": 2551725,
+ "n_val": 499021,
+ "n_pru": 533085,
+ "pos_ent": 0.12766814605805876,
+ "pos_pru": 0.11505669827513436,
+ "auc_roc": 0.9743384549108255,
+ "auc_pr": 0.9136504467054679,
+ "umbral": 0.7,
+ "k": 2,
+ "matriz": [
+  [
+   470330,
+   1420
+  ],
+  [
+   15716,
+   45619
+  ]
+ ],
+ "grid": [
+  {
+   "umbral": 0.3,
+   "k": 1,
+   "envolvente": true,
+   "riesgo": 27,
+   "choque": 12,
+   "cerca": 79,
+   "innecesarias": 96,
+   "t_det_innec": 1504.200000000002
+  },
+  {
+   "umbral": 0.3,
+   "k": 1,
+   "envolvente": false,
+   "riesgo": 21,
+   "choque": 11,
+   "cerca": 36,
+   "innecesarias": 96,
+   "t_det_innec": 1504.200000000002
+  },
+  {
+   "umbral": 0.5,
+   "k": 1,
+   "envolvente": true,
+   "riesgo": 32,
+   "choque": 12,
+   "cerca": 92,
+   "innecesarias": 63,
+   "t_det_innec": 820.100000000001
+  },
+  {
+   "umbral": 0.5,
+   "k": 1,
+   "envolvente": false,
+   "riesgo": 26,
+   "choque": 11,
+   "cerca": 43,
+   "innecesarias": 63,
+   "t_det_innec": 820.100000000001
+  },
+  {
+   "umbral": 0.7,
+   "k": 1,
+   "envolvente": true,
+   "riesgo": 37,
+   "choque": 13,
+   "cerca": 109,
+   "innecesarias": 53,
+   "t_det_innec": 620.4000000000007
+  },
+  {
+   "umbral": 0.7,
+   "k": 1,
+   "envolvente": false,
+   "riesgo": 29,
+   "choque": 12,
+   "cerca": 53,
+   "innecesarias": 53,
+   "t_det_innec": 620.4000000000007
+  },
+  {
+   "umbral": 0.3,
+   "k": 2,
+   "envolvente": true,
+   "riesgo": 31,
+   "choque": 13,
+   "cerca": 94,
+   "innecesarias": 78,
+   "t_det_innec": 1120.3000000000015
+  },
+  {
+   "umbral": 0.3,
+   "k": 2,
+   "envolvente": false,
+   "riesgo": 25,
+   "choque": 12,
+   "cerca": 50,
+   "innecesarias": 78,
+   "t_det_innec": 1120.3000000000015
+  },
+  {
+   "umbral": 0.5,
+   "k": 2,
+   "envolvente": true,
+   "riesgo": 36,
+   "choque": 14,
+   "cerca": 122,
+   "innecesarias": 50,
+   "t_det_innec": 554.9000000000005
+  },
+  {
+   "umbral": 0.5,
+   "k": 2,
+   "envolvente": false,
+   "riesgo": 28,
+   "choque": 13,
+   "cerca": 68,
+   "innecesarias": 50,
+   "t_det_innec": 554.9000000000005
+  },
+  {
+   "umbral": 0.7,
+   "k": 2,
+   "envolvente": true,
+   "riesgo": 44,
+   "choque": 14,
+   "cerca": 134,
+   "innecesarias": 42,
+   "t_det_innec": 408.4000000000004
+  },
+  {
+   "umbral": 0.7,
+   "k": 2,
+   "envolvente": false,
+   "riesgo": 34,
+   "choque": 13,
+   "cerca": 75,
+   "innecesarias": 42,
+   "t_det_innec": 408.4000000000004
+  }
+ ],
+ "reglas_val": {
+  "riesgo": 63,
+  "choque": 20,
+  "cerca": 224,
+  "innecesarias": 64,
+  "t_det_innec": 824.4000000000008
+ },
+ "vuelos_val": 1920,
+ "vuelos_val_con_riesgo": 1222,
+ "seg": 281.0889265537262
+}

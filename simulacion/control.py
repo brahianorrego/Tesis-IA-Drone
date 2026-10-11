@@ -41,6 +41,8 @@ class AutopilotoArduPilot(object):
     ATC_RAT_P, ATC_RAT_I = 25.0, 4.0   # PID de tasa normalizado (1/s y 1/s²; D despreciable a 50 Hz)
     ATC_ACCEL_PR_MAX = 1100.0      # °/s² de aceleración angular en pitch y roll
     ATC_ACCEL_Y_MAX = 180.0        # °/s² en guiñada (más bajo que el de fábrica: la cámara no lo tolera)
+    RATE_Y_MAX = 120.0             # °/s: tope de la tasa de guiñada que acepta la Pixhawk (V13; más rápido, la imagen de
+                                   # YOLO se desenfoca por movimiento)
     ARRASTRE = 0.12                # 1/s: arrastre lineal del cuadricóptero
 
     def __init__(self, n, rng):
@@ -138,7 +140,8 @@ class AutopilotoArduPilot(object):
         return cab_pedido
 
     def guinada(self, e, yaw_sp, dt):
-        """Tasa de guiñada con la aceleración limitada (ATC_ACCEL_Y_MAX)."""
+        """Tasa de guiñada con la aceleración limitada (ATC_ACCEL_Y_MAX) y el tope RATE_Y_MAX."""
+        yaw_sp = np.clip(yaw_sp, -self.RATE_Y_MAX, self.RATE_Y_MAX)
         e.yaw_dps += np.clip(yaw_sp - e.yaw_dps, -self.ATC_ACCEL_Y_MAX * dt, self.ATC_ACCEL_Y_MAX * dt)
 
 

@@ -14,6 +14,9 @@ Escenarios:
   tras_muro      corre a esconderse detrás de un panel de 2.6 m y se queda ahí
   debajo         corre hasta quedar debajo del dron y lo sigue caminando (punto ciego de la cámara; el ladrón
                  aprendido salta si el dron está a menos de 2.9 m de altura)
+  detras_punta   (V15) corre detrás de un panel y se queda justo detrás de su punta lejana, en la línea del muro
+  detras_punta_4, detras_punta_65   (V15) lo mismo con muros de 4 m y de 6.5 m
+  cambia_lado    (V15) se esconde detrás de un panel y gatea por detrás hasta el otro extremo
 
 Política determinista (la acción más probable). Partidas de hasta --max-seg segundos.
 
@@ -52,10 +55,24 @@ ESCENARIOS = {
                           ruta=[(2.0, 0.0, CORRE), (-6.0, -3.0, CORRE), (-6.0, 10.0, CORRE), (6.0, 10.0, 2.0)]),
     "tras_muro": dict(dron=(-15.0, 0.0, 0.0), ladron=(-10.0, 1.0), paneles=[(0.0, -3.0, 0.0, 3.0)],
                       ruta=[(-1.0, 4.5, CORRE), (1.5, 1.0, 2.0)]),
+    "detras_punta": dict(dron=(-15.0, 0.0, 0.0), ladron=(-10.0, 1.0), paneles=[(0.0, -3.0, 0.0, 3.0)],
+                         ruta=[(1.0, 1.0, CORRE), (0.0, 3.8, 0.6)]),
+    # V15 · canto con desplazamiento lateral: la misma táctica con el muro más corto (4 m) y el más largo (6.5 m)
+    "detras_punta_4": dict(dron=(-15.0, 0.0, 0.0), ladron=(-10.0, 1.0), paneles=[(0.0, -2.0, 0.0, 2.0)],
+                           ruta=[(1.0, 0.5, CORRE), (0.0, 2.8, 0.6)]),
+    "detras_punta_65": dict(dron=(-15.0, 0.0, 0.0), ladron=(-10.0, 1.0), paneles=[(0.0, -3.25, 0.0, 3.25)],
+                            ruta=[(1.0, 1.0, CORRE), (0.0, 4.05, 0.6)]),
+    "cambia_lado": dict(dron=(-15.0, 0.0, 0.0), ladron=(-10.0, 1.0), paneles=[(0.0, -3.0, 0.0, 3.0)],
+                        ruta=[(1.0, 2.0, CORRE), (1.0, -2.2, 0.7)]),
     "debajo": dict(dron=(0.0, 0.0, 0.0), ladron=(6.0, 0.0), paneles=[],
                    ruta=[("D", 6.0, CORRE), ("D", 15.0, E.VEL_CAMINAR)]),
 }
 RESULTADOS = ["cumplida", "perdido", "alcanzado", "choque_peaton", "panel", "geocerca", "no_encontrado", "tiempo"]
+
+
+# V15: la misión se cumple cuando el ladrón se rinde (contador continuo, ~2 min con la reserva llena). Los escenarios fijos
+# miden la TÁCTICA (no el cansancio): aquí el éxito es T_TACTICA s seguidos a la vista con el objetivo correcto
+T_TACTICA = 30.0
 
 
 def preparar(env, esc, rng):
@@ -140,9 +157,21 @@ def velocidad_ladron(env, ruta, wp, t_wp, k_vel):
 
 
 def correr_escenario(modelo, nombre, n, semilla, max_seg, nivel):
+    """Corre un escenario con el éxito táctico (T_TACTICA s seguidos); restaura la rendición del entorno al terminar."""
+    previo = (getattr(E, "T_RINDE_BASE", None), getattr(E, "T_RINDE_RESERVA", None))
+    if previo[0] is not None:
+        E.T_RINDE_BASE, E.T_RINDE_RESERVA = T_TACTICA, 0.0
+    try:
+        return _correr_escenario(modelo, nombre, n, semilla, max_seg, nivel)
+    finally:
+        if previo[0] is not None:
+            E.T_RINDE_BASE, E.T_RINDE_RESERVA = previo
+
+
+def _correr_escenario(modelo, nombre, n, semilla, max_seg, nivel):
     esc = ESCENARIOS[nombre]
     rng = np.random.default_rng(semilla)
-    env = E.EntornoDronPersona(n, semilla=semilla)
+    env = E.EntornoDronPersona(n, semilla=semilla, nivel=E.N_NIVELES - 1)    # V14: escenarios propios, sin currículo
     env.nivel = nivel
     env.ap.reset(np.ones(n, bool), nivel)
     preparar(env, esc, rng)
@@ -169,10 +198,12 @@ def correr_escenario(modelo, nombre, n, semilla, max_seg, nivel):
         acciones += np.bincount(acc[md], minlength=len(E.CLASES))
         vx, vy = velocidad_ladron(env, esc["ruta"], wp, t_wp, k_vel)
         env.v_forzada[:, 0, 0], env.v_forzada[:, 0, 1] = vx, vy
-        u_ant, mando_ant = env.u_prev.copy(), env.mando_prev.copy()
+        u_fis = env.u_prev_fis if hasattr(env, "u_prev_fis") else env.u_prev      # V12: jitter FÍSICO (todo lo que se movió)
+        u_ant, mando_ant = u_fis.copy(), env.mando_prev.copy()
         r, _, done, info = env.step(acc, acc_p, auto_reset=False)
         ambos = info["al_mando"] & mando_ant & vivo
-        dj[ambos] += np.abs(env.u_prev[ambos] - u_ant[ambos])
+        u_fis = env.u_prev_fis if hasattr(env, "u_prev_fis") else env.u_prev
+        dj[ambos] += np.abs(u_fis[ambos] - u_ant[ambos])
         n_dj += ambos
         r_tot += np.where(vivo, r, 0.0)
         r_ctrl -= np.where(vivo, info["jitter"] + info["esfuerzo"], 0.0)

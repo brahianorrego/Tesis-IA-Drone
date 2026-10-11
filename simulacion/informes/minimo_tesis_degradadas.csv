@@ -1,0 +1,687 @@
+tipo,condicion,escenario,v,n,exito,exito_sin_operador,choques,act_falsas,paradas_operador
+escenario,Nominal,a_panel_1,1.0,100,100,100,0,0,0
+escenario,Nominal,a_panel_2,2.0,100,100,100,0,0,0
+escenario,Nominal,a_panel_3,3.0,100,100,100,0,0,0
+escenario,Nominal,a_panel_4,4.0,100,100,100,0,0,0
+escenario,Nominal,b_quieta_1.5,1.5,100,100,100,0,0,0
+escenario,Nominal,b_quieta_3.0,3.0,100,100,100,0,0,0
+escenario,Nominal,c_frente_camina,1.0,100,100,100,0,0,0
+escenario,Nominal,c_frente_corre,1.0,100,100,72,0,0,28
+escenario,Nominal,d_cruza_camina,1.0,100,100,100,0,0,0
+escenario,Nominal,d_cruza_corre,1.0,100,100,100,0,0,0
+escenario,Nominal,e_estatico_camina,0.0,100,100,100,0,0,0
+escenario,Nominal,e_estatico_corre,0.0,100,100,100,0,0,0
+escenario,Nominal,e_estatico_lado,0.0,100,100,100,0,0,0
+barrido,Nominal,a_panel_1,1.0,100,100,100,0,0,0
+barrido,Nominal,a_panel_1,2.0,100,100,100,0,0,0
+barrido,Nominal,a_panel_1,3.0,100,100,100,0,0,0
+barrido,Nominal,a_panel_1,4.0,100,100,100,0,0,0
+barrido,Nominal,a_panel_1,5.0,100,100,100,0,0,0
+barrido,Nominal,a_panel_1,6.0,100,100,100,0,0,0
+barrido,Nominal,a_panel_1,7.0,100,100,100,0,0,0
+barrido,Nominal,a_panel_1,8.0,100,100,100,0,0,0
+barrido,Nominal,a_panel_1,9.0,100,100,100,0,0,0
+barrido,Nominal,a_panel_1,10.0,100,100,100,0,0,0
+barrido,Nominal,a_panel_1,11.0,100,100,100,0,0,0
+barrido,Nominal,a_panel_1,12.0,100,1,1,0,0,0
+barrido,Nominal,b_quieta_1.5,1.0,100,100,100,0,0,0
+barrido,Nominal,b_quieta_1.5,2.0,100,100,100,0,0,0
+barrido,Nominal,b_quieta_1.5,3.0,100,100,100,0,0,0
+barrido,Nominal,b_quieta_1.5,4.0,100,100,100,0,0,0
+barrido,Nominal,b_quieta_1.5,5.0,100,80,65,0,0,34
+barrido,Nominal,b_quieta_1.5,6.0,100,66,64,0,0,35
+barrido,Nominal,b_quieta_1.5,7.0,100,65,65,0,0,34
+barrido,Nominal,b_quieta_1.5,8.0,100,66,66,0,0,34
+barrido,Nominal,b_quieta_1.5,9.0,100,59,59,0,0,40
+barrido,Nominal,b_quieta_1.5,10.0,100,56,56,0,0,43
+barrido,Nominal,b_quieta_1.5,11.0,100,65,65,0,0,34
+barrido,Nominal,b_quieta_1.5,12.0,100,0,0,0,0,45
+barrido,Nominal,c_frente_corre,1.0,100,100,76,0,0,24
+barrido,Nominal,c_frente_corre,2.0,100,100,0,0,0,100
+barrido,Nominal,c_frente_corre,3.0,100,100,0,0,0,100
+barrido,Nominal,c_frente_corre,4.0,100,100,0,0,0,100
+barrido,Nominal,c_frente_corre,5.0,100,100,1,0,0,99
+barrido,Nominal,c_frente_corre,6.0,100,100,31,0,0,69
+barrido,Nominal,c_frente_corre,7.0,100,100,65,0,0,35
+barrido,Nominal,c_frente_corre,8.0,100,100,63,0,0,37
+barrido,Nominal,c_frente_corre,9.0,100,100,54,0,0,46
+barrido,Nominal,c_frente_corre,10.0,100,96,52,0,0,48
+barrido,Nominal,c_frente_corre,11.0,100,81,62,0,0,38
+barrido,Nominal,c_frente_corre,12.0,100,62,56,4,0,44
+escenario,YOLO recall 0.85 (sol de frente),a_panel_1,1.0,100,100,100,0,0,0
+escenario,YOLO recall 0.85 (sol de frente),a_panel_2,2.0,100,100,100,0,0,0
+escenario,YOLO recall 0.85 (sol de frente),a_panel_3,3.0,100,100,100,0,0,0
+escenario,YOLO recall 0.85 (sol de frente),a_panel_4,4.0,100,100,100,0,0,0
+escenario,YOLO recall 0.85 (sol de frente),b_quieta_1.5,1.5,100,100,100,0,0,0
+escenario,YOLO recall 0.85 (sol de frente),b_quieta_3.0,3.0,100,100,100,0,0,0
+escenario,YOLO recall 0.85 (sol de frente),c_frente_camina,1.0,100,100,100,0,0,0
+escenario,YOLO recall 0.85 (sol de frente),c_frente_corre,1.0,100,100,73,0,0,27
+escenario,YOLO recall 0.85 (sol de frente),d_cruza_camina,1.0,100,100,100,0,0,0
+escenario,YOLO recall 0.85 (sol de frente),d_cruza_corre,1.0,100,100,100,0,0,0
+escenario,YOLO recall 0.85 (sol de frente),e_estatico_camina,0.0,100,100,100,0,0,0
+escenario,YOLO recall 0.85 (sol de frente),e_estatico_corre,0.0,100,100,100,0,0,0
+escenario,YOLO recall 0.85 (sol de frente),e_estatico_lado,0.0,100,100,100,0,0,0
+barrido,YOLO recall 0.85 (sol de frente),a_panel_1,1.0,100,100,100,0,0,0
+barrido,YOLO recall 0.85 (sol de frente),a_panel_1,2.0,100,100,100,0,0,0
+barrido,YOLO recall 0.85 (sol de frente),a_panel_1,3.0,100,100,100,0,0,0
+barrido,YOLO recall 0.85 (sol de frente),a_panel_1,4.0,100,100,100,0,0,0
+barrido,YOLO recall 0.85 (sol de frente),a_panel_1,5.0,100,100,100,0,0,0
+barrido,YOLO recall 0.85 (sol de frente),a_panel_1,6.0,100,100,100,0,0,0
+barrido,YOLO recall 0.85 (sol de frente),a_panel_1,7.0,100,100,100,0,0,0
+barrido,YOLO recall 0.85 (sol de frente),a_panel_1,8.0,100,100,100,0,0,0
+barrido,YOLO recall 0.85 (sol de frente),a_panel_1,9.0,100,100,100,0,0,0
+barrido,YOLO recall 0.85 (sol de frente),a_panel_1,10.0,100,100,100,0,0,0
+barrido,YOLO recall 0.85 (sol de frente),a_panel_1,11.0,100,100,100,0,0,0
+barrido,YOLO recall 0.85 (sol de frente),a_panel_1,12.0,100,1,1,0,0,0
+barrido,YOLO recall 0.85 (sol de frente),b_quieta_1.5,1.0,100,100,100,0,0,0
+barrido,YOLO recall 0.85 (sol de frente),b_quieta_1.5,2.0,100,100,100,0,0,0
+barrido,YOLO recall 0.85 (sol de frente),b_quieta_1.5,3.0,100,100,100,0,0,0
+barrido,YOLO recall 0.85 (sol de frente),b_quieta_1.5,4.0,100,100,100,0,0,0
+barrido,YOLO recall 0.85 (sol de frente),b_quieta_1.5,5.0,100,80,66,0,0,33
+barrido,YOLO recall 0.85 (sol de frente),b_quieta_1.5,6.0,100,66,64,0,0,35
+barrido,YOLO recall 0.85 (sol de frente),b_quieta_1.5,7.0,100,65,65,0,0,34
+barrido,YOLO recall 0.85 (sol de frente),b_quieta_1.5,8.0,100,66,66,0,0,34
+barrido,YOLO recall 0.85 (sol de frente),b_quieta_1.5,9.0,100,59,59,0,0,40
+barrido,YOLO recall 0.85 (sol de frente),b_quieta_1.5,10.0,100,56,56,0,0,43
+barrido,YOLO recall 0.85 (sol de frente),b_quieta_1.5,11.0,100,65,65,0,0,34
+barrido,YOLO recall 0.85 (sol de frente),b_quieta_1.5,12.0,100,0,0,0,0,45
+barrido,YOLO recall 0.85 (sol de frente),c_frente_corre,1.0,100,100,76,0,0,24
+barrido,YOLO recall 0.85 (sol de frente),c_frente_corre,2.0,100,100,0,0,0,100
+barrido,YOLO recall 0.85 (sol de frente),c_frente_corre,3.0,100,100,0,0,0,100
+barrido,YOLO recall 0.85 (sol de frente),c_frente_corre,4.0,100,100,0,0,0,100
+barrido,YOLO recall 0.85 (sol de frente),c_frente_corre,5.0,100,100,1,0,0,99
+barrido,YOLO recall 0.85 (sol de frente),c_frente_corre,6.0,100,100,31,0,0,69
+barrido,YOLO recall 0.85 (sol de frente),c_frente_corre,7.0,100,100,65,0,0,35
+barrido,YOLO recall 0.85 (sol de frente),c_frente_corre,8.0,100,100,63,0,0,37
+barrido,YOLO recall 0.85 (sol de frente),c_frente_corre,9.0,100,100,54,0,0,46
+barrido,YOLO recall 0.85 (sol de frente),c_frente_corre,10.0,100,96,52,0,0,48
+barrido,YOLO recall 0.85 (sol de frente),c_frente_corre,11.0,100,82,62,0,0,38
+barrido,YOLO recall 0.85 (sol de frente),c_frente_corre,12.0,100,62,56,4,0,44
+escenario,YOLO recall 0.70 (desenfoque),a_panel_1,1.0,100,100,100,0,0,0
+escenario,YOLO recall 0.70 (desenfoque),a_panel_2,2.0,100,100,100,0,0,0
+escenario,YOLO recall 0.70 (desenfoque),a_panel_3,3.0,100,100,100,0,0,0
+escenario,YOLO recall 0.70 (desenfoque),a_panel_4,4.0,100,100,100,0,0,0
+escenario,YOLO recall 0.70 (desenfoque),b_quieta_1.5,1.5,100,100,100,0,0,0
+escenario,YOLO recall 0.70 (desenfoque),b_quieta_3.0,3.0,100,100,100,0,0,0
+escenario,YOLO recall 0.70 (desenfoque),c_frente_camina,1.0,100,100,100,0,0,0
+escenario,YOLO recall 0.70 (desenfoque),c_frente_corre,1.0,100,100,71,0,0,29
+escenario,YOLO recall 0.70 (desenfoque),d_cruza_camina,1.0,100,100,100,0,0,0
+escenario,YOLO recall 0.70 (desenfoque),d_cruza_corre,1.0,100,100,100,0,0,0
+escenario,YOLO recall 0.70 (desenfoque),e_estatico_camina,0.0,100,100,100,0,0,0
+escenario,YOLO recall 0.70 (desenfoque),e_estatico_corre,0.0,100,100,100,0,0,0
+escenario,YOLO recall 0.70 (desenfoque),e_estatico_lado,0.0,100,100,100,0,0,0
+barrido,YOLO recall 0.70 (desenfoque),a_panel_1,1.0,100,100,100,0,0,0
+barrido,YOLO recall 0.70 (desenfoque),a_panel_1,2.0,100,100,100,0,0,0
+barrido,YOLO recall 0.70 (desenfoque),a_panel_1,3.0,100,100,100,0,0,0
+barrido,YOLO recall 0.70 (desenfoque),a_panel_1,4.0,100,100,100,0,0,0
+barrido,YOLO recall 0.70 (desenfoque),a_panel_1,5.0,100,100,100,0,0,0
+barrido,YOLO recall 0.70 (desenfoque),a_panel_1,6.0,100,100,100,0,0,0
+barrido,YOLO recall 0.70 (desenfoque),a_panel_1,7.0,100,100,100,0,0,0
+barrido,YOLO recall 0.70 (desenfoque),a_panel_1,8.0,100,100,100,0,0,0
+barrido,YOLO recall 0.70 (desenfoque),a_panel_1,9.0,100,100,100,0,0,0
+barrido,YOLO recall 0.70 (desenfoque),a_panel_1,10.0,100,100,100,0,0,0
+barrido,YOLO recall 0.70 (desenfoque),a_panel_1,11.0,100,100,100,0,0,0
+barrido,YOLO recall 0.70 (desenfoque),a_panel_1,12.0,100,1,1,0,0,0
+barrido,YOLO recall 0.70 (desenfoque),b_quieta_1.5,1.0,100,100,100,0,0,0
+barrido,YOLO recall 0.70 (desenfoque),b_quieta_1.5,2.0,100,100,100,0,0,0
+barrido,YOLO recall 0.70 (desenfoque),b_quieta_1.5,3.0,100,100,100,0,0,0
+barrido,YOLO recall 0.70 (desenfoque),b_quieta_1.5,4.0,100,100,100,0,0,0
+barrido,YOLO recall 0.70 (desenfoque),b_quieta_1.5,5.0,100,80,66,0,0,33
+barrido,YOLO recall 0.70 (desenfoque),b_quieta_1.5,6.0,100,66,64,0,0,35
+barrido,YOLO recall 0.70 (desenfoque),b_quieta_1.5,7.0,100,65,65,0,0,34
+barrido,YOLO recall 0.70 (desenfoque),b_quieta_1.5,8.0,100,66,66,0,0,34
+barrido,YOLO recall 0.70 (desenfoque),b_quieta_1.5,9.0,100,59,59,0,0,40
+barrido,YOLO recall 0.70 (desenfoque),b_quieta_1.5,10.0,100,56,56,0,0,43
+barrido,YOLO recall 0.70 (desenfoque),b_quieta_1.5,11.0,100,65,65,0,0,34
+barrido,YOLO recall 0.70 (desenfoque),b_quieta_1.5,12.0,100,0,0,0,0,45
+barrido,YOLO recall 0.70 (desenfoque),c_frente_corre,1.0,100,100,71,0,0,29
+barrido,YOLO recall 0.70 (desenfoque),c_frente_corre,2.0,100,100,0,0,0,100
+barrido,YOLO recall 0.70 (desenfoque),c_frente_corre,3.0,100,100,0,0,0,100
+barrido,YOLO recall 0.70 (desenfoque),c_frente_corre,4.0,100,100,0,0,0,100
+barrido,YOLO recall 0.70 (desenfoque),c_frente_corre,5.0,100,100,1,0,0,99
+barrido,YOLO recall 0.70 (desenfoque),c_frente_corre,6.0,100,100,31,0,0,69
+barrido,YOLO recall 0.70 (desenfoque),c_frente_corre,7.0,100,100,65,0,0,35
+barrido,YOLO recall 0.70 (desenfoque),c_frente_corre,8.0,100,100,63,0,0,37
+barrido,YOLO recall 0.70 (desenfoque),c_frente_corre,9.0,100,100,54,0,0,46
+barrido,YOLO recall 0.70 (desenfoque),c_frente_corre,10.0,100,96,52,0,0,48
+barrido,YOLO recall 0.70 (desenfoque),c_frente_corre,11.0,100,87,62,0,0,38
+barrido,YOLO recall 0.70 (desenfoque),c_frente_corre,12.0,100,64,56,5,0,44
+escenario,Oclusión: medio cuerpo visible,a_panel_1,1.0,100,100,100,0,0,0
+escenario,Oclusión: medio cuerpo visible,a_panel_2,2.0,100,100,100,0,0,0
+escenario,Oclusión: medio cuerpo visible,a_panel_3,3.0,100,100,100,0,0,0
+escenario,Oclusión: medio cuerpo visible,a_panel_4,4.0,100,100,100,0,0,0
+escenario,Oclusión: medio cuerpo visible,b_quieta_1.5,1.5,100,100,100,0,0,0
+escenario,Oclusión: medio cuerpo visible,b_quieta_3.0,3.0,100,100,100,0,0,0
+escenario,Oclusión: medio cuerpo visible,c_frente_camina,1.0,100,100,100,0,0,0
+escenario,Oclusión: medio cuerpo visible,c_frente_corre,1.0,100,100,76,0,0,24
+escenario,Oclusión: medio cuerpo visible,d_cruza_camina,1.0,100,100,100,0,0,0
+escenario,Oclusión: medio cuerpo visible,d_cruza_corre,1.0,100,100,100,0,0,0
+escenario,Oclusión: medio cuerpo visible,e_estatico_camina,0.0,100,100,100,0,0,0
+escenario,Oclusión: medio cuerpo visible,e_estatico_corre,0.0,100,100,100,0,0,0
+escenario,Oclusión: medio cuerpo visible,e_estatico_lado,0.0,100,100,100,0,0,0
+barrido,Oclusión: medio cuerpo visible,a_panel_1,1.0,100,100,100,0,0,0
+barrido,Oclusión: medio cuerpo visible,a_panel_1,2.0,100,100,100,0,0,0
+barrido,Oclusión: medio cuerpo visible,a_panel_1,3.0,100,100,100,0,0,0
+barrido,Oclusión: medio cuerpo visible,a_panel_1,4.0,100,100,100,0,0,0
+barrido,Oclusión: medio cuerpo visible,a_panel_1,5.0,100,100,100,0,0,0
+barrido,Oclusión: medio cuerpo visible,a_panel_1,6.0,100,100,100,0,0,0
+barrido,Oclusión: medio cuerpo visible,a_panel_1,7.0,100,100,100,0,0,0
+barrido,Oclusión: medio cuerpo visible,a_panel_1,8.0,100,100,100,0,0,0
+barrido,Oclusión: medio cuerpo visible,a_panel_1,9.0,100,100,100,0,0,0
+barrido,Oclusión: medio cuerpo visible,a_panel_1,10.0,100,100,100,0,0,0
+barrido,Oclusión: medio cuerpo visible,a_panel_1,11.0,100,100,100,0,0,0
+barrido,Oclusión: medio cuerpo visible,a_panel_1,12.0,100,1,1,0,0,0
+barrido,Oclusión: medio cuerpo visible,b_quieta_1.5,1.0,100,100,100,0,0,0
+barrido,Oclusión: medio cuerpo visible,b_quieta_1.5,2.0,100,100,100,0,0,0
+barrido,Oclusión: medio cuerpo visible,b_quieta_1.5,3.0,100,100,100,0,0,0
+barrido,Oclusión: medio cuerpo visible,b_quieta_1.5,4.0,100,100,100,0,0,0
+barrido,Oclusión: medio cuerpo visible,b_quieta_1.5,5.0,100,80,65,0,0,34
+barrido,Oclusión: medio cuerpo visible,b_quieta_1.5,6.0,100,66,64,0,0,35
+barrido,Oclusión: medio cuerpo visible,b_quieta_1.5,7.0,100,65,65,0,0,34
+barrido,Oclusión: medio cuerpo visible,b_quieta_1.5,8.0,100,66,66,0,0,34
+barrido,Oclusión: medio cuerpo visible,b_quieta_1.5,9.0,100,59,59,0,0,40
+barrido,Oclusión: medio cuerpo visible,b_quieta_1.5,10.0,100,56,56,0,0,43
+barrido,Oclusión: medio cuerpo visible,b_quieta_1.5,11.0,100,65,65,0,0,34
+barrido,Oclusión: medio cuerpo visible,b_quieta_1.5,12.0,100,0,0,0,0,45
+barrido,Oclusión: medio cuerpo visible,c_frente_corre,1.0,100,100,76,0,0,24
+barrido,Oclusión: medio cuerpo visible,c_frente_corre,2.0,100,100,1,0,0,99
+barrido,Oclusión: medio cuerpo visible,c_frente_corre,3.0,100,100,0,0,0,100
+barrido,Oclusión: medio cuerpo visible,c_frente_corre,4.0,100,100,0,0,0,100
+barrido,Oclusión: medio cuerpo visible,c_frente_corre,5.0,100,100,1,0,0,99
+barrido,Oclusión: medio cuerpo visible,c_frente_corre,6.0,100,100,31,0,0,69
+barrido,Oclusión: medio cuerpo visible,c_frente_corre,7.0,100,100,65,0,0,35
+barrido,Oclusión: medio cuerpo visible,c_frente_corre,8.0,100,100,63,0,0,37
+barrido,Oclusión: medio cuerpo visible,c_frente_corre,9.0,100,100,54,0,0,46
+barrido,Oclusión: medio cuerpo visible,c_frente_corre,10.0,100,99,52,0,0,48
+barrido,Oclusión: medio cuerpo visible,c_frente_corre,11.0,100,87,62,0,0,38
+barrido,Oclusión: medio cuerpo visible,c_frente_corre,12.0,100,64,56,5,0,44
+escenario,Oclusión: solo torso visible,a_panel_1,1.0,100,100,100,0,0,0
+escenario,Oclusión: solo torso visible,a_panel_2,2.0,100,100,100,0,0,0
+escenario,Oclusión: solo torso visible,a_panel_3,3.0,100,100,100,0,0,0
+escenario,Oclusión: solo torso visible,a_panel_4,4.0,100,100,100,0,0,0
+escenario,Oclusión: solo torso visible,b_quieta_1.5,1.5,100,100,100,0,0,0
+escenario,Oclusión: solo torso visible,b_quieta_3.0,3.0,100,100,100,0,0,0
+escenario,Oclusión: solo torso visible,c_frente_camina,1.0,100,100,100,0,0,0
+escenario,Oclusión: solo torso visible,c_frente_corre,1.0,100,100,74,0,0,26
+escenario,Oclusión: solo torso visible,d_cruza_camina,1.0,100,100,100,0,0,0
+escenario,Oclusión: solo torso visible,d_cruza_corre,1.0,100,100,100,0,0,0
+escenario,Oclusión: solo torso visible,e_estatico_camina,0.0,100,100,100,0,0,0
+escenario,Oclusión: solo torso visible,e_estatico_corre,0.0,100,100,100,0,0,0
+escenario,Oclusión: solo torso visible,e_estatico_lado,0.0,100,100,100,0,0,0
+barrido,Oclusión: solo torso visible,a_panel_1,1.0,100,100,100,0,0,0
+barrido,Oclusión: solo torso visible,a_panel_1,2.0,100,100,100,0,0,0
+barrido,Oclusión: solo torso visible,a_panel_1,3.0,100,100,100,0,0,0
+barrido,Oclusión: solo torso visible,a_panel_1,4.0,100,100,100,0,0,0
+barrido,Oclusión: solo torso visible,a_panel_1,5.0,100,100,100,0,0,0
+barrido,Oclusión: solo torso visible,a_panel_1,6.0,100,100,100,0,0,0
+barrido,Oclusión: solo torso visible,a_panel_1,7.0,100,100,100,0,0,0
+barrido,Oclusión: solo torso visible,a_panel_1,8.0,100,100,100,0,0,0
+barrido,Oclusión: solo torso visible,a_panel_1,9.0,100,100,100,0,0,0
+barrido,Oclusión: solo torso visible,a_panel_1,10.0,100,100,100,0,0,0
+barrido,Oclusión: solo torso visible,a_panel_1,11.0,100,100,100,0,0,0
+barrido,Oclusión: solo torso visible,a_panel_1,12.0,100,1,1,0,0,0
+barrido,Oclusión: solo torso visible,b_quieta_1.5,1.0,100,100,100,0,0,0
+barrido,Oclusión: solo torso visible,b_quieta_1.5,2.0,100,100,100,0,0,0
+barrido,Oclusión: solo torso visible,b_quieta_1.5,3.0,100,100,100,0,0,0
+barrido,Oclusión: solo torso visible,b_quieta_1.5,4.0,100,100,99,0,0,1
+barrido,Oclusión: solo torso visible,b_quieta_1.5,5.0,100,82,67,0,0,32
+barrido,Oclusión: solo torso visible,b_quieta_1.5,6.0,100,66,64,0,0,35
+barrido,Oclusión: solo torso visible,b_quieta_1.5,7.0,100,65,65,0,0,34
+barrido,Oclusión: solo torso visible,b_quieta_1.5,8.0,100,66,66,0,0,34
+barrido,Oclusión: solo torso visible,b_quieta_1.5,9.0,100,59,59,0,0,40
+barrido,Oclusión: solo torso visible,b_quieta_1.5,10.0,100,56,56,0,0,43
+barrido,Oclusión: solo torso visible,b_quieta_1.5,11.0,100,65,65,0,0,34
+barrido,Oclusión: solo torso visible,b_quieta_1.5,12.0,100,0,0,0,0,45
+barrido,Oclusión: solo torso visible,c_frente_corre,1.0,100,100,75,0,0,25
+barrido,Oclusión: solo torso visible,c_frente_corre,2.0,100,100,1,0,0,99
+barrido,Oclusión: solo torso visible,c_frente_corre,3.0,100,100,0,0,0,100
+barrido,Oclusión: solo torso visible,c_frente_corre,4.0,100,100,0,0,0,100
+barrido,Oclusión: solo torso visible,c_frente_corre,5.0,100,100,1,0,0,99
+barrido,Oclusión: solo torso visible,c_frente_corre,6.0,100,100,31,0,0,69
+barrido,Oclusión: solo torso visible,c_frente_corre,7.0,100,100,65,0,0,35
+barrido,Oclusión: solo torso visible,c_frente_corre,8.0,100,100,63,0,0,37
+barrido,Oclusión: solo torso visible,c_frente_corre,9.0,100,100,54,0,0,46
+barrido,Oclusión: solo torso visible,c_frente_corre,10.0,100,96,52,0,0,48
+barrido,Oclusión: solo torso visible,c_frente_corre,11.0,100,84,62,0,0,38
+barrido,Oclusión: solo torso visible,c_frente_corre,12.0,100,63,56,6,0,44
+escenario,LiDAR ruido ×3 y 5 % sin retorno,a_panel_1,1.0,100,100,100,0,0,0
+escenario,LiDAR ruido ×3 y 5 % sin retorno,a_panel_2,2.0,100,100,100,0,0,0
+escenario,LiDAR ruido ×3 y 5 % sin retorno,a_panel_3,3.0,100,100,100,0,0,0
+escenario,LiDAR ruido ×3 y 5 % sin retorno,a_panel_4,4.0,100,100,100,0,0,0
+escenario,LiDAR ruido ×3 y 5 % sin retorno,b_quieta_1.5,1.5,100,100,100,0,0,0
+escenario,LiDAR ruido ×3 y 5 % sin retorno,b_quieta_3.0,3.0,100,100,100,0,0,0
+escenario,LiDAR ruido ×3 y 5 % sin retorno,c_frente_camina,1.0,100,100,100,0,0,0
+escenario,LiDAR ruido ×3 y 5 % sin retorno,c_frente_corre,1.0,100,100,72,0,0,28
+escenario,LiDAR ruido ×3 y 5 % sin retorno,d_cruza_camina,1.0,100,100,100,0,0,0
+escenario,LiDAR ruido ×3 y 5 % sin retorno,d_cruza_corre,1.0,100,100,100,0,0,0
+escenario,LiDAR ruido ×3 y 5 % sin retorno,e_estatico_camina,0.0,100,100,100,0,0,0
+escenario,LiDAR ruido ×3 y 5 % sin retorno,e_estatico_corre,0.0,100,100,100,0,0,0
+escenario,LiDAR ruido ×3 y 5 % sin retorno,e_estatico_lado,0.0,100,100,100,0,0,0
+barrido,LiDAR ruido ×3 y 5 % sin retorno,a_panel_1,1.0,100,100,100,0,0,0
+barrido,LiDAR ruido ×3 y 5 % sin retorno,a_panel_1,2.0,100,100,100,0,0,0
+barrido,LiDAR ruido ×3 y 5 % sin retorno,a_panel_1,3.0,100,100,100,0,0,0
+barrido,LiDAR ruido ×3 y 5 % sin retorno,a_panel_1,4.0,100,100,100,0,0,0
+barrido,LiDAR ruido ×3 y 5 % sin retorno,a_panel_1,5.0,100,100,100,0,0,0
+barrido,LiDAR ruido ×3 y 5 % sin retorno,a_panel_1,6.0,100,100,100,0,0,0
+barrido,LiDAR ruido ×3 y 5 % sin retorno,a_panel_1,7.0,100,100,100,0,0,0
+barrido,LiDAR ruido ×3 y 5 % sin retorno,a_panel_1,8.0,100,100,100,0,0,0
+barrido,LiDAR ruido ×3 y 5 % sin retorno,a_panel_1,9.0,100,100,100,0,0,0
+barrido,LiDAR ruido ×3 y 5 % sin retorno,a_panel_1,10.0,100,100,100,0,0,0
+barrido,LiDAR ruido ×3 y 5 % sin retorno,a_panel_1,11.0,100,100,100,0,0,0
+barrido,LiDAR ruido ×3 y 5 % sin retorno,a_panel_1,12.0,100,1,1,0,0,0
+barrido,LiDAR ruido ×3 y 5 % sin retorno,b_quieta_1.5,1.0,100,100,100,0,0,0
+barrido,LiDAR ruido ×3 y 5 % sin retorno,b_quieta_1.5,2.0,100,100,100,0,0,0
+barrido,LiDAR ruido ×3 y 5 % sin retorno,b_quieta_1.5,3.0,100,100,100,0,0,0
+barrido,LiDAR ruido ×3 y 5 % sin retorno,b_quieta_1.5,4.0,100,100,100,0,0,0
+barrido,LiDAR ruido ×3 y 5 % sin retorno,b_quieta_1.5,5.0,100,80,65,0,0,34
+barrido,LiDAR ruido ×3 y 5 % sin retorno,b_quieta_1.5,6.0,100,66,64,0,0,35
+barrido,LiDAR ruido ×3 y 5 % sin retorno,b_quieta_1.5,7.0,100,65,65,0,0,34
+barrido,LiDAR ruido ×3 y 5 % sin retorno,b_quieta_1.5,8.0,100,66,66,0,0,34
+barrido,LiDAR ruido ×3 y 5 % sin retorno,b_quieta_1.5,9.0,100,59,59,0,0,40
+barrido,LiDAR ruido ×3 y 5 % sin retorno,b_quieta_1.5,10.0,100,56,56,0,0,43
+barrido,LiDAR ruido ×3 y 5 % sin retorno,b_quieta_1.5,11.0,100,64,64,0,0,34
+barrido,LiDAR ruido ×3 y 5 % sin retorno,b_quieta_1.5,12.0,100,0,0,0,0,45
+barrido,LiDAR ruido ×3 y 5 % sin retorno,c_frente_corre,1.0,100,100,76,0,0,24
+barrido,LiDAR ruido ×3 y 5 % sin retorno,c_frente_corre,2.0,100,100,0,0,0,100
+barrido,LiDAR ruido ×3 y 5 % sin retorno,c_frente_corre,3.0,100,100,0,0,0,100
+barrido,LiDAR ruido ×3 y 5 % sin retorno,c_frente_corre,4.0,100,100,0,0,0,100
+barrido,LiDAR ruido ×3 y 5 % sin retorno,c_frente_corre,5.0,100,100,1,0,0,99
+barrido,LiDAR ruido ×3 y 5 % sin retorno,c_frente_corre,6.0,100,100,27,0,0,73
+barrido,LiDAR ruido ×3 y 5 % sin retorno,c_frente_corre,7.0,100,100,64,0,0,36
+barrido,LiDAR ruido ×3 y 5 % sin retorno,c_frente_corre,8.0,100,100,63,0,0,37
+barrido,LiDAR ruido ×3 y 5 % sin retorno,c_frente_corre,9.0,100,100,54,0,0,46
+barrido,LiDAR ruido ×3 y 5 % sin retorno,c_frente_corre,10.0,100,96,52,0,0,48
+barrido,LiDAR ruido ×3 y 5 % sin retorno,c_frente_corre,11.0,100,81,62,0,0,38
+barrido,LiDAR ruido ×3 y 5 % sin retorno,c_frente_corre,12.0,100,62,56,4,0,44
+escenario,Latencia total 200 ms,a_panel_1,1.0,100,100,100,0,0,0
+escenario,Latencia total 200 ms,a_panel_2,2.0,100,100,100,0,0,0
+escenario,Latencia total 200 ms,a_panel_3,3.0,100,100,100,0,0,0
+escenario,Latencia total 200 ms,a_panel_4,4.0,100,100,100,0,0,0
+escenario,Latencia total 200 ms,b_quieta_1.5,1.5,100,100,100,0,0,0
+escenario,Latencia total 200 ms,b_quieta_3.0,3.0,100,100,100,0,0,0
+escenario,Latencia total 200 ms,c_frente_camina,1.0,100,100,100,0,0,0
+escenario,Latencia total 200 ms,c_frente_corre,1.0,100,100,40,0,0,60
+escenario,Latencia total 200 ms,d_cruza_camina,1.0,100,100,100,0,0,0
+escenario,Latencia total 200 ms,d_cruza_corre,1.0,100,100,100,0,0,0
+escenario,Latencia total 200 ms,e_estatico_camina,0.0,100,100,100,0,0,0
+escenario,Latencia total 200 ms,e_estatico_corre,0.0,100,100,100,0,0,0
+escenario,Latencia total 200 ms,e_estatico_lado,0.0,100,100,100,0,0,0
+barrido,Latencia total 200 ms,a_panel_1,1.0,100,100,100,0,0,0
+barrido,Latencia total 200 ms,a_panel_1,2.0,100,100,100,0,0,0
+barrido,Latencia total 200 ms,a_panel_1,3.0,100,100,100,0,0,0
+barrido,Latencia total 200 ms,a_panel_1,4.0,100,100,100,0,0,0
+barrido,Latencia total 200 ms,a_panel_1,5.0,100,100,100,0,0,0
+barrido,Latencia total 200 ms,a_panel_1,6.0,100,100,100,0,0,0
+barrido,Latencia total 200 ms,a_panel_1,7.0,100,100,100,0,0,0
+barrido,Latencia total 200 ms,a_panel_1,8.0,100,100,100,0,0,0
+barrido,Latencia total 200 ms,a_panel_1,9.0,100,100,100,0,0,0
+barrido,Latencia total 200 ms,a_panel_1,10.0,100,100,100,0,0,0
+barrido,Latencia total 200 ms,a_panel_1,11.0,100,99,99,0,0,0
+barrido,Latencia total 200 ms,a_panel_1,12.0,100,0,0,0,0,0
+barrido,Latencia total 200 ms,b_quieta_1.5,1.0,100,100,100,0,0,0
+barrido,Latencia total 200 ms,b_quieta_1.5,2.0,100,100,100,0,0,0
+barrido,Latencia total 200 ms,b_quieta_1.5,3.0,100,100,100,0,0,0
+barrido,Latencia total 200 ms,b_quieta_1.5,4.0,100,100,97,0,0,3
+barrido,Latencia total 200 ms,b_quieta_1.5,5.0,100,77,60,0,0,40
+barrido,Latencia total 200 ms,b_quieta_1.5,6.0,100,65,63,0,0,36
+barrido,Latencia total 200 ms,b_quieta_1.5,7.0,100,65,65,0,0,34
+barrido,Latencia total 200 ms,b_quieta_1.5,8.0,100,66,66,0,0,34
+barrido,Latencia total 200 ms,b_quieta_1.5,9.0,100,57,57,0,0,40
+barrido,Latencia total 200 ms,b_quieta_1.5,10.0,100,56,56,0,0,43
+barrido,Latencia total 200 ms,b_quieta_1.5,11.0,100,41,41,0,0,34
+barrido,Latencia total 200 ms,b_quieta_1.5,12.0,100,0,0,0,0,45
+barrido,Latencia total 200 ms,c_frente_corre,1.0,100,100,38,0,0,62
+barrido,Latencia total 200 ms,c_frente_corre,2.0,100,100,0,0,0,100
+barrido,Latencia total 200 ms,c_frente_corre,3.0,100,100,0,0,0,100
+barrido,Latencia total 200 ms,c_frente_corre,4.0,100,100,0,0,0,100
+barrido,Latencia total 200 ms,c_frente_corre,5.0,100,100,0,0,0,100
+barrido,Latencia total 200 ms,c_frente_corre,6.0,100,100,1,0,0,99
+barrido,Latencia total 200 ms,c_frente_corre,7.0,100,100,29,0,0,71
+barrido,Latencia total 200 ms,c_frente_corre,8.0,100,100,56,0,0,44
+barrido,Latencia total 200 ms,c_frente_corre,9.0,100,96,54,0,0,46
+barrido,Latencia total 200 ms,c_frente_corre,10.0,100,70,52,1,0,48
+barrido,Latencia total 200 ms,c_frente_corre,11.0,100,67,62,16,0,38
+barrido,Latencia total 200 ms,c_frente_corre,12.0,100,59,47,37,0,53
+escenario,Latencia total 300 ms,a_panel_1,1.0,100,100,100,0,0,0
+escenario,Latencia total 300 ms,a_panel_2,2.0,100,100,100,0,0,0
+escenario,Latencia total 300 ms,a_panel_3,3.0,100,100,100,0,0,0
+escenario,Latencia total 300 ms,a_panel_4,4.0,100,100,100,0,0,0
+escenario,Latencia total 300 ms,b_quieta_1.5,1.5,100,100,100,0,0,0
+escenario,Latencia total 300 ms,b_quieta_3.0,3.0,100,100,100,0,0,0
+escenario,Latencia total 300 ms,c_frente_camina,1.0,100,100,100,0,0,0
+escenario,Latencia total 300 ms,c_frente_corre,1.0,100,100,17,0,0,83
+escenario,Latencia total 300 ms,d_cruza_camina,1.0,100,100,100,0,0,0
+escenario,Latencia total 300 ms,d_cruza_corre,1.0,100,100,100,0,0,0
+escenario,Latencia total 300 ms,e_estatico_camina,0.0,100,100,100,0,0,0
+escenario,Latencia total 300 ms,e_estatico_corre,0.0,100,100,100,0,0,0
+escenario,Latencia total 300 ms,e_estatico_lado,0.0,100,100,100,0,0,0
+barrido,Latencia total 300 ms,a_panel_1,1.0,100,100,100,0,0,0
+barrido,Latencia total 300 ms,a_panel_1,2.0,100,100,100,0,0,0
+barrido,Latencia total 300 ms,a_panel_1,3.0,100,100,100,0,0,0
+barrido,Latencia total 300 ms,a_panel_1,4.0,100,100,100,0,0,0
+barrido,Latencia total 300 ms,a_panel_1,5.0,100,100,100,0,0,0
+barrido,Latencia total 300 ms,a_panel_1,6.0,100,100,100,0,0,0
+barrido,Latencia total 300 ms,a_panel_1,7.0,100,100,100,0,0,0
+barrido,Latencia total 300 ms,a_panel_1,8.0,100,100,100,0,0,0
+barrido,Latencia total 300 ms,a_panel_1,9.0,100,100,100,0,0,0
+barrido,Latencia total 300 ms,a_panel_1,10.0,100,100,100,0,0,0
+barrido,Latencia total 300 ms,a_panel_1,11.0,100,29,29,0,0,0
+barrido,Latencia total 300 ms,a_panel_1,12.0,100,0,0,0,0,0
+barrido,Latencia total 300 ms,b_quieta_1.5,1.0,100,100,100,0,0,0
+barrido,Latencia total 300 ms,b_quieta_1.5,2.0,100,100,100,0,0,0
+barrido,Latencia total 300 ms,b_quieta_1.5,3.0,100,100,100,0,0,0
+barrido,Latencia total 300 ms,b_quieta_1.5,4.0,100,100,85,0,0,15
+barrido,Latencia total 300 ms,b_quieta_1.5,5.0,100,77,60,0,0,40
+barrido,Latencia total 300 ms,b_quieta_1.5,6.0,100,65,63,0,0,37
+barrido,Latencia total 300 ms,b_quieta_1.5,7.0,100,64,64,0,0,35
+barrido,Latencia total 300 ms,b_quieta_1.5,8.0,100,66,66,0,0,34
+barrido,Latencia total 300 ms,b_quieta_1.5,9.0,100,57,57,0,0,40
+barrido,Latencia total 300 ms,b_quieta_1.5,10.0,100,55,55,0,0,43
+barrido,Latencia total 300 ms,b_quieta_1.5,11.0,100,2,2,0,0,34
+barrido,Latencia total 300 ms,b_quieta_1.5,12.0,100,0,0,2,0,45
+barrido,Latencia total 300 ms,c_frente_corre,1.0,100,100,21,0,0,79
+barrido,Latencia total 300 ms,c_frente_corre,2.0,100,100,0,0,0,100
+barrido,Latencia total 300 ms,c_frente_corre,3.0,100,100,0,0,0,100
+barrido,Latencia total 300 ms,c_frente_corre,4.0,100,100,0,0,0,100
+barrido,Latencia total 300 ms,c_frente_corre,5.0,100,100,0,0,0,100
+barrido,Latencia total 300 ms,c_frente_corre,6.0,100,100,0,0,0,100
+barrido,Latencia total 300 ms,c_frente_corre,7.0,100,98,0,0,0,100
+barrido,Latencia total 300 ms,c_frente_corre,8.0,100,82,15,0,0,85
+barrido,Latencia total 300 ms,c_frente_corre,9.0,100,66,40,1,0,60
+barrido,Latencia total 300 ms,c_frente_corre,10.0,100,60,52,23,0,48
+barrido,Latencia total 300 ms,c_frente_corre,11.0,100,67,46,32,0,54
+barrido,Latencia total 300 ms,c_frente_corre,12.0,100,58,3,40,0,97
+escenario,Viento de cola 3 m/s con ráfagas,a_panel_1,1.0,100,100,100,0,0,0
+escenario,Viento de cola 3 m/s con ráfagas,a_panel_2,2.0,100,100,100,0,0,0
+escenario,Viento de cola 3 m/s con ráfagas,a_panel_3,3.0,100,100,100,0,0,0
+escenario,Viento de cola 3 m/s con ráfagas,a_panel_4,4.0,100,100,100,0,0,0
+escenario,Viento de cola 3 m/s con ráfagas,b_quieta_1.5,1.5,100,100,100,0,0,0
+escenario,Viento de cola 3 m/s con ráfagas,b_quieta_3.0,3.0,100,100,100,0,0,0
+escenario,Viento de cola 3 m/s con ráfagas,c_frente_camina,1.0,100,100,100,0,0,0
+escenario,Viento de cola 3 m/s con ráfagas,c_frente_corre,1.0,100,100,65,0,0,35
+escenario,Viento de cola 3 m/s con ráfagas,d_cruza_camina,1.0,100,100,100,0,0,0
+escenario,Viento de cola 3 m/s con ráfagas,d_cruza_corre,1.0,100,100,100,0,0,0
+escenario,Viento de cola 3 m/s con ráfagas,e_estatico_camina,0.0,100,100,100,0,0,0
+escenario,Viento de cola 3 m/s con ráfagas,e_estatico_corre,0.0,100,100,100,0,0,0
+escenario,Viento de cola 3 m/s con ráfagas,e_estatico_lado,0.0,100,100,100,0,0,0
+barrido,Viento de cola 3 m/s con ráfagas,a_panel_1,1.0,100,100,100,0,0,0
+barrido,Viento de cola 3 m/s con ráfagas,a_panel_1,2.0,100,100,100,0,0,0
+barrido,Viento de cola 3 m/s con ráfagas,a_panel_1,3.0,100,100,100,0,0,0
+barrido,Viento de cola 3 m/s con ráfagas,a_panel_1,4.0,100,100,100,0,0,0
+barrido,Viento de cola 3 m/s con ráfagas,a_panel_1,5.0,100,100,100,0,0,0
+barrido,Viento de cola 3 m/s con ráfagas,a_panel_1,6.0,100,100,100,0,0,0
+barrido,Viento de cola 3 m/s con ráfagas,a_panel_1,7.0,100,100,100,0,0,0
+barrido,Viento de cola 3 m/s con ráfagas,a_panel_1,8.0,100,100,100,0,0,0
+barrido,Viento de cola 3 m/s con ráfagas,a_panel_1,9.0,100,100,100,0,0,0
+barrido,Viento de cola 3 m/s con ráfagas,a_panel_1,10.0,100,100,100,0,0,0
+barrido,Viento de cola 3 m/s con ráfagas,a_panel_1,11.0,100,100,100,0,0,0
+barrido,Viento de cola 3 m/s con ráfagas,a_panel_1,12.0,100,4,4,0,0,0
+barrido,Viento de cola 3 m/s con ráfagas,b_quieta_1.5,1.0,100,100,100,0,0,0
+barrido,Viento de cola 3 m/s con ráfagas,b_quieta_1.5,2.0,100,100,100,0,0,0
+barrido,Viento de cola 3 m/s con ráfagas,b_quieta_1.5,3.0,100,100,100,0,0,0
+barrido,Viento de cola 3 m/s con ráfagas,b_quieta_1.5,4.0,100,100,100,0,0,0
+barrido,Viento de cola 3 m/s con ráfagas,b_quieta_1.5,5.0,100,68,62,0,0,36
+barrido,Viento de cola 3 m/s con ráfagas,b_quieta_1.5,6.0,100,66,63,0,0,36
+barrido,Viento de cola 3 m/s con ráfagas,b_quieta_1.5,7.0,100,66,66,0,0,33
+barrido,Viento de cola 3 m/s con ráfagas,b_quieta_1.5,8.0,100,67,67,0,0,32
+barrido,Viento de cola 3 m/s con ráfagas,b_quieta_1.5,9.0,100,62,62,0,0,36
+barrido,Viento de cola 3 m/s con ráfagas,b_quieta_1.5,10.0,100,59,59,0,0,40
+barrido,Viento de cola 3 m/s con ráfagas,b_quieta_1.5,11.0,100,66,66,0,0,32
+barrido,Viento de cola 3 m/s con ráfagas,b_quieta_1.5,12.0,100,0,0,0,0,41
+barrido,Viento de cola 3 m/s con ráfagas,c_frente_corre,1.0,100,100,67,0,0,33
+barrido,Viento de cola 3 m/s con ráfagas,c_frente_corre,2.0,100,100,0,0,0,100
+barrido,Viento de cola 3 m/s con ráfagas,c_frente_corre,3.0,100,100,0,0,0,100
+barrido,Viento de cola 3 m/s con ráfagas,c_frente_corre,4.0,100,100,0,0,0,100
+barrido,Viento de cola 3 m/s con ráfagas,c_frente_corre,5.0,100,100,0,0,0,100
+barrido,Viento de cola 3 m/s con ráfagas,c_frente_corre,6.0,100,100,44,0,0,56
+barrido,Viento de cola 3 m/s con ráfagas,c_frente_corre,7.0,100,100,63,0,0,37
+barrido,Viento de cola 3 m/s con ráfagas,c_frente_corre,8.0,100,100,65,0,0,35
+barrido,Viento de cola 3 m/s con ráfagas,c_frente_corre,9.0,100,100,61,0,0,39
+barrido,Viento de cola 3 m/s con ráfagas,c_frente_corre,10.0,100,97,56,0,0,44
+barrido,Viento de cola 3 m/s con ráfagas,c_frente_corre,11.0,100,86,63,0,0,37
+barrido,Viento de cola 3 m/s con ráfagas,c_frente_corre,12.0,100,66,56,2,0,44
+escenario,Viento de cola 5 m/s con ráfagas,a_panel_1,1.0,100,100,100,0,0,0
+escenario,Viento de cola 5 m/s con ráfagas,a_panel_2,2.0,100,100,100,0,0,0
+escenario,Viento de cola 5 m/s con ráfagas,a_panel_3,3.0,100,100,100,0,0,0
+escenario,Viento de cola 5 m/s con ráfagas,a_panel_4,4.0,100,100,100,0,0,0
+escenario,Viento de cola 5 m/s con ráfagas,b_quieta_1.5,1.5,100,100,100,0,0,0
+escenario,Viento de cola 5 m/s con ráfagas,b_quieta_3.0,3.0,100,100,100,0,0,0
+escenario,Viento de cola 5 m/s con ráfagas,c_frente_camina,1.0,100,100,100,0,0,0
+escenario,Viento de cola 5 m/s con ráfagas,c_frente_corre,1.0,100,100,58,0,0,42
+escenario,Viento de cola 5 m/s con ráfagas,d_cruza_camina,1.0,100,100,100,0,0,0
+escenario,Viento de cola 5 m/s con ráfagas,d_cruza_corre,1.0,100,100,100,0,0,0
+escenario,Viento de cola 5 m/s con ráfagas,e_estatico_camina,0.0,100,100,100,0,0,0
+escenario,Viento de cola 5 m/s con ráfagas,e_estatico_corre,0.0,100,100,100,0,0,0
+escenario,Viento de cola 5 m/s con ráfagas,e_estatico_lado,0.0,100,100,100,0,0,0
+barrido,Viento de cola 5 m/s con ráfagas,a_panel_1,1.0,100,96,96,0,0,0
+barrido,Viento de cola 5 m/s con ráfagas,a_panel_1,2.0,100,100,100,0,0,0
+barrido,Viento de cola 5 m/s con ráfagas,a_panel_1,3.0,100,100,100,0,0,0
+barrido,Viento de cola 5 m/s con ráfagas,a_panel_1,4.0,100,100,100,0,0,0
+barrido,Viento de cola 5 m/s con ráfagas,a_panel_1,5.0,100,100,100,0,0,0
+barrido,Viento de cola 5 m/s con ráfagas,a_panel_1,6.0,100,100,100,0,0,0
+barrido,Viento de cola 5 m/s con ráfagas,a_panel_1,7.0,100,100,100,0,0,0
+barrido,Viento de cola 5 m/s con ráfagas,a_panel_1,8.0,100,100,100,0,0,0
+barrido,Viento de cola 5 m/s con ráfagas,a_panel_1,9.0,100,100,100,0,0,0
+barrido,Viento de cola 5 m/s con ráfagas,a_panel_1,10.0,100,100,100,0,0,0
+barrido,Viento de cola 5 m/s con ráfagas,a_panel_1,11.0,100,100,100,0,0,0
+barrido,Viento de cola 5 m/s con ráfagas,a_panel_1,12.0,100,7,7,0,0,0
+barrido,Viento de cola 5 m/s con ráfagas,b_quieta_1.5,1.0,100,100,100,0,0,0
+barrido,Viento de cola 5 m/s con ráfagas,b_quieta_1.5,2.0,100,100,100,0,0,0
+barrido,Viento de cola 5 m/s con ráfagas,b_quieta_1.5,3.0,100,100,100,0,0,0
+barrido,Viento de cola 5 m/s con ráfagas,b_quieta_1.5,4.0,100,99,99,0,0,0
+barrido,Viento de cola 5 m/s con ráfagas,b_quieta_1.5,5.0,100,61,60,0,0,39
+barrido,Viento de cola 5 m/s con ráfagas,b_quieta_1.5,6.0,100,66,66,0,0,33
+barrido,Viento de cola 5 m/s con ráfagas,b_quieta_1.5,7.0,100,66,66,0,0,33
+barrido,Viento de cola 5 m/s con ráfagas,b_quieta_1.5,8.0,100,68,68,0,0,31
+barrido,Viento de cola 5 m/s con ráfagas,b_quieta_1.5,9.0,100,60,60,0,0,38
+barrido,Viento de cola 5 m/s con ráfagas,b_quieta_1.5,10.0,100,60,60,0,0,37
+barrido,Viento de cola 5 m/s con ráfagas,b_quieta_1.5,11.0,100,65,65,0,0,35
+barrido,Viento de cola 5 m/s con ráfagas,b_quieta_1.5,12.0,100,0,0,0,0,35
+barrido,Viento de cola 5 m/s con ráfagas,c_frente_corre,1.0,100,100,65,0,0,35
+barrido,Viento de cola 5 m/s con ráfagas,c_frente_corre,2.0,100,100,0,0,0,100
+barrido,Viento de cola 5 m/s con ráfagas,c_frente_corre,3.0,100,100,0,0,0,100
+barrido,Viento de cola 5 m/s con ráfagas,c_frente_corre,4.0,100,100,0,0,0,100
+barrido,Viento de cola 5 m/s con ráfagas,c_frente_corre,5.0,100,100,1,0,0,99
+barrido,Viento de cola 5 m/s con ráfagas,c_frente_corre,6.0,100,100,39,0,0,61
+barrido,Viento de cola 5 m/s con ráfagas,c_frente_corre,7.0,100,100,65,0,0,35
+barrido,Viento de cola 5 m/s con ráfagas,c_frente_corre,8.0,100,100,65,0,0,35
+barrido,Viento de cola 5 m/s con ráfagas,c_frente_corre,9.0,100,100,61,0,0,39
+barrido,Viento de cola 5 m/s con ráfagas,c_frente_corre,10.0,100,98,56,0,0,44
+barrido,Viento de cola 5 m/s con ráfagas,c_frente_corre,11.0,100,87,62,0,0,38
+barrido,Viento de cola 5 m/s con ráfagas,c_frente_corre,12.0,100,70,58,1,0,42
+escenario,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,a_panel_1,1.0,100,100,100,0,0,0
+escenario,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,a_panel_2,2.0,100,100,100,0,0,0
+escenario,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,a_panel_3,3.0,100,100,100,0,0,0
+escenario,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,a_panel_4,4.0,100,100,100,0,0,0
+escenario,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,b_quieta_1.5,1.5,100,100,100,0,0,0
+escenario,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,b_quieta_3.0,3.0,100,100,100,0,0,0
+escenario,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,c_frente_camina,1.0,100,100,100,0,0,0
+escenario,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,c_frente_corre,1.0,100,100,35,0,0,65
+escenario,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,d_cruza_camina,1.0,100,100,100,0,0,0
+escenario,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,d_cruza_corre,1.0,100,100,100,0,0,0
+escenario,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,e_estatico_camina,0.0,100,100,100,0,0,0
+escenario,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,e_estatico_corre,0.0,100,100,99,0,0,1
+escenario,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,e_estatico_lado,0.0,100,100,100,0,0,0
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,a_panel_1,1.0,100,98,98,0,0,0
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,a_panel_1,2.0,100,100,100,0,0,0
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,a_panel_1,3.0,100,100,100,0,0,0
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,a_panel_1,4.0,100,100,100,0,0,0
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,a_panel_1,5.0,100,100,100,0,0,0
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,a_panel_1,6.0,100,100,100,0,0,0
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,a_panel_1,7.0,100,100,100,0,0,0
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,a_panel_1,8.0,100,100,100,0,0,0
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,a_panel_1,9.0,100,100,100,0,0,0
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,a_panel_1,10.0,100,100,100,0,0,0
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,a_panel_1,11.0,100,100,100,0,0,0
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,a_panel_1,12.0,100,0,0,0,0,0
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,b_quieta_1.5,1.0,100,100,100,0,0,0
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,b_quieta_1.5,2.0,100,100,100,0,0,0
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,b_quieta_1.5,3.0,100,100,100,0,0,0
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,b_quieta_1.5,4.0,100,95,93,0,0,4
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,b_quieta_1.5,5.0,100,64,60,0,0,40
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,b_quieta_1.5,6.0,100,65,65,0,0,34
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,b_quieta_1.5,7.0,100,66,66,0,0,34
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,b_quieta_1.5,8.0,100,67,67,0,0,32
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,b_quieta_1.5,9.0,100,59,59,0,0,39
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,b_quieta_1.5,10.0,100,58,58,0,0,40
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,b_quieta_1.5,11.0,100,58,58,0,0,33
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,b_quieta_1.5,12.0,100,0,0,0,0,38
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,c_frente_corre,1.0,100,100,31,0,0,69
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,c_frente_corre,2.0,100,100,0,0,0,100
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,c_frente_corre,3.0,100,100,0,0,0,100
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,c_frente_corre,4.0,100,100,0,0,0,100
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,c_frente_corre,5.0,100,100,0,0,0,100
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,c_frente_corre,6.0,100,100,1,0,0,99
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,c_frente_corre,7.0,100,100,37,0,0,63
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,c_frente_corre,8.0,100,98,58,0,0,42
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,c_frente_corre,9.0,100,93,53,0,0,47
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,c_frente_corre,10.0,100,72,55,0,0,45
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,c_frente_corre,11.0,100,70,60,4,0,40
+barrido,Combinada: recall 0.85 + medio cuerpo + LiDAR + 200 ms + viento 4 m/s,c_frente_corre,12.0,100,60,24,27,0,76
+escenario,Extrema: YOLO recall 0.40,a_panel_1,1.0,100,100,100,0,0,0
+escenario,Extrema: YOLO recall 0.40,a_panel_2,2.0,100,100,100,0,0,0
+escenario,Extrema: YOLO recall 0.40,a_panel_3,3.0,100,100,100,0,0,0
+escenario,Extrema: YOLO recall 0.40,a_panel_4,4.0,100,100,100,0,0,0
+escenario,Extrema: YOLO recall 0.40,b_quieta_1.5,1.5,100,100,100,0,0,0
+escenario,Extrema: YOLO recall 0.40,b_quieta_3.0,3.0,100,100,100,0,0,0
+escenario,Extrema: YOLO recall 0.40,c_frente_camina,1.0,100,100,100,0,0,0
+escenario,Extrema: YOLO recall 0.40,c_frente_corre,1.0,100,100,56,0,0,44
+escenario,Extrema: YOLO recall 0.40,d_cruza_camina,1.0,100,100,100,0,0,0
+escenario,Extrema: YOLO recall 0.40,d_cruza_corre,1.0,100,100,100,0,0,0
+escenario,Extrema: YOLO recall 0.40,e_estatico_camina,0.0,100,100,100,0,0,0
+escenario,Extrema: YOLO recall 0.40,e_estatico_corre,0.0,100,100,95,0,0,5
+escenario,Extrema: YOLO recall 0.40,e_estatico_lado,0.0,100,100,100,0,0,0
+barrido,Extrema: YOLO recall 0.40,a_panel_1,1.0,100,100,100,0,0,0
+barrido,Extrema: YOLO recall 0.40,a_panel_1,2.0,100,100,100,0,0,0
+barrido,Extrema: YOLO recall 0.40,a_panel_1,3.0,100,100,100,0,0,0
+barrido,Extrema: YOLO recall 0.40,a_panel_1,4.0,100,100,100,0,0,0
+barrido,Extrema: YOLO recall 0.40,a_panel_1,5.0,100,100,100,0,0,0
+barrido,Extrema: YOLO recall 0.40,a_panel_1,6.0,100,100,100,0,0,0
+barrido,Extrema: YOLO recall 0.40,a_panel_1,7.0,100,100,100,0,0,0
+barrido,Extrema: YOLO recall 0.40,a_panel_1,8.0,100,100,100,0,0,0
+barrido,Extrema: YOLO recall 0.40,a_panel_1,9.0,100,100,100,0,0,0
+barrido,Extrema: YOLO recall 0.40,a_panel_1,10.0,100,100,100,0,0,0
+barrido,Extrema: YOLO recall 0.40,a_panel_1,11.0,100,100,100,0,0,0
+barrido,Extrema: YOLO recall 0.40,a_panel_1,12.0,100,1,1,0,0,0
+barrido,Extrema: YOLO recall 0.40,b_quieta_1.5,1.0,100,100,100,0,0,0
+barrido,Extrema: YOLO recall 0.40,b_quieta_1.5,2.0,100,100,100,0,0,0
+barrido,Extrema: YOLO recall 0.40,b_quieta_1.5,3.0,100,98,97,0,0,3
+barrido,Extrema: YOLO recall 0.40,b_quieta_1.5,4.0,100,100,94,0,0,6
+barrido,Extrema: YOLO recall 0.40,b_quieta_1.5,5.0,100,80,64,0,0,36
+barrido,Extrema: YOLO recall 0.40,b_quieta_1.5,6.0,100,66,64,0,0,35
+barrido,Extrema: YOLO recall 0.40,b_quieta_1.5,7.0,100,65,65,0,0,34
+barrido,Extrema: YOLO recall 0.40,b_quieta_1.5,8.0,100,66,66,0,0,34
+barrido,Extrema: YOLO recall 0.40,b_quieta_1.5,9.0,100,59,59,1,0,40
+barrido,Extrema: YOLO recall 0.40,b_quieta_1.5,10.0,100,56,56,0,0,43
+barrido,Extrema: YOLO recall 0.40,b_quieta_1.5,11.0,100,65,65,1,0,34
+barrido,Extrema: YOLO recall 0.40,b_quieta_1.5,12.0,100,0,0,1,0,45
+barrido,Extrema: YOLO recall 0.40,c_frente_corre,1.0,100,100,54,0,0,46
+barrido,Extrema: YOLO recall 0.40,c_frente_corre,2.0,100,99,2,0,0,98
+barrido,Extrema: YOLO recall 0.40,c_frente_corre,3.0,100,99,0,1,0,100
+barrido,Extrema: YOLO recall 0.40,c_frente_corre,4.0,100,97,0,2,0,100
+barrido,Extrema: YOLO recall 0.40,c_frente_corre,5.0,100,98,1,0,0,99
+barrido,Extrema: YOLO recall 0.40,c_frente_corre,6.0,100,98,31,1,0,69
+barrido,Extrema: YOLO recall 0.40,c_frente_corre,7.0,100,97,65,2,0,35
+barrido,Extrema: YOLO recall 0.40,c_frente_corre,8.0,100,94,63,2,0,37
+barrido,Extrema: YOLO recall 0.40,c_frente_corre,9.0,100,98,54,1,0,46
+barrido,Extrema: YOLO recall 0.40,c_frente_corre,10.0,100,90,52,2,0,48
+barrido,Extrema: YOLO recall 0.40,c_frente_corre,11.0,100,78,62,6,0,38
+barrido,Extrema: YOLO recall 0.40,c_frente_corre,12.0,100,64,56,16,0,44
+escenario,Extrema: solo cabeza y hombros (15 % del alto),a_panel_1,1.0,100,100,100,0,0,0
+escenario,Extrema: solo cabeza y hombros (15 % del alto),a_panel_2,2.0,100,100,100,0,0,0
+escenario,Extrema: solo cabeza y hombros (15 % del alto),a_panel_3,3.0,100,100,100,0,0,0
+escenario,Extrema: solo cabeza y hombros (15 % del alto),a_panel_4,4.0,100,100,100,0,0,0
+escenario,Extrema: solo cabeza y hombros (15 % del alto),b_quieta_1.5,1.5,100,100,100,0,0,0
+escenario,Extrema: solo cabeza y hombros (15 % del alto),b_quieta_3.0,3.0,100,100,95,0,0,5
+escenario,Extrema: solo cabeza y hombros (15 % del alto),c_frente_camina,1.0,100,100,96,0,0,4
+escenario,Extrema: solo cabeza y hombros (15 % del alto),c_frente_corre,1.0,100,100,52,0,0,48
+escenario,Extrema: solo cabeza y hombros (15 % del alto),d_cruza_camina,1.0,100,100,100,0,0,0
+escenario,Extrema: solo cabeza y hombros (15 % del alto),d_cruza_corre,1.0,100,100,100,0,0,0
+escenario,Extrema: solo cabeza y hombros (15 % del alto),e_estatico_camina,0.0,100,100,99,0,0,1
+escenario,Extrema: solo cabeza y hombros (15 % del alto),e_estatico_corre,0.0,100,100,85,0,0,15
+escenario,Extrema: solo cabeza y hombros (15 % del alto),e_estatico_lado,0.0,100,100,100,0,0,0
+barrido,Extrema: solo cabeza y hombros (15 % del alto),a_panel_1,1.0,100,100,100,0,0,0
+barrido,Extrema: solo cabeza y hombros (15 % del alto),a_panel_1,2.0,100,100,100,0,0,0
+barrido,Extrema: solo cabeza y hombros (15 % del alto),a_panel_1,3.0,100,100,100,0,0,0
+barrido,Extrema: solo cabeza y hombros (15 % del alto),a_panel_1,4.0,100,100,100,0,0,0
+barrido,Extrema: solo cabeza y hombros (15 % del alto),a_panel_1,5.0,100,100,100,0,0,0
+barrido,Extrema: solo cabeza y hombros (15 % del alto),a_panel_1,6.0,100,100,100,0,0,0
+barrido,Extrema: solo cabeza y hombros (15 % del alto),a_panel_1,7.0,100,100,100,0,0,0
+barrido,Extrema: solo cabeza y hombros (15 % del alto),a_panel_1,8.0,100,100,100,0,0,0
+barrido,Extrema: solo cabeza y hombros (15 % del alto),a_panel_1,9.0,100,100,100,0,0,0
+barrido,Extrema: solo cabeza y hombros (15 % del alto),a_panel_1,10.0,100,100,100,0,0,0
+barrido,Extrema: solo cabeza y hombros (15 % del alto),a_panel_1,11.0,100,100,100,0,0,0
+barrido,Extrema: solo cabeza y hombros (15 % del alto),a_panel_1,12.0,100,1,1,0,0,0
+barrido,Extrema: solo cabeza y hombros (15 % del alto),b_quieta_1.5,1.0,100,100,100,0,0,0
+barrido,Extrema: solo cabeza y hombros (15 % del alto),b_quieta_1.5,2.0,100,100,99,0,0,1
+barrido,Extrema: solo cabeza y hombros (15 % del alto),b_quieta_1.5,3.0,100,98,93,0,0,7
+barrido,Extrema: solo cabeza y hombros (15 % del alto),b_quieta_1.5,4.0,100,100,85,0,0,15
+barrido,Extrema: solo cabeza y hombros (15 % del alto),b_quieta_1.5,5.0,100,81,65,0,0,35
+barrido,Extrema: solo cabeza y hombros (15 % del alto),b_quieta_1.5,6.0,100,66,64,0,0,35
+barrido,Extrema: solo cabeza y hombros (15 % del alto),b_quieta_1.5,7.0,100,65,65,1,0,34
+barrido,Extrema: solo cabeza y hombros (15 % del alto),b_quieta_1.5,8.0,100,66,66,2,0,34
+barrido,Extrema: solo cabeza y hombros (15 % del alto),b_quieta_1.5,9.0,100,59,59,3,0,40
+barrido,Extrema: solo cabeza y hombros (15 % del alto),b_quieta_1.5,10.0,100,56,56,3,0,43
+barrido,Extrema: solo cabeza y hombros (15 % del alto),b_quieta_1.5,11.0,100,65,65,8,0,34
+barrido,Extrema: solo cabeza y hombros (15 % del alto),b_quieta_1.5,12.0,100,0,0,7,0,45
+barrido,Extrema: solo cabeza y hombros (15 % del alto),c_frente_corre,1.0,100,93,49,2,0,51
+barrido,Extrema: solo cabeza y hombros (15 % del alto),c_frente_corre,2.0,100,92,3,4,0,97
+barrido,Extrema: solo cabeza y hombros (15 % del alto),c_frente_corre,3.0,100,94,0,3,0,100
+barrido,Extrema: solo cabeza y hombros (15 % del alto),c_frente_corre,4.0,100,96,0,2,0,100
+barrido,Extrema: solo cabeza y hombros (15 % del alto),c_frente_corre,5.0,100,95,1,2,0,99
+barrido,Extrema: solo cabeza y hombros (15 % del alto),c_frente_corre,6.0,100,94,31,3,0,69
+barrido,Extrema: solo cabeza y hombros (15 % del alto),c_frente_corre,7.0,100,94,65,4,0,35
+barrido,Extrema: solo cabeza y hombros (15 % del alto),c_frente_corre,8.0,100,92,63,3,0,37
+barrido,Extrema: solo cabeza y hombros (15 % del alto),c_frente_corre,9.0,100,88,54,5,0,46
+barrido,Extrema: solo cabeza y hombros (15 % del alto),c_frente_corre,10.0,100,79,52,7,0,48
+barrido,Extrema: solo cabeza y hombros (15 % del alto),c_frente_corre,11.0,100,70,62,15,0,38
+barrido,Extrema: solo cabeza y hombros (15 % del alto),c_frente_corre,12.0,100,60,56,31,0,44
+escenario,Extrema: latencia total 500 ms,a_panel_1,1.0,100,100,100,0,0,0
+escenario,Extrema: latencia total 500 ms,a_panel_2,2.0,100,100,100,0,0,0
+escenario,Extrema: latencia total 500 ms,a_panel_3,3.0,100,100,100,0,0,0
+escenario,Extrema: latencia total 500 ms,a_panel_4,4.0,100,100,100,0,0,0
+escenario,Extrema: latencia total 500 ms,b_quieta_1.5,1.5,100,100,100,0,0,0
+escenario,Extrema: latencia total 500 ms,b_quieta_3.0,3.0,100,100,100,0,0,0
+escenario,Extrema: latencia total 500 ms,c_frente_camina,1.0,100,100,100,0,0,0
+escenario,Extrema: latencia total 500 ms,c_frente_corre,1.0,100,100,1,0,0,99
+escenario,Extrema: latencia total 500 ms,d_cruza_camina,1.0,100,100,100,0,0,0
+escenario,Extrema: latencia total 500 ms,d_cruza_corre,1.0,100,100,100,0,0,0
+escenario,Extrema: latencia total 500 ms,e_estatico_camina,0.0,100,100,100,0,0,0
+escenario,Extrema: latencia total 500 ms,e_estatico_corre,0.0,100,100,81,0,0,19
+escenario,Extrema: latencia total 500 ms,e_estatico_lado,0.0,100,100,100,0,0,0
+barrido,Extrema: latencia total 500 ms,a_panel_1,1.0,100,99,99,0,0,0
+barrido,Extrema: latencia total 500 ms,a_panel_1,2.0,100,100,100,0,0,0
+barrido,Extrema: latencia total 500 ms,a_panel_1,3.0,100,100,100,0,0,0
+barrido,Extrema: latencia total 500 ms,a_panel_1,4.0,100,100,100,0,0,0
+barrido,Extrema: latencia total 500 ms,a_panel_1,5.0,100,100,100,0,0,0
+barrido,Extrema: latencia total 500 ms,a_panel_1,6.0,100,100,100,0,0,0
+barrido,Extrema: latencia total 500 ms,a_panel_1,7.0,100,100,100,0,0,0
+barrido,Extrema: latencia total 500 ms,a_panel_1,8.0,100,100,100,0,0,0
+barrido,Extrema: latencia total 500 ms,a_panel_1,9.0,100,100,100,0,0,0
+barrido,Extrema: latencia total 500 ms,a_panel_1,10.0,100,100,100,0,0,0
+barrido,Extrema: latencia total 500 ms,a_panel_1,11.0,100,0,0,0,0,0
+barrido,Extrema: latencia total 500 ms,a_panel_1,12.0,100,0,0,0,0,0
+barrido,Extrema: latencia total 500 ms,b_quieta_1.5,1.0,100,100,100,0,0,0
+barrido,Extrema: latencia total 500 ms,b_quieta_1.5,2.0,100,100,100,0,0,0
+barrido,Extrema: latencia total 500 ms,b_quieta_1.5,3.0,100,100,100,0,0,0
+barrido,Extrema: latencia total 500 ms,b_quieta_1.5,4.0,100,99,66,0,0,34
+barrido,Extrema: latencia total 500 ms,b_quieta_1.5,5.0,100,77,60,0,0,40
+barrido,Extrema: latencia total 500 ms,b_quieta_1.5,6.0,100,65,63,0,0,37
+barrido,Extrema: latencia total 500 ms,b_quieta_1.5,7.0,100,64,64,0,0,36
+barrido,Extrema: latencia total 500 ms,b_quieta_1.5,8.0,100,65,65,0,0,34
+barrido,Extrema: latencia total 500 ms,b_quieta_1.5,9.0,100,56,56,0,0,43
+barrido,Extrema: latencia total 500 ms,b_quieta_1.5,10.0,100,51,51,0,0,44
+barrido,Extrema: latencia total 500 ms,b_quieta_1.5,11.0,100,0,0,17,0,34
+barrido,Extrema: latencia total 500 ms,b_quieta_1.5,12.0,100,0,0,43,0,46
+barrido,Extrema: latencia total 500 ms,c_frente_corre,1.0,100,100,1,0,0,99
+barrido,Extrema: latencia total 500 ms,c_frente_corre,2.0,100,100,0,0,0,100
+barrido,Extrema: latencia total 500 ms,c_frente_corre,3.0,100,100,0,0,0,100
+barrido,Extrema: latencia total 500 ms,c_frente_corre,4.0,100,100,0,0,0,100
+barrido,Extrema: latencia total 500 ms,c_frente_corre,5.0,100,100,0,0,0,100
+barrido,Extrema: latencia total 500 ms,c_frente_corre,6.0,100,78,0,0,0,100
+barrido,Extrema: latencia total 500 ms,c_frente_corre,7.0,100,69,0,2,0,100
+barrido,Extrema: latencia total 500 ms,c_frente_corre,8.0,100,66,0,23,0,100
+barrido,Extrema: latencia total 500 ms,c_frente_corre,9.0,100,61,0,37,0,100
+barrido,Extrema: latencia total 500 ms,c_frente_corre,10.0,100,57,1,41,0,99
+barrido,Extrema: latencia total 500 ms,c_frente_corre,11.0,100,65,0,33,0,100
+barrido,Extrema: latencia total 500 ms,c_frente_corre,12.0,100,57,0,41,0,100

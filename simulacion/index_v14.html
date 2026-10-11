@@ -1,0 +1,1615 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRON-IA · Estación de simulación</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+  // Tailwind solo con tema y utilidades: sin el preflight, que reiniciaría los estilos propios del visor.
+  // Se inserta desde JS porque, escritos en el HTML, el navegador intenta descargar esos @import como archivos (404).
+  document.head.insertAdjacentHTML("beforeend", '<style type="text/tailwindcss">@layer theme, base, components, utilities; '
+    + '@import "tailwindcss/theme.css" layer(theme); @import "tailwindcss/utilities.css" layer(utilities);</style>');
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.18/dist/index.global.js"></script>
+<style>
+  :root {
+    --fondo: #0a0e13; --panel: rgba(12, 17, 24, .88); --panel2: rgba(255, 255, 255, .025); --borde: #243243; --linea: #1a2431;
+    --texto: #e3eaf3; --suave: #8b9bb0; --tenue: #56667a;
+    --nominal: #2db7ff; --ok: #33d17a; --alerta: #ff9f1a; --peligro: #ff4d4f; --precaucion: #f5c542;
+    --mono: "Roboto Mono", ui-monospace, Consolas, monospace; --sans: "Inter", "Segoe UI", system-ui, sans-serif;
+    --izq: 300px; --der: 364px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--fondo); color: var(--texto); font: 12.5px/1.45 var(--sans); }
+  #mundo { position: fixed; inset: 0; }
+  #mundo canvas { display: block; }
+  .ui { position: absolute; z-index: 2; }
+  .panel { background: var(--panel); border: 1px solid var(--borde); border-radius: 6px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+           box-shadow: 0 8px 28px rgba(0, 0, 0, .35); animation: entrar .45s ease-out both; }
+  @keyframes entrar { from { opacity: 0; transform: translateY(8px); } }
+  .cab { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-bottom: 1px solid var(--linea); user-select: none; }
+  .cab h3 { margin: 0; font: 600 10.5px var(--sans); letter-spacing: 1.1px; text-transform: uppercase; color: var(--suave); flex: 1; white-space: nowrap; }
+  .chev { width: 20px; height: 20px; border: 1px solid var(--borde); border-radius: 4px; background: transparent; color: var(--suave); cursor: pointer; display: grid; place-items: center; padding: 0; }
+  .chev:hover { color: var(--texto); border-color: #36506b; }
+  .chev svg { width: 12px; height: 12px; transition: transform .2s; }
+  .plegado .chev svg { transform: rotate(-90deg); }
+  .plegado .cuerpo { display: none; }
+  .plegado .cab { border-bottom: 0; }
+  .cuerpo { padding: 8px 10px 10px; }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .tag { font: 600 10px var(--mono); padding: 2px 6px; border-radius: 3px; border: 1px solid currentColor; letter-spacing: .4px; white-space: nowrap; }
+  .led { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #2a3646; flex: none; }
+  .led.on { background: var(--c); box-shadow: 0 0 8px var(--c); }
+
+  /* ---------- barra superior ---------- */
+  #barra { left: 0; right: 0; top: 0; height: 42px; display: flex; align-items: center; gap: 14px; padding: 0 14px; background: rgba(9, 13, 19, .94);
+           border-bottom: 1px solid var(--borde); backdrop-filter: blur(10px); }
+  #barra .marca { display: flex; align-items: center; gap: 9px; font: 700 13px var(--sans); letter-spacing: .6px; white-space: nowrap; }
+  #barra .marca small { font-weight: 500; color: var(--suave); letter-spacing: 0; }
+  .ind { display: flex; flex-direction: column; justify-content: center; padding: 0 12px; border-left: 1px solid var(--linea); height: 100%; min-width: 0; }
+  .ind span { font: 500 9px var(--sans); letter-spacing: 1px; color: var(--tenue); text-transform: uppercase; }
+  .ind b { font: 600 11.5px var(--mono); white-space: nowrap; }
+  #barra .der { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  select, .btn { font: 500 11.5px var(--sans); color: var(--texto); background: #121a24; border: 1px solid var(--borde); border-radius: 4px; padding: 5px 9px; cursor: pointer; }
+  select:hover, .btn:hover { border-color: #36506b; background: #16212d; }
+  .btn.activo { border-color: var(--nominal); color: #fff; background: rgba(45, 183, 255, .14); }
+
+  /* ---------- columna izquierda ---------- */
+  #izq { left: 10px; top: 52px; width: var(--izq); display: flex; flex-direction: column; gap: 8px; max-height: calc(100% - 62px); overflow-y: auto; scrollbar-width: thin; }
+  .kv { display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; }
+  .kv span { color: var(--suave); font-size: 11.5px; }
+  .kv b { font: 500 12px var(--mono); text-align: right; white-space: nowrap; }
+  .obj-estado { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+  .pista { display: grid; grid-template-columns: 10px 44px 1fr auto; gap: 6px; align-items: center; padding: 4px 0; border-top: 1px solid var(--linea); font: 500 11.5px var(--mono); }
+  .pista:first-child { border-top: 0; }
+  .pista .rol { font-family: var(--sans); color: var(--suave); }
+  .pista.objetivo .rol { color: var(--texto); font-weight: 600; }
+  .nota { color: var(--tenue); font-size: 10.5px; margin-top: 6px; line-height: 1.4; }
+  .decision { display: grid; grid-template-columns: 10px 112px 1fr 34px; gap: 7px; align-items: center; padding: 2.5px 0; font: 500 11px var(--mono); color: var(--suave); }
+  .decision .barra-p { position: relative; height: 6px; background: #17212c; border-radius: 1px; overflow: hidden; }
+  .decision .barra-p i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--c); opacity: .85; transition: width .12s linear; }
+  .decision .barra-p::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 24.5%, rgba(10, 14, 19, .9) 24.5% 25.5%, transparent 25.5% 49.5%,
+                              rgba(10, 14, 19, .9) 49.5% 50.5%, transparent 50.5% 74.5%, rgba(10, 14, 19, .9) 74.5% 75.5%, transparent 75.5%); }
+  .decision b { font-weight: 500; text-align: right; }
+  .decision.sel { color: var(--texto); }
+  .decision.sel b { color: var(--texto); font-weight: 700; }
+  #veto { margin-top: 6px; font: 500 10.5px var(--mono); color: var(--alerta); min-height: 15px; }
+  .leds { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; }
+  .leds div { display: flex; align-items: center; gap: 7px; font: 500 10.5px var(--mono); color: var(--suave); letter-spacing: .3px; }
+  .leds div.on { color: var(--texto); }
+  .apagado { opacity: .35; }
+
+  /* ---------- columna derecha ---------- */
+  #der { right: 10px; top: 52px; width: var(--der); display: flex; flex-direction: column; gap: 8px; }
+  /* el recuadro FPV no puede tener fondo: la cámara del dron se dibuja detrás, en el lienzo 3D */
+  #fpv { background: transparent; border: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  #fpv .cab { background: var(--panel); border: 1px solid var(--borde); border-bottom: 0; border-radius: 6px 6px 0 0; backdrop-filter: blur(10px); }
+  #fpv .cuerpo { padding: 6px; border: 1px solid var(--borde); border-top: 0; border-radius: 0 0 6px 6px; box-shadow: 0 8px 28px rgba(0, 0, 0, .35); }
+  #fpv-vista { position: relative; width: 100%; aspect-ratio: 4 / 3; box-shadow: 0 0 0 6px rgba(12, 17, 24, .96), 0 0 0 1px #2c3b4e inset; }
+  #fpv-vista .filtro { position: absolute; inset: 0; backdrop-filter: contrast(1.08) saturate(.9); -webkit-backdrop-filter: contrast(1.08) saturate(.9);
+                        background: radial-gradient(ellipse at center, transparent 62%, rgba(0, 0, 0, .38) 100%), repeating-linear-gradient(0deg, rgba(0, 0, 0, .05) 0 1px, transparent 1px 3px); }
+  #hud-fpv { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #rc .cuerpo { padding: 6px 8px 8px; }
+  #rc svg { width: 100%; display: block; }
+
+  /* ---------- monitor de entrenamiento ---------- */
+  #monitor { right: 10px; bottom: 10px; width: var(--der); z-index: 3; }
+  #monitor .resumen { font: 500 10.5px var(--mono); color: var(--suave); white-space: nowrap; }
+  #monitor:not(.plegado) .resumen { display: none; }
+  .canal { position: relative; height: 66px; margin-bottom: 6px; }
+  .canal canvas { width: 100%; height: 100%; display: block; }
+  #mon-pie { font: 500 10px var(--mono); color: var(--tenue); display: flex; justify-content: space-between; margin-top: 2px; }
+
+  /* ---------- dock inferior ---------- */
+  #dock { left: calc(var(--izq) + 20px); right: calc(var(--der) + 20px); bottom: 10px; display: flex; flex-direction: column; gap: 6px; }
+  #estado-linea { padding: 7px 12px; display: flex; gap: 10px; align-items: center; font: 500 12px var(--mono); }
+  #estado-linea .tag { flex: none; }
+  #estado-txt { flex: 1; min-width: 0; }
+  #log { padding: 6px 12px; font: 400 11px var(--mono); color: var(--suave); height: 76px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; }
+  #log div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #log div i { font-style: normal; color: var(--tenue); margin-right: 8px; }
+  #reproductor { padding: 7px 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  #pista-t { position: relative; flex: 1; min-width: 180px; height: 22px; cursor: pointer; }
+  #pista-t .fondo { position: absolute; left: 0; right: 0; top: 8px; height: 6px; background: #17212c; border-radius: 1px; }
+  #pista-t .s1, #pista-t .s2 { position: absolute; top: 8px; height: 6px; }
+  #pista-t .s1 { left: 0; background: #3a4b60; }
+  #pista-t .s2 { right: 0; background: rgba(45, 183, 255, .45); }
+  #pista-t .ev { position: absolute; top: 4px; width: 2px; height: 14px; margin-left: -1px; }
+  #pista-t .cursor { position: absolute; top: 2px; width: 2px; height: 18px; margin-left: -1px; background: #fff; box-shadow: 0 0 6px #fff; }
+  #reloj { font: 500 12px var(--mono); min-width: 58px; text-align: right; }
+  .seg { display: flex; border: 1px solid var(--borde); border-radius: 4px; overflow: hidden; }
+  .seg button { font: 500 11px var(--sans); color: var(--suave); background: #121a24; border: 0; border-left: 1px solid var(--borde); padding: 5px 9px; cursor: pointer; }
+  .seg button:first-child { border-left: 0; }
+  .seg button.activo { color: #fff; background: rgba(45, 183, 255, .18); }
+  .leyenda-t { display: flex; gap: 10px; font: 500 10px var(--mono); color: var(--tenue); }
+  .leyenda-t i { display: inline-block; width: 8px; height: 8px; margin-right: 4px; vertical-align: -1px; }
+
+  /* ---------- avisos ---------- */
+  #aviso { left: 50%; top: 52px; transform: translate(-50%, -6px); opacity: 0; transition: opacity .25s, transform .25s; padding: 7px 14px; font: 600 12px var(--mono);
+           letter-spacing: .5px; border-left: 3px solid var(--c); pointer-events: none; white-space: nowrap; }
+  #aviso.ver { opacity: 1; transform: translate(-50%, 0); }
+  #resumen { left: 50%; top: 46%; width: 380px; transform: translate(-50%, -50%); opacity: 0; pointer-events: none; transition: opacity .25s; animation: none; }
+  #resumen.ver { opacity: 1; pointer-events: auto; }
+  #resumen table { width: 100%; border-collapse: collapse; font: 500 11.5px var(--mono); }
+  #resumen td { padding: 4px 0; border-top: 1px solid var(--linea); }
+  #resumen td:first-child { color: var(--suave); font-family: var(--sans); }
+  #resumen td:last-child { text-align: right; }
+  #resumen .barra-sig { height: 2px; background: #17212c; margin-top: 8px; }
+  #resumen .barra-sig i { display: block; height: 100%; width: 0; background: var(--nominal); }
+  #resumen.ver .barra-sig i { width: 100%; transition: width 4s linear; }
+
+  @media (max-width: 1280px) { :root { --izq: 270px; --der: 330px; } .decision { grid-template-columns: 10px 98px 1fr 32px; } .ind.opc { display: none; } }
+</style>
+</head>
+<body>
+<div id="mundo"></div>
+
+<div id="barra" class="ui">
+  <div class="marca">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2db7ff" stroke-width="1.6"><circle cx="5" cy="5" r="3"/><circle cx="19" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><path d="M7.2 7.2l9.6 9.6M16.8 7.2l-9.6 9.6"/><rect x="9.5" y="9.5" width="5" height="5" rx="1" fill="#2db7ff" stroke="none"/></svg>
+    DRON-IA <small>Estación de simulación · Tesis · <span style="color:var(--tenue)">Desarrollado por BRAHIAN ORREGO</span></small>
+  </div>
+  <div class="ind"><span>Modo de vuelo</span><b id="i-modo">–</b></div>
+  <div class="ind"><span>Control</span><b id="i-fuente">–</b></div>
+  <div class="ind"><span>Objetivo</span><b id="i-obj">–</b></div>
+  <div class="ind"><span>Árbitro</span><b id="i-arb">–</b></div>
+  <div class="ind opc"><span>Entrenamiento</span><b id="i-ent">–</b></div>
+  <div class="der">
+    <div class="flex items-center gap-1.5 whitespace-nowrap rounded-md border border-sky-400/35 bg-slate-950/60 px-2.5 py-1 text-[11px] text-slate-300 shadow-[0_0_12px_rgba(45,183,255,0.25)] backdrop-blur-sm">
+      Desarrollado por <span class="font-semibold tracking-wide text-sky-300">Brahian Andrés Orrego Osorio</span>
+    </div>
+    <select id="selector" title="Repetición a mostrar"></select>
+  </div>
+</div>
+
+<div id="izq" class="ui">
+  <section class="panel" id="p-tel">
+    <div class="cab"><h3>Telemetría del vehículo</h3><button class="chev" title="Plegar"><svg viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none"/></svg></button></div>
+    <div class="cuerpo kv">
+      <span>Altitud (AGL)</span><b id="t-alt">–</b>
+      <span>Velocidad suelo</span><b id="t-gs">–</b>
+      <span>Rumbo</span><b id="t-hdg">–</b>
+      <span>Tasa de guiñada</span><b id="t-yaw">–</b>
+      <span>LiDAR frontal</span><b id="t-lid">–</b>
+      <span>Objetivo en vista</span><b id="t-vista">–</b>
+    </div>
+  </section>
+  <section class="panel" id="p-obj">
+    <div class="cab"><h3>Objetivo · tracker</h3><button class="chev" title="Plegar"><svg viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none"/></svg></button></div>
+    <div class="cuerpo">
+      <div class="obj-estado"><span class="tag" id="obj-tag">–</span><span class="mono" id="obj-det" style="color:var(--suave);font-size:11px">–</span></div>
+      <div id="pistas"></div>
+      <div class="nota">El operador designa al sospechoso en la estación de tierra; el tracker conserva su ID y lo re-identifica por apariencia. El dron nunca cambia de objetivo por su cuenta: las demás personas son obstáculos.</div>
+    </div>
+  </section>
+  <section class="panel" id="p-dec">
+    <div class="cab"><h3>Lógica de decisión · política PPO</h3><button class="chev" title="Plegar"><svg viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none"/></svg></button></div>
+    <div class="cuerpo"><div id="decisiones"></div><div id="veto"></div></div>
+  </section>
+  <section class="panel" id="p-arb">
+    <div class="cab"><h3>Árbitro de seguridad</h3><button class="chev" title="Plegar"><svg viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none"/></svg></button></div>
+    <div class="cuerpo leds">
+      <div id="l-bloq"><span class="led" style="--c:var(--peligro)"></span>BLOQUEO FRONTAL</div>
+      <div id="l-amz"><span class="led" style="--c:var(--peligro)"></span>AMENAZA</div>
+      <div id="l-eva"><span class="led" style="--c:var(--alerta)"></span>EVASIÓN</div>
+      <div id="l-giro"><span class="led" style="--c:var(--nominal)"></span>PANEO</div>
+      <div id="l-dist"><span class="led" style="--c:var(--precaucion)"></span>DIST. MÍN 8 m</div>
+      <div id="l-geo"><span class="led on" style="--c:var(--ok)"></span>GEOCERCA</div>
+    </div>
+  </section>
+</div>
+
+<div id="der" class="ui">
+  <section class="panel" id="fpv">
+    <div class="cab"><h3>Cámara FPV · gimbal · YOLO</h3><span class="tag" id="fpv-trk" style="color:var(--tenue)">–</span></div>
+    <div class="cuerpo"><div id="fpv-vista"><div class="filtro"></div><canvas id="hud-fpv"></canvas></div></div>
+  </section>
+  <section class="panel" id="rc">
+    <div class="cab"><h3 id="rc-tit">Entrada de control</h3><span class="tag" id="rc-fuente" style="color:var(--suave)">–</span></div>
+    <div class="cuerpo"><svg id="rc-svg" viewBox="0 0 344 132"></svg></div>
+  </section>
+</div>
+
+<section id="monitor" class="ui panel">
+  <div class="cab"><h3>Telemetría de entrenamiento</h3><span class="resumen" id="mon-resumen">–</span><button class="chev" id="mon-chev" title="Plegar / desplegar"><svg viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none"/></svg></button></div>
+  <div class="cuerpo">
+    <div class="canal"><canvas id="o-vista"></canvas></div>
+    <div class="canal"><canvas id="o-alc"></canvas></div>
+    <div class="canal"><canvas id="o-rec"></canvas></div>
+    <div class="canal"><canvas id="o-vel"></canvas></div>
+    <div id="mon-pie"><span id="mon-izq">–</span><span id="mon-der">–</span></div>
+  </div>
+</section>
+
+<div id="dock" class="ui">
+  <div id="estado-linea" class="panel"><span class="tag" id="estado-tag">–</span><span id="estado-txt">Cargando…</span></div>
+  <div id="log" class="panel"></div>
+  <div id="reproductor" class="panel">
+    <button class="btn" id="pausa" title="Pausa (barra espaciadora)">❚❚</button>
+    <select id="velocidad"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select>
+    <div id="pista-t"><div class="fondo"></div><div class="s1" id="s1"></div><div class="s2" id="s2"></div><div id="marcas"></div><div class="cursor" id="cursor"></div></div>
+    <span id="reloj">0.0 s</span>
+    <button class="btn activo" id="b-operador" title="MANUAL: la repetición se detiene en la alerta hasta que usted haga clic sobre el sospechoso (en la cámara FPV o en la lista del tracker). AUTO: el clic lo hace el operador simulado.">Operador · MANUAL</button>
+    <div class="seg" id="camaras">
+      <button data-cam="cine" class="activo">Cine</button><button data-cam="seguir">Seguir</button><button data-cam="orbita">Libre</button><button data-cam="arriba">Cenital</button>
+    </div>
+  </div>
+</div>
+
+<div id="aviso" class="ui panel"></div>
+<section id="resumen" class="ui panel">
+  <div class="cab"><h3>Resumen de la misión</h3><span class="tag" id="res-tag">–</span></div>
+  <div class="cuerpo"><table id="res-tabla"></table><div class="barra-sig"><i></i></div><div class="nota">Siguiente repetición en unos segundos…</div></div>
+</section>
+
+<script>
+"use strict";
+const NOMBRES = ["MANTENER", "ESQUIVAR IZQ", "ESQUIVAR DER", "FRENAR+SUBIR", "GIRAR IZQ", "GIRAR DER", "AVANZAR", "BAJAR", "GIMBAL ARRIBA", "GIMBAL ABAJO"];
+const NOMBRES_TXT = ["mantener", "esquivar a la izquierda", "esquivar a la derecha", "frenar y subir", "girar a la izquierda", "girar a la derecha", "avanzar", "bajar", "subir el gimbal", "bajar el gimbal"];
+// en la búsqueda por IA las mismas salidas son consignas de vuelo (persisten hasta que otra acción las cambie)
+const NOMBRES_BUSQ = ["HOVER", "LATERAL IZQ", "LATERAL DER", "SUBIR", "GIRAR IZQ", "GIRAR DER", "AVANZAR", "BAJAR", "GIMBAL ARRIBA", "GIMBAL ABAJO"];
+const COL = { nominal: "#2db7ff", ok: "#33d17a", alerta: "#ff9f1a", peligro: "#ff4d4f", precaucion: "#f5c542", tenue: "#56667a", suave: "#8b9bb0" };
+const COL_ACC = [COL.nominal, COL.alerta, COL.alerta, COL.precaucion, COL.nominal, COL.nominal, COL.nominal, COL.precaucion, COL.nominal, COL.nominal];
+const TRK = [["BÚSQUEDA 360°", COL.suave], ["FIJADO", COL.ok], ["MEMORIA", COL.nominal], ["PERDIDO", COL.alerta], ["RE-ID", COL.precaucion], ["VERIFICANDO", COL.precaucion]];
+const MODOS = ["SEARCH", "VERIFICA", "TRACK", "INVESTIGA", "ASOMO", "ALTURA", "PREDICCIÓN", "BÚSQUEDA IA"];
+const ladoTxt = c => (c.bd ?? 1) < 0 ? "izquierda" : "derecha";
+const RESULTADOS = {
+  "cumplida": ["MISIÓN CUMPLIDA · rastreo mantenido durante toda la prueba", COL.ok, true],
+  "perdido": ["MISIÓN FALLIDA · protocolo de búsqueda agotado: objetivo no recuperado", COL.peligro, false],
+  "no_encontrado": ["MISIÓN FALLIDA · el sospechoso no se confirmó a tiempo", COL.peligro, false],
+  "alcanzado": ["MISIÓN FALLIDA · el ladrón alcanzó al dron", COL.peligro, false],
+  "choque_peaton": ["MISIÓN FALLIDA · choque con un peatón", COL.peligro, false],
+  "panel": ["MISIÓN FALLIDA · choque con un obstáculo", COL.peligro, false],
+  "geocerca": ["MISIÓN FALLIDA · salida de la geocerca", COL.peligro, false],
+  "tiempo": ["MISIÓN INCONCLUSA · tiempo agotado", COL.alerta, false],
+  "a salvo": ["Criterio anterior (v4): dron a salvo", COL.suave, false],
+};
+// ¿el objetivo ya fue designado por el operador? (en repeticiones v4 no existe el modo)
+const fijado = c => c.fase === 2 && (c.modo !== undefined ? c.modo >= 2 : c.trk >= 1 && c.trk <= 4);
+const protocolo = c => c.fase === 2 && c.modo >= 3;
+const candidato = c => (c.pers || []).find(p => p.cand);
+const HFOV = 38.9, VFOV = 29.7;
+const mundo = (x, y, z = 0) => new THREE.Vector3(x, z, -y);
+const $ = id => document.getElementById(id);
+const lerp = (a, b, f) => a + (b - a) * f;
+const limitar = (v, a, b) => Math.max(a, Math.min(b, v));
+const pad2 = n => String(n).padStart(2, "0");
+const reloj = t => pad2(Math.floor(t / 60)) + ":" + (t % 60).toFixed(1).padStart(4, "0");
+function lerpAng(a, b, f) { let d = b - a; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return a + d * f; }
+const difAngGrados = (a, b) => ((a - b) * 180 / Math.PI + 540) % 360 - 180;
+
+// paneles plegables
+document.querySelectorAll(".panel .chev").forEach(b => b.addEventListener("click", () => {
+  const p = b.closest(".panel");
+  p.classList.toggle("plegado");
+  try { localStorage.setItem("plegado-" + p.id, p.classList.contains("plegado") ? "1" : "0"); } catch (e) {}
+  if (p.id === "monitor") ajustarOsciloscopios();
+}));
+document.querySelectorAll(".panel[id]").forEach(p => {
+  let v = null;
+  try { v = localStorage.getItem("plegado-" + p.id); } catch (e) {}
+  if (v === "1" || (v === null && p.id === "monitor" && innerHeight < 900)) p.classList.add("plegado");
+});
+
+// ======================================================================= render
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.95;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.autoUpdate = false;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+$("mundo").appendChild(renderer.domElement);
+const escena = new THREE.Scene();
+escena.fog = new THREE.Fog(0xc4d0dc, 60, 210);
+const camara = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.05, 700);
+camara.position.set(-36, 18, 22);
+const controles = new THREE.OrbitControls(camara, renderer.domElement);
+controles.enableDamping = true;
+controles.maxPolarAngle = Math.PI * 0.49;
+
+const lin = c => new THREE.Color(c).convertSRGBToLinear();
+const est = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: lin(c), roughness: 0.7 }, o));
+function tex(canvas, rep) {
+  const t = new THREE.CanvasTexture(canvas);
+  t.encoding = THREE.sRGBEncoding;
+  t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  if (rep) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep, rep); }
+  return t;
+}
+function lienzo(w, h) { const c = document.createElement("canvas"); c.width = w; c.height = h; return [c, c.getContext("2d")]; }
+function cajaBisel(w, h, d, b = 0.06) {
+  b = Math.min(b, w / 4, h / 4, d / 4);
+  const s = new THREE.Shape();
+  s.moveTo(-w / 2 + b, -h / 2 + b); s.lineTo(w / 2 - b, -h / 2 + b); s.lineTo(w / 2 - b, h / 2 - b); s.lineTo(-w / 2 + b, h / 2 - b); s.lineTo(-w / 2 + b, -h / 2 + b);
+  const g = new THREE.ExtrudeGeometry(s, { depth: d - 2 * b, bevelEnabled: true, bevelThickness: b, bevelSize: b, bevelSegments: 2, curveSegments: 1 });
+  g.translate(0, 0, -(d - 2 * b) / 2);
+  return g;
+}
+function sombraAO(w, d, margen = 0.9, fuerza = 0.36) {     // sombra de contacto (oclusión ambiental aproximada)
+  const ppm = 24, [c, g] = lienzo(Math.max(16, Math.round((w + 2 * margen) * ppm)), Math.max(16, Math.round((d + 2 * margen) * ppm)));
+  g.filter = `blur(${Math.round(margen * ppm * 0.42)}px)`;
+  g.fillStyle = `rgba(18,26,40,${fuerza})`;
+  g.fillRect(margen * ppm * 0.75, margen * ppm * 0.75, c.width - 1.5 * margen * ppm, c.height - 1.5 * margen * ppm);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w + 2 * margen, d + 2 * margen), new THREE.MeshBasicMaterial({ map: tex(c), transparent: true, depthWrite: false }));
+  m.rotation.x = -Math.PI / 2;
+  m.position.y = 0.011;
+  return m;
+}
+escena.add(new THREE.Mesh(new THREE.SphereGeometry(450, 32, 16), new THREE.ShaderMaterial({
+  side: THREE.BackSide, depthWrite: false, fog: false,
+  uniforms: { arriba: { value: new THREE.Color(0x46709e) }, horizonte: { value: new THREE.Color(0xc4d0dc) } },
+  vertexShader: "varying float h; void main(){ h = normalize(position).y; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+  fragmentShader: "uniform vec3 arriba; uniform vec3 horizonte; varying float h; void main(){ float t = pow(clamp(h, 0.0, 1.0), 0.6); gl_FragColor = vec4(mix(horizonte, arriba, t), 1.0); }",
+})));
+escena.add(new THREE.HemisphereLight(0xe8eef6, 0xa9b4c3, 0.62));
+const sol = new THREE.DirectionalLight(0xfff3e2, 1.2);
+sol.castShadow = true;
+sol.shadow.mapSize.set(4096, 4096);
+sol.shadow.bias = -0.0004;
+sol.shadow.radius = 5;
+Object.assign(sol.shadow.camera, { left: -34, right: 34, top: 34, bottom: -34, far: 150 });
+escena.add(sol, sol.target);
+{     // piso de baldosas
+  const [c, g] = lienzo(1024, 1024);
+  g.fillStyle = "#b4bec9"; g.fillRect(0, 0, 1024, 1024);
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) {
+    const x = i * 256 + 3, y = j * 256 + 3, L = 250;
+    g.fillStyle = "#e2e7ed"; g.fillRect(x, y, L, L);
+    g.fillStyle = "#eef1f5"; g.fillRect(x, y, L, 4); g.fillRect(x, y, 4, L);
+    g.fillStyle = "#d0d7e0"; g.fillRect(x, y + L - 5, L, 5); g.fillRect(x + L - 5, y, 5, L);
+    if ((i + j) % 2 === 0) {
+      const cx = x + L / 2, cy = y + L / 2;
+      g.strokeStyle = "rgba(120,135,160,0.22)"; g.lineWidth = 5;
+      g.beginPath(); g.arc(cx, cy, 56, 0, Math.PI * 2); g.stroke();
+      g.beginPath(); g.moveTo(cx - 24, cy - 24); g.lineTo(cx + 24, cy + 24); g.moveTo(cx + 24, cy - 24); g.lineTo(cx - 24, cy + 24); g.stroke();
+      [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => { g.beginPath(); g.arc(cx + a * 27, cy + b * 27, 10, 0, Math.PI * 2); g.stroke(); });
+    }
+  }
+  for (let i = 0; i < 5000; i++) { g.fillStyle = `rgba(30,40,60,${Math.random() * 0.025})`; g.fillRect(Math.random() * 1024, Math.random() * 1024, 2, 2); }
+  const piso = new THREE.Mesh(new THREE.PlaneGeometry(50, 50), est(0xffffff, { map: tex(c, 50 / 8), roughness: 0.85 }));
+  piso.rotation.x = -Math.PI / 2;
+  piso.receiveShadow = true;
+  const afuera = new THREE.Mesh(new THREE.PlaneGeometry(900, 900), est(0xc9d1db, { roughness: 1 }));
+  afuera.rotation.x = -Math.PI / 2; afuera.position.y = -0.02; afuera.receiveShadow = true;
+  escena.add(piso, afuera);
+}
+{     // autoría grabada en el piso, en la franja sur (se lee desde las vistas cenital y libre)
+  // droid_sans_bold y no helvetiker: helvetiker no trae la "É" y three.js la omitiría sin avisar
+  new THREE.FontLoader().load("https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/droid/droid_sans_bold.typeface.json", fuente => {
+    const geo = new THREE.TextGeometry("BRAHIAN ANDRÉS ORREGO OSORIO", { font: fuente, size: 1.1, height: 0.03, curveSegments: 6 });
+    geo.center();
+    const texto = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: lin(0x0b2a3a), emissive: lin(0x2db7ff), emissiveIntensity: 0.6, roughness: 0.5, fog: false }));
+    texto.rotation.x = -Math.PI / 2;
+    texto.position.set(0, 0.02, 21.5);
+    texto.receiveShadow = true;
+    escena.add(texto);
+  });
+}
+{     // muros del salón y bloques de alrededor
+  const blanco = est(0xdfe4ea, { roughness: 0.85 });
+  [[0, 25.4, 51.6, 0.8], [0, -25.4, 51.6, 0.8], [25.4, 0, 0.8, 50], [-25.4, 0, 0.8, 50]].forEach(([x, y, sx, sy]) => {
+    const m = new THREE.Mesh(cajaBisel(sx, 2.0, sy, 0.1), blanco);
+    m.position.set(x, 1.0, -y);
+    m.castShadow = m.receiveShadow = true;
+    const ao = sombraAO(sx, sy, 1.0, 0.3);
+    ao.position.set(x, 0.011, -y);
+    escena.add(m, ao);
+  });
+  const celdas = [];
+  for (let i = -30; i < 30; i++) for (let j = -30; j < 30; j++) {
+    const x = i * 2.5 + 1.25, z = j * 2.5 + 1.25, borde = Math.max(Math.abs(x), Math.abs(z));
+    if (borde < 27.5) continue;
+    const r = Math.abs(Math.sin(i * 12.9898 + j * 78.233) * 43758.5453) % 1;
+    celdas.push([x, z, 0.5 + r * (1.0 + (borde - 27) * 0.1), r]);
+  }
+  const geo = cajaBisel(2.5, 1, 2.5, 0.08); geo.translate(0, 0.5, 0);
+  const bloques = new THREE.InstancedMesh(geo, est(0xffffff, { roughness: 0.9 }), celdas.length);
+  const m = new THREE.Matrix4(), col = new THREE.Color(), q = new THREE.Quaternion();
+  celdas.forEach(([x, z, h, r], i) => {
+    m.compose(new THREE.Vector3(x, 0, z), q, new THREE.Vector3(1, h, 1));
+    bloques.setMatrixAt(i, m);
+    const v = 0.76 + r * 0.1;
+    bloques.setColorAt(i, col.setRGB(v * 0.96, v * 0.98, Math.min(v * 1.03, 1)).convertSRGBToLinear());
+  });
+  bloques.castShadow = bloques.receiveShadow = true;
+  escena.add(bloques);
+}
+function sombraBlob(r) {
+  const [c, g] = lienzo(128, 128);
+  const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  gr.addColorStop(0, "rgba(16,24,40,0.42)"); gr.addColorStop(1, "rgba(16,24,40,0)");
+  g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(r * 2, r * 2), new THREE.MeshBasicMaterial({ map: tex(c), transparent: true, depthWrite: false }));
+  m.rotation.x = -Math.PI / 2;
+  m.position.y = 0.013;
+  return m;
+}
+function textoPlano(texto, color, ancho, alto, tam, fuente = "700 %px Inter, sans-serif") {
+  const [c, g] = lienzo(ancho, alto);
+  g.fillStyle = color; g.font = fuente.replace("%", tam);
+  g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText(texto, ancho / 2, alto / 2 + 4);
+  return c;
+}
+// etiquetas técnicas (sprites de tamaño fijo en pantalla), con caché de texturas
+const cacheEtq = new Map();
+function texEtiqueta(texto, fondo, borde) {
+  const clave = texto + "|" + fondo + "|" + borde;
+  if (cacheEtq.has(clave)) return cacheEtq.get(clave);
+  const [m, gm] = lienzo(1, 1);
+  gm.font = "500 44px 'Roboto Mono', monospace";
+  const w = Math.ceil(gm.measureText(texto).width + 40), h = 72;
+  const [c, g] = lienzo(w, h);
+  g.fillStyle = fondo;
+  g.beginPath(); g.moveTo(8, 4); g.lineTo(w - 8, 4); g.quadraticCurveTo(w - 4, 4, w - 4, 8); g.lineTo(w - 4, h - 8); g.quadraticCurveTo(w - 4, h - 4, w - 8, h - 4);
+  g.lineTo(8, h - 4); g.quadraticCurveTo(4, h - 4, 4, h - 8); g.lineTo(4, 8); g.quadraticCurveTo(4, 4, 8, 4); g.fill();
+  g.strokeStyle = borde; g.lineWidth = 3; g.stroke();
+  g.fillStyle = "#ffffff"; g.font = "500 44px 'Roboto Mono', monospace"; g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText(texto, w / 2, h / 2 + 2);
+  const t = { map: tex(c), aspecto: w / h };
+  cacheEtq.set(clave, t);
+  return t;
+}
+function etiqueta(alto = 0.024) {
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ depthTest: false, transparent: true, sizeAttenuation: false }));
+  s.center.set(0.5, 0);
+  s.renderOrder = 20;
+  s.userData.alto = alto;
+  return s;
+}
+function ponerEtiqueta(s, texto, fondo = "rgba(14,20,28,0.92)", borde = "rgba(140,160,185,0.55)") {
+  if (!texto) { s.visible = false; return; }
+  s.visible = true;
+  const clave = texto + fondo + borde;
+  if (s.userData.clave === clave) return;
+  const t = texEtiqueta(texto, fondo, borde);
+  s.material.map = t.map; s.material.needsUpdate = true;
+  s.scale.set(s.userData.alto * t.aspecto, s.userData.alto, 1);
+  s.userData.clave = clave;
+}
+function texAnillo(guiones, grosor = 10) {
+  const [c, g] = lienzo(256, 256);
+  g.strokeStyle = "#fff"; g.lineWidth = grosor;
+  if (guiones) for (let k = 0; k < guiones; k++) { const a0 = k * 2 * Math.PI / guiones; g.beginPath(); g.arc(128, 128, 110, a0 + 0.1, a0 + 2 * Math.PI / guiones - 0.1); g.stroke(); }
+  else { g.beginPath(); g.arc(128, 128, 110, 0, Math.PI * 2); g.stroke(); }
+  for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2; g.beginPath(); g.moveTo(128 + Math.cos(a) * 92, 128 + Math.sin(a) * 92); g.lineTo(128 + Math.cos(a) * 124, 128 + Math.sin(a) * 124); g.stroke(); }
+  return tex(c);
+}
+const TEX_ANILLO = texAnillo(0), TEX_ANILLO_G = texAnillo(8);
+function anillo(r) {
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(r * 2, r * 2), new THREE.MeshBasicMaterial({ map: TEX_ANILLO, transparent: true, depthWrite: false, opacity: 0 }));
+  m.rotation.x = -Math.PI / 2;
+  m.position.y = 0.02;
+  return m;
+}
+
+// ======================================================================= escenario de cada repetición
+const grupoObst = new THREE.Group(), grupoPaneles = new THREE.Group(), helipuerto = new THREE.Group(), lineaIA = new THREE.Group();
+escena.add(grupoObst, grupoPaneles, helipuerto, lineaIA);
+function cuna(sx, h, sy) {
+  const f = new THREE.Shape();
+  f.moveTo(-sx / 2, 0); f.lineTo(sx / 2, 0); f.lineTo(sx / 2, h); f.lineTo(-sx / 2, 0);
+  const geo = new THREE.ExtrudeGeometry(f, { depth: sy, bevelEnabled: false });
+  geo.translate(0, 0, -sy / 2);
+  return geo;
+}
+const COLOR_OBST = { muro: 0xc9d0da, caja: 0xe8b53a, columna: 0x6fa9d6, rampa: 0xe8b53a };
+// ---- autoría: "BRAHIAN ORREGO" en letras 3D planas sobre el piso, cerca del punto de inicio. Solo es visual: la
+// simulación (Python) no la conoce, así que no interviene en las físicas
+const autoria = new THREE.Group();
+escena.add(autoria);
+const MAT_AUTORIA = new THREE.MeshStandardMaterial({ color: 0x7d8da1, roughness: 0.9, metalness: 0.0, transparent: true, opacity: 0.6 });
+let fuenteAutoria = null;
+new THREE.FontLoader().load("https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/helvetiker_bold.typeface.json",
+  f => { fuenteAutoria = f; if (partida) ponerAutoria(partida); }, undefined, () => {});
+function ponerAutoria(pt) {
+  while (autoria.children.length) autoria.remove(autoria.children[0]);
+  let m;
+  if (fuenteAutoria) {
+    const geo = new THREE.TextGeometry("BRAHIAN ORREGO", { font: fuenteAutoria, size: 0.9, height: 0.03, curveSegments: 4, bevelEnabled: false });
+    geo.computeBoundingBox(); geo.center();
+    m = new THREE.Mesh(geo, MAT_AUTORIA);
+    m.receiveShadow = true;
+  } else {   // sin la fuente (sin internet): el mismo texto como calcomanía
+    m = new THREE.Mesh(new THREE.PlaneGeometry(10, 1.4), new THREE.MeshBasicMaterial({ map: tex(textoPlano("BRAHIAN ORREGO", "#7d8da1", 1000, 140, 110)), transparent: true, opacity: 0.6, depthWrite: false }));
+  }
+  m.rotation.x = -Math.PI / 2;                       // plano sobre el piso, se lee a lo largo de +X (rumbo de la misión)
+  const [x, y] = pt.mision ? [pt.despegue[0] + 5.5, pt.despegue[1] - 3.2] : [0, -11];
+  m.position.copy(mundo(x, y, 0.02));
+  autoria.add(m);
+}
+function prepararEscenario(pt) {
+  ponerAutoria(pt);
+  [grupoObst, grupoPaneles, helipuerto, lineaIA].forEach(g => { while (g.children.length) g.remove(g.children[0]); });
+  (pt.obst || []).forEach(([cx, cy, sx, sy, h, tipo]) => {
+    const m = new THREE.Mesh(tipo === "rampa" ? cuna(sx, h, sy) : cajaBisel(sx, h, sy, 0.06), est(COLOR_OBST[tipo] || 0xc9d0da, { roughness: 0.6 }));
+    m.position.set(cx, tipo === "rampa" ? 0 : h / 2, -cy);
+    m.castShadow = m.receiveShadow = true;
+    const ao = sombraAO(sx, sy);
+    ao.position.set(cx, 0.011, -cy);
+    grupoObst.add(m, ao);
+  });
+  (pt.paneles || []).forEach(([ax, ay, bx, by, h]) => {
+    const L = Math.hypot(bx - ax, by - ay), ang = Math.atan2(by - ay, bx - ax);
+    const m = new THREE.Mesh(cajaBisel(L, h, 0.35, 0.06), est(0xa8b4c3, { roughness: 0.8 }));
+    m.position.set((ax + bx) / 2, h / 2, -(ay + by) / 2);
+    m.rotation.y = ang;
+    m.castShadow = m.receiveShadow = true;
+    const ao = sombraAO(L, 0.35);
+    ao.rotation.set(-Math.PI / 2, 0, ang);
+    ao.position.set((ax + bx) / 2, 0.011, -(ay + by) / 2);
+    grupoPaneles.add(m, ao);
+  });
+  if (pt.mision) {
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.3, 0.05, 48), est(0x3a4658, { roughness: 0.6 }));
+    base.position.y = 0.025; base.receiveShadow = true;
+    const h = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.6), new THREE.MeshBasicMaterial({ map: tex(textoPlano("H", "#ffffff", 256, 256, 200)), transparent: true }));
+    h.rotation.x = -Math.PI / 2; h.position.y = 0.055;
+    const aro = new THREE.Mesh(new THREE.RingGeometry(1.06, 1.14, 48), new THREE.MeshBasicMaterial({ color: 0xf5c542 }));
+    aro.rotation.x = -Math.PI / 2; aro.position.y = 0.056;
+    helipuerto.add(base, h, aro);
+    helipuerto.position.set(pt.despegue[0], 0, -pt.despegue[1]);
+    const x = pt.entrada_ia_x !== undefined ? pt.entrada_ia_x : pt.entrada_zona_x;
+    const franja = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 50), new THREE.MeshBasicMaterial({ color: 0x2db7ff }));
+    franja.rotation.x = -Math.PI / 2; franja.position.set(x, 0.022, 0);
+    const letrero = (txt, color, dx) => {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(9, 1.3), new THREE.MeshBasicMaterial({ map: tex(textoPlano(txt, color, 900, 130, 92, "500 %px 'Roboto Mono', monospace")), transparent: true }));
+      m.rotation.x = -Math.PI / 2; m.rotation.z = -Math.PI / 2;
+      m.position.set(x + dx, 0.025, 0);
+      return m;
+    };
+    lineaIA.add(franja, letrero("GUIDED · IA", "#1d8fd0", 1.2), letrero("MANUAL", "#6f7e92", -1.2));
+  }
+}
+
+// ======================================================================= el dron (a partir de las fotos)
+const dron = new THREE.Group();
+const chasis = new THREE.Group();
+dron.add(chasis);
+let carbono;
+{
+  const [c, g] = lienzo(128, 128);
+  g.fillStyle = "#1c1e22"; g.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) { g.fillStyle = (i + j) % 2 ? "#26292e" : "#18191c"; g.fillRect(i * 16, j * 16, 16, 16); }
+  carbono = est(0xffffff, { map: tex(c, 3), roughness: 0.35, metalness: 0.3 });
+}
+const negro = est(0x1b1d21, { roughness: 0.45, metalness: 0.2 });
+const rojo = new THREE.MeshPhysicalMaterial({ color: lin(0xc8232c), roughness: 0.3, metalness: 0.5, clearcoat: 0.6 });
+const dorado = est(0xd9a441, { roughness: 0.3, metalness: 0.8 });
+const amarillo = est(0xf2c230, { roughness: 0.5 });
+[0.0, 0.055].forEach(y => { const p = new THREE.Mesh(new THREE.BoxGeometry(0.21, 0.008, 0.21), carbono); p.position.y = y; chasis.add(p); });
+[[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(([a, b]) => { const s = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.055, 8), dorado); s.position.set(a * 0.085, 0.027, b * 0.085); chasis.add(s); });
+const rotores = [], leds = [];
+[[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(([a, b]) => {
+  const ang = Math.atan2(b, a);
+  const brazo = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.024, 0.032), carbono);
+  brazo.position.set(Math.cos(ang) * 0.15, 0.028, Math.sin(ang) * 0.15); brazo.rotation.y = -ang;
+  const esc = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.014, 0.026), amarillo);
+  esc.position.set(Math.cos(ang) * 0.14, 0.045, Math.sin(ang) * 0.14); esc.rotation.y = -ang;
+  const mx = Math.cos(ang) * 0.275, mz = Math.sin(ang) * 0.275;
+  const motor = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.026, 0.034, 20), rojo);
+  motor.position.set(mx, 0.058, mz);
+  const tapaM = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.02, 0.008, 16), dorado);
+  tapaM.position.set(mx, 0.078, mz);
+  const rotor = new THREE.Group();
+  rotor.position.set(mx, 0.086, mz);
+  [0, Math.PI].forEach(r => {
+    const aspa = new THREE.Mesh(new THREE.BoxGeometry(0.125, 0.004, 0.028), est(0x202226, { roughness: 0.25 }));
+    aspa.position.x = 0.0625; aspa.rotation.x = 0.18;
+    const ba = new THREE.Group(); ba.rotation.y = r; ba.add(aspa); rotor.add(ba);
+  });
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(0.127, 32), new THREE.MeshBasicMaterial({ color: 0x2a2d33, transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false }));
+  disc.rotation.x = -Math.PI / 2; disc.position.set(mx, 0.088, mz);
+  const led = new THREE.Mesh(new THREE.SphereGeometry(0.009, 8, 8), new THREE.MeshBasicMaterial({ color: a > 0 ? 0x3dff7a : 0xff3b3b }));
+  led.position.set(mx, 0.035, mz); led.userData.frontal = a > 0;
+  chasis.add(brazo, esc, motor, tapaM, rotor, disc, led);
+  rotores.push({ rotor, sentido: a * b });
+  leds.push(led);
+});
+function tubo(a, b, r, mat) {
+  const dir = new THREE.Vector3().subVectors(b, a);
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, dir.length(), 10), mat);
+  m.position.copy(a).addScaledVector(dir, 0.5);
+  m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+  return m;
+}
+[-1, 1].forEach(s => {
+  [-1, 1].forEach(f => chasis.add(tubo(new THREE.Vector3(f * 0.045, -0.004, s * 0.07), new THREE.Vector3(f * 0.085, -0.236, s * 0.13), 0.0065, negro)));
+  const bajo = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.012, 0.014), negro); bajo.position.set(0, -0.004, s * 0.07);
+  const patin = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.34, 10), negro); patin.rotation.z = Math.PI / 2; patin.position.set(0, -0.24, s * 0.13);
+  const espuma = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.22, 12), est(0x26282c, { roughness: 1 })); espuma.rotation.z = Math.PI / 2; espuma.position.set(0, -0.24, s * 0.13);
+  chasis.add(bajo, patin, espuma);
+  [-1, 1].forEach(f => { const p = new THREE.Mesh(new THREE.SphereGeometry(0.013, 10, 8), rojo); p.position.set(f * 0.17, -0.24, s * 0.13); chasis.add(p); });
+});
+const ventilador = new THREE.Group();
+{
+  const caja = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.075, 0.11), new THREE.MeshPhysicalMaterial({ color: 0xdff1ff, roughness: 0.08, transparent: true, opacity: 0.32, clearcoat: 1 }));
+  caja.position.set(0, 0.1, 0);
+  const placa = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.008, 0.085), est(0x2b6e3f, { roughness: 0.6 })); placa.position.set(0, 0.07, 0);
+  const disipador = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.028, 0.065), est(0x2a2c30, { metalness: 0.6, roughness: 0.4 })); disipador.position.set(0, 0.09, 0);
+  const aro = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.006, 24), negro); aro.position.set(0, 0.106, 0);
+  [0, 1, 2, 3, 4].forEach(k => { const aspa = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.002, 0.008), est(0x55595f)); aspa.position.x = 0.011; const p = new THREE.Group(); p.rotation.y = k * Math.PI * 2 / 5; p.add(aspa); ventilador.add(p); });
+  ventilador.position.set(0, 0.11, 0);
+  chasis.add(caja, placa, disipador, aro, ventilador);
+  [[-0.06, 0.05], [-0.06, -0.05]].forEach(([x, z], i) => { const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.0045, 0.006, 0.15, 8), negro); ant.position.set(x, 0.2, z); ant.rotation.z = 0.12; ant.rotation.x = (i ? -1 : 1) * 0.15; chasis.add(ant); });
+  const mastil = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.07, 8), negro); mastil.position.set(-0.09, 0.17, 0);
+  const gps = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.014, 20), est(0x15161a, { roughness: 0.4 })); gps.position.set(-0.09, 0.21, 0);
+  chasis.add(mastil, gps);
+  [[0.03, 0.07], [-0.04, -0.07], [0.06, -0.06]].forEach(([x, z]) => { const xt = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.011, 0.01), amarillo); xt.position.set(x, 0.035, z); chasis.add(xt); });
+}
+const gimbalPitch = new THREE.Group();
+{
+  const g = new THREE.Group(); g.position.set(0.07, -0.03, 0);
+  const soporte = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.01, 0.07), negro);
+  const motorRoll = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.02, 16), negro); motorRoll.rotation.z = Math.PI / 2; motorRoll.position.set(0, -0.03, 0);
+  const brazoG = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.06, 0.008), negro); brazoG.position.set(0, -0.055, 0.045);
+  gimbalPitch.position.set(0, -0.085, 0);
+  const cam = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.04, 0.045), est(0x202227, { roughness: 0.5 }));
+  const lente = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.014, 0.012, 16), est(0x0b0c0e, { metalness: 0.7, roughness: 0.2 })); lente.rotation.z = Math.PI / 2; lente.position.set(0.028, 0.004, -0.008);
+  const lidar = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.026, 0.03), est(0x111216, { roughness: 0.5 })); lidar.position.set(0.006, 0.033, 0);
+  const imu = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.004, 0.022), est(0x2e8b3e)); imu.position.set(-0.005, 0.05, 0);
+  gimbalPitch.add(cam, lente, lidar, imu);
+  g.add(soporte, motorRoll, brazoG, gimbalPitch);
+  chasis.add(g);
+}
+const estrobo = new THREE.Mesh(new THREE.SphereGeometry(0.008, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+estrobo.position.set(-0.1, 0.07, 0.08);
+chasis.add(estrobo);
+chasis.traverse(o => { if (o.isMesh && !o.material.transparent) o.castShadow = true; });
+const halo = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.008, 6, 64), new THREE.MeshBasicMaterial({ color: 0x2db7ff, transparent: true, opacity: 0.8 }));
+halo.rotation.x = Math.PI / 2; halo.position.y = 0.06;
+dron.add(halo);
+const etqDron = etiqueta(0.022);
+etqDron.position.y = 0.36;
+dron.add(etqDron);
+escena.add(dron);
+const sombraDron = sombraBlob(0.45);
+escena.add(sombraDron);
+const pulso = new THREE.Mesh(new THREE.TorusGeometry(1, 0.03, 6, 64), new THREE.MeshBasicMaterial({ color: 0x2db7ff, transparent: true, opacity: 0 }));
+pulso.rotation.x = Math.PI / 2;
+escena.add(pulso);
+// campo de visión, LiDAR y línea de vista
+const cono = new THREE.Mesh((() => {
+  const R = 14, seg = 28, v = [0, 0, 0], a = [0.3], idx = [];
+  for (let i = 0; i <= seg; i++) { const t = (-HFOV / 2 + HFOV * i / seg) * Math.PI / 180; v.push(R * Math.cos(t), 0, R * Math.sin(t)); a.push(0.0); }
+  for (let i = 1; i <= seg; i++) idx.push(0, i, i + 1);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(v, 3));
+  g.setAttribute("alfa", new THREE.Float32BufferAttribute(a, 1));
+  g.setIndex(idx);
+  return g;
+})(), new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, side: THREE.DoubleSide,
+  uniforms: { color: { value: new THREE.Color(0x2db7ff) }, fuerza: { value: 1.0 } },
+  vertexShader: "attribute float alfa; varying float va; void main(){ va = alfa; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+  fragmentShader: "uniform vec3 color; uniform float fuerza; varying float va; void main(){ gl_FragColor = vec4(color, va * fuerza); }",
+}));
+escena.add(cono);
+const linea = m => new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]), m);
+const laser = linea(new THREE.LineBasicMaterial({ color: 0xff3b3b }));
+const puntoLaser = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 10), new THREE.MeshBasicMaterial({ color: 0xff3b3b }));
+const lineaVista = linea(new THREE.LineDashedMaterial({ color: 0x33d17a, dashSize: 0.3, gapSize: 0.2 }));
+escena.add(laser, puntoLaser, lineaVista);
+
+// ======================================================================= personas
+function personaje(color) {
+  const g = new THREE.Group(), cuerpo = new THREE.Group();
+  g.add(cuerpo);
+  const piel = new THREE.MeshPhysicalMaterial({ color: lin(color), roughness: 0.4, clearcoat: 0.5, clearcoatRoughness: 0.3 });
+  const torso = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 20), piel); torso.scale.set(0.27, 0.36, 0.22); torso.position.y = 1.0;
+  const cadera = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14), piel); cadera.scale.set(0.23, 0.16, 0.19); cadera.position.y = 0.74;
+  const cabeza = new THREE.Group(); cabeza.position.y = 1.55;
+  const craneo = new THREE.Mesh(new THREE.SphereGeometry(0.33, 32, 24), piel); craneo.scale.set(1, 0.94, 0.95);
+  cabeza.add(craneo);
+  const ojoMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  [-1, 1].forEach(s => { const ojo = new THREE.Mesh(new THREE.TorusGeometry(0.052, 0.016, 8, 20, Math.PI), ojoMat); ojo.rotation.y = Math.PI / 2; ojo.position.set(0.305, 0.03, s * 0.11); cabeza.add(ojo); });
+  const mano = new THREE.SphereGeometry(0.075, 16, 12);
+  const extremidad = (r, l) => { const p = new THREE.Group(); const e = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.8, l, 14), piel); e.position.y = -l / 2; p.add(e); return p; };
+  const bi = extremidad(0.07, 0.4), bd = extremidad(0.07, 0.4);
+  [bi, bd].forEach((b, k) => { const m = new THREE.Mesh(mano, piel); m.position.y = -0.43; b.add(m); b.position.set(0, 1.2, (k ? -1 : 1) * 0.29); b.rotation.x = (k ? 1 : -1) * 0.12; });
+  const pi = extremidad(0.085, 0.5), pd = extremidad(0.085, 0.5);
+  [pi, pd].forEach((p, k) => { const pie = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), piel); pie.scale.set(0.13, 0.065, 0.09); pie.position.set(0.04, -0.52, 0); p.add(pie); p.position.set(0, 0.68, (k ? -1 : 1) * 0.12); });
+  cuerpo.add(torso, cadera, cabeza, bi, bd, pi, pd);
+  cuerpo.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  g.add(sombraBlob(0.5));
+  const marca = anillo(0.8);
+  g.add(marca);
+  const etq = etiqueta(0.024);
+  etq.position.y = 2.08;
+  g.add(etq);
+  g.userData = { cuerpo, cabeza, bi, bd, pi, pd, marca, etq, fase: Math.random() * 6 };
+  g.visible = false;
+  escena.add(g);
+  return g;
+}
+const ladron = personaje(0xd9363e);
+const peatones = [personaje(0x3f7fd9), personaje(0x3f7fd9), personaje(0x3f7fd9)];
+// marcas en el piso: última posición conocida del objetivo (protocolo de pérdida) y punto de inspección tras un panel
+function marcaSuelo(color, tex_) {
+  const g = new THREE.Group();
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 1.8), new THREE.MeshBasicMaterial({ map: tex_, color, transparent: true, depthWrite: false }));
+  m.rotation.x = -Math.PI / 2;
+  g.add(m);
+  [0, Math.PI / 2].forEach(r => { const b = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.06), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9, depthWrite: false })); b.rotation.set(-Math.PI / 2, 0, r + Math.PI / 4); g.add(b); });
+  g.visible = false;
+  escena.add(g);
+  return g;
+}
+const marcaUlt = marcaSuelo(0xff9f1a, TEX_ANILLO), marcaWp = marcaSuelo(0x2db7ff, TEX_ANILLO_G);
+const lineaRuta = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]),
+  new THREE.LineDashedMaterial({ color: 0x2db7ff, dashSize: 0.35, gapSize: 0.25 }));
+lineaRuta.visible = false;
+escena.add(lineaRuta);
+const flechaEscape = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 3, 0xff9f1a, 0.6, 0.35);
+flechaEscape.visible = false;
+escena.add(flechaEscape);
+// paneles tal como los mapeó el LiDAR del dron (segmentos a ras de piso)
+const mapaLidar = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x2db7ff, transparent: true, opacity: 0.95 }));
+mapaLidar.geometry.setAttribute("position", new THREE.Float32BufferAttribute(new Array(4 * 3 * 2 * 3).fill(0), 3));
+escena.add(mapaLidar);
+function dibujarMapaLidar(det) {
+  const pos = mapaLidar.geometry.attributes.position;
+  for (let j = 0; j < 4; j++) {
+    const sgm = det && det[j];
+    [0.06, 0.6, 1.2].forEach((h, q) => {       // tres trazos a distintas alturas: una "cortina" de los impactos del LiDAR
+      const i0 = (j * 3 + q) * 2;
+      if (sgm) { pos.setXYZ(i0, sgm[0], h, -sgm[1]); pos.setXYZ(i0 + 1, sgm[2], h, -sgm[3]); }
+      else { pos.setXYZ(i0, 0, -50, 0); pos.setXYZ(i0 + 1, 0, -50, 0); }
+    });
+  }
+  pos.needsUpdate = true;
+  mapaLidar.geometry.computeBoundingSphere();
+  mapaLidar.visible = !!(det && det.length);
+}
+function rastro(color) {
+  const n = 60, g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(new Array(n * 3).fill(0), 3));
+  const l = new THREE.Line(g, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.5 }));
+  l.userData.n = n;
+  escena.add(l);
+  return l;
+}
+const rastroDron = rastro(0x1f6fa8), rastroLadron = rastro(0xd9363e);
+function actualizarRastro(l, puntos) {
+  const pos = l.geometry.attributes.position, n = l.userData.n;
+  for (let i = 0; i < n; i++) { const p = puntos[Math.max(0, puntos.length - n + i)] || puntos[0] || [0, -5, 0]; pos.setXYZ(i, p[0], p[1], p[2]); }
+  pos.needsUpdate = true;
+  l.geometry.computeBoundingSphere();
+}
+
+// ======================================================================= paneles: construcción
+$("decisiones").innerHTML = NOMBRES.map((n, i) => `<div class="decision" style="--c:${COL_ACC[i]}"><span class="led" style="--c:${COL_ACC[i]}"></span><span>${n}</span><div class="barra-p"><i></i></div><b>0.00</b></div>`).join("");
+const filasDec = [...document.querySelectorAll(".decision")];
+// diagrama del radio (líneas, estilo esquema técnico)
+$("rc-svg").innerHTML = `
+  <g fill="none" stroke="#2f3e52" stroke-width="1">
+    <path d="M10 22 Q10 8 26 8 H318 Q334 8 334 22 V112 Q334 126 318 126 H26 Q10 126 10 112 Z"/>
+    <line x1="172" y1="8" x2="172" y2="1" stroke-width="2"/>
+  </g>
+  ${[["L", 20], ["R", 228]].map(([k, x]) => `
+  <g transform="translate(${x},16)">
+    <rect width="96" height="96" fill="#0d141c" stroke="#33465c"/>
+    <path d="M48 0V96M0 48H96" stroke="#22303f" stroke-dasharray="2 3"/>
+    <path d="M24 0V4M72 0V4M24 92V96M72 92V96M0 24H4M0 72H4M92 24H96M92 72H96" stroke="#3b5068"/>
+    <line id="rc-t${k}" x1="48" y1="48" x2="48" y2="48" stroke="#2db7ff" stroke-width="1.2" opacity=".7"/>
+    <circle id="rc-p${k}" cx="48" cy="48" r="4.5" fill="#2db7ff"/>
+  </g>`).join("")}
+  <g font-family="Roboto Mono, monospace" font-size="8.5" fill="#8b9bb0">
+    <text x="20" y="12">CH4 YAW · CH3 THR</text><text x="324" y="12" text-anchor="end">CH1 ROLL · CH2 PITCH</text>
+    <text x="172" y="27" text-anchor="middle" fill="#56667a">CH5 · MODO</text>
+    <text x="172" y="66" text-anchor="middle" fill="#56667a">CH8 · PARADA</text>
+    <text x="172" y="91" text-anchor="middle" fill="#56667a">PWM (µs)</text>
+  </g>
+  <g font-family="Roboto Mono, monospace" font-size="9" text-anchor="middle">
+    ${[1, 2, 3].map(p => `<rect id="rc-m${p}" x="${124 + (p - 1) * 33}" y="32" width="30" height="16" rx="2" fill="#0d141c" stroke="#33465c"/><text id="rc-mt${p}" x="${139 + (p - 1) * 33}" y="43.5" fill="#8b9bb0">${p}</text>`).join("")}
+    <text x="139" y="57" font-size="7.5" fill="#56667a">MANUAL</text><text x="205" y="57" font-size="7.5" fill="#56667a">GUIDED</text>
+    <rect x="148" y="71" width="48" height="14" rx="2" fill="#0d141c" stroke="#33465c"/><text x="172" y="81.5" fill="#33d17a">OFF</text>
+    <text id="rc-pwm1" x="172" y="104" fill="#e3eaf3">R 1500 · P 1500</text>
+    <text id="rc-pwm2" x="172" y="117" fill="#e3eaf3">T 1500 · Y 1500</text>
+  </g>`;
+const radio = { L: [0, 0], R: [0, 0] };
+function dibujarRadio(objL, objR, fase, bloq) {
+  radio.L = [lerp(radio.L[0], objL[0], 0.25), lerp(radio.L[1], objL[1], 0.25)];
+  radio.R = [lerp(radio.R[0], objR[0], 0.25), lerp(radio.R[1], objR[1], 0.25)];
+  const colR = bloq ? COL.peligro : COL.nominal;
+  [["L", radio.L, COL.nominal], ["R", radio.R, colR]].forEach(([k, [x, y], c]) => {
+    const px = 48 + limitar(x, -1, 1) * 42, py = 48 - limitar(y, -1, 1) * 42;
+    $("rc-p" + k).setAttribute("cx", px.toFixed(1)); $("rc-p" + k).setAttribute("cy", py.toFixed(1)); $("rc-p" + k).setAttribute("fill", c);
+    $("rc-t" + k).setAttribute("x2", px.toFixed(1)); $("rc-t" + k).setAttribute("y2", py.toFixed(1)); $("rc-t" + k).setAttribute("stroke", c);
+  });
+  const pwm = v => Math.round(1500 + 500 * limitar(v, -1, 1));
+  $("rc-pwm1").textContent = `R ${pwm(radio.R[0])} · P ${pwm(radio.R[1])}`;
+  $("rc-pwm2").textContent = `T ${pwm(radio.L[1])} · Y ${pwm(radio.L[0])}`;
+  const modo = fase === 2 ? 3 : 1;
+  [1, 2, 3].forEach(p => {
+    $("rc-m" + p).setAttribute("stroke", p === modo ? (modo === 3 ? COL.nominal : "#8b9bb0") : "#33465c");
+    $("rc-m" + p).setAttribute("fill", p === modo ? (modo === 3 ? "rgba(45,183,255,.18)" : "rgba(139,155,176,.15)") : "#0d141c");
+    $("rc-mt" + p).setAttribute("fill", p === modo ? "#ffffff" : "#56667a");
+  });
+  $("rc-tit").textContent = fase === 2 ? "Entrada de control · IA" : "Entrada de control · piloto";
+  const f = $("rc-fuente");
+  f.textContent = fase === 2 ? "MAVLink · GUIDED" : bloq ? "AVANCE ANULADO" : "RC · MANUAL";
+  f.style.color = fase === 2 ? COL.nominal : bloq ? COL.peligro : COL.suave;
+}
+
+// ======================================================================= osciloscopios del entrenamiento
+class Osciloscopio {
+  constructor(canvas, op) { this.c = canvas; this.g = canvas.getContext("2d"); this.op = op; this.datos = []; this.xmax = 1; this.ymin = 0; this.ymax = 1; this.anim = null; }
+  poner(datos) {
+    const xs = datos.map(d => d[0]), ys = datos.map(d => d[1]).filter(v => v !== null && isFinite(v));
+    const xmax = Math.max(1, ...xs);
+    let ymin = this.op.min, ymax = this.op.max;
+    if (ymin === undefined || ymax === undefined) {
+      const lo = Math.min(...ys), hi = Math.max(...ys), m = (hi - lo) * 0.15 || Math.abs(hi) * 0.1 || 1;
+      if (ymin === undefined) ymin = lo - m;
+      if (ymax === undefined) ymax = hi + m;
+      if (this.op.tope !== undefined) ymax = Math.min(ymax, this.op.tope);
+    }
+    this.anim = { t0: performance.now(), de: [this.xmax, this.ymin, this.ymax], a: [xmax, ymin, ymax] };
+    this.datos = datos;
+  }
+  dibujar(ahora) {
+    const c = this.c, g = this.g, dpr = Math.min(devicePixelRatio, 2), W = c.clientWidth, H = c.clientHeight;
+    if (!W || !H) return;
+    if (c.width !== Math.round(W * dpr)) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
+    if (this.anim) {
+      const k = limitar((ahora - this.anim.t0) / 700, 0, 1), e = 1 - Math.pow(1 - k, 3);
+      [this.xmax, this.ymin, this.ymax] = this.anim.a.map((v, i) => lerp(this.anim.de[i], v, e));
+      if (k >= 1) this.anim = null;
+    }
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, W, H);
+    const x0 = 34, x1 = W - 4, y0 = 14, y1 = H - 4;
+    g.fillStyle = "rgba(4,8,12,.55)"; g.fillRect(x0, y0, x1 - x0, y1 - y0);
+    g.lineWidth = 1;
+    for (let i = 0; i <= 10; i++) { const x = Math.round(x0 + (x1 - x0) * i / 10) + 0.5; g.strokeStyle = i % 5 ? "rgba(70,100,130,.13)" : "rgba(70,100,130,.3)"; g.beginPath(); g.moveTo(x, y0); g.lineTo(x, y1); g.stroke(); }
+    for (let i = 0; i <= 4; i++) { const y = Math.round(y0 + (y1 - y0) * i / 4) + 0.5; g.strokeStyle = i % 2 ? "rgba(70,100,130,.13)" : "rgba(70,100,130,.3)"; g.beginPath(); g.moveTo(x0, y); g.lineTo(x1, y); g.stroke(); }
+    const op = this.op, X = x => x0 + (x1 - x0) * x / this.xmax, Y = y => y1 - (y1 - y0) * (y - this.ymin) / (this.ymax - this.ymin || 1);
+    g.font = "500 9px 'Roboto Mono', monospace"; g.fillStyle = "#56667a"; g.textAlign = "right";
+    g.fillText(op.fmt(this.ymax), x0 - 4, y0 + 7); g.fillText(op.fmt(this.ymin), x0 - 4, y1);
+    g.textAlign = "left"; g.fillStyle = op.color; g.font = "600 9.5px 'Roboto Mono', monospace";
+    g.fillText(op.nombre, x0, 10);
+    const d = this.datos.filter(p => p[1] !== null && isFinite(p[1]));
+    if (d.length) {
+      g.save(); g.beginPath(); g.rect(x0, y0, x1 - x0, y1 - y0); g.clip();
+      g.strokeStyle = op.color; g.globalAlpha = 0.28; g.lineWidth = 1;
+      g.beginPath(); d.forEach((p, i) => i ? g.lineTo(X(p[0]), Y(p[1])) : g.moveTo(X(p[0]), Y(p[1]))); g.stroke();
+      let s = d[0][1];
+      const suave = d.map(p => (s = s + 0.12 * (p[1] - s), [p[0], s]));
+      g.globalAlpha = 1; g.lineWidth = 1.6; g.shadowColor = op.color; g.shadowBlur = 6;
+      g.beginPath(); suave.forEach((p, i) => i ? g.lineTo(X(p[0]), Y(p[1])) : g.moveTo(X(p[0]), Y(p[1]))); g.stroke();
+      const u = suave[suave.length - 1], r = 2.4 + Math.sin(ahora / 180) * 0.8;
+      g.fillStyle = op.color; g.beginPath(); g.arc(X(u[0]), Y(u[1]), r, 0, Math.PI * 2); g.fill();
+      g.restore();
+      g.textAlign = "right"; g.fillStyle = "#e3eaf3"; g.font = "600 10.5px 'Roboto Mono', monospace";
+      g.fillText(op.fmt(u[1]), x1, 10);
+    }
+  }
+}
+const pct = v => (v * 100).toFixed(0) + "%";
+const OSC = {
+  vista: new Osciloscopio($("o-vista"), { nombre: "CH1 · OBJETIVO EN VISTA", color: COL.ok, min: 0, tope: 1, fmt: pct }),
+  alc: new Osciloscopio($("o-alc"), { nombre: "CH2 · ALCANZADO POR EL LADRÓN", color: COL.peligro, min: 0, tope: 1, fmt: pct }),
+  rec: new Osciloscopio($("o-rec"), { nombre: "CH3 · RECOMPENSA MEDIA / PARTIDA", color: COL.nominal, fmt: v => v.toFixed(2) }),
+  // castigo por brusquedad (derivada de los comandos) + esfuerzo, por segundo con la IA al mando: debe bajar al aprender
+  vel: new Osciloscopio($("o-vel"), { nombre: "CH4 · ESFUERZO DE CONTROL / JITTER", color: COL.precaucion, min: 0, fmt: v => v.toFixed(3) }),
+};
+function ajustarOsciloscopios() { Object.values(OSC).forEach(o => o.dibujar(performance.now())); }
+const durTxt = s => { s = Math.round(s); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60); return h ? `${h} h ${pad2(m)} min` : `${m} min`; };
+async function actualizarMetricas() {
+  let M = null;
+  try { M = (await cargarJSON("salida/metricas.json")).filter(m => m.adv); } catch (e) {}
+  if (M && M.length) {
+    const x = m => m.pasos / 1e6;
+    OSC.vista.poner(M.map(m => [x(m), m.adv.vista]));
+    OSC.alc.poner(M.map(m => [x(m), m.adv.alcanzado]));
+    OSC.rec.poner(M.map(m => [x(m), m.adv.recompensa]));
+    const J = M.filter(m => m.control);
+    if (J.length) OSC.vel.poner(J.map(m => [x(m), m.control.total]));
+    const u = M.slice(-10), prom = f => u.reduce((s, m) => s + f(m), 0) / u.length;
+    const uj = J.slice(-10), jit = uj.length ? uj.reduce((s, m) => s + m.control.total, 0) / uj.length : null;
+    $("mon-resumen").textContent = `VISTA ${pct(prom(m => m.adv.vista))} · ALC ${pct(prom(m => m.adv.alcanzado))}` + (jit !== null ? ` · JITTER ${jit.toFixed(3)}` : "");
+  }
+  try {
+    const e = await cargarJSON("salida/estado.json");
+    const vivo = Date.now() / 1000 - e.t < 60;
+    $("mon-izq").textContent = `IT ${e.it} · ${(e.pasos / 1e6).toFixed(1)} M PASOS · ${durTxt(e.seg)}`;
+    $("mon-der").textContent = vivo ? `${(e.pasos_s / 1000).toFixed(1)}k PASOS/s · ETA ${durTxt((e.objetivo - e.pasos) / Math.max(e.pasos_s, 1))}` : "DETENIDO";
+    $("i-ent").innerHTML = vivo ? `<span style="color:${COL.ok}">●</span> EN VIVO · IT ${e.it}` : `<span style="color:${COL.tenue}">●</span> DETENIDO`;
+    $("mon-resumen").textContent = (M && M.length ? $("mon-resumen").textContent + " · " : "") + `${(e.pasos / 1e6).toFixed(1)} M`;
+  } catch (err) {}
+}
+
+// ======================================================================= repeticiones
+const sel = $("selector");
+let partida = null, eventos = [], tPartida = 0, pausa = false, vel = 1, modoCam = "cine", recargando = false, angCine = 0, kAnterior = -1;
+async function cargarJSON(ruta) {
+  const r = await fetch(ruta + "?t=" + Date.now(), { cache: "no-store" });
+  if (!r.ok) throw new Error(ruta);
+  return r.json();
+}
+function normalizar(pt) {
+  pt.cuadros.forEach(c => { if (!c.pers) c.pers = [{ rol: pt.adversaria ? "ladron" : "peaton", p: c.p, v: c.pv, vis: c.vis, tap: false, run: c.run }]; if (!c.fase) c.fase = 2; });
+  return pt;
+}
+function calcularEventos(pt) {     // eventos de la misión para la bitácora y las marcas de la línea de tiempo
+  const C = pt.cuadros, ev = [];
+  let ultimaAmz = -99;
+  const idDe = p => p && p.id !== undefined ? pad2(p.id) : "--";
+  const ladDe = k => (C[k].pers || []).find(p => p.rol === "ladron");
+  C.forEach((c, k) => {
+    const p = C[k - 1];
+    if (!p) { ev.push({ k, txt: c.fase === 1 ? "DESPEGUE · modo MANUAL, piloto al mando" : "IA ACTIVA · modo GUIDED", col: COL.suave }); return; }
+    if (p.fase === 1 && c.fase === 2) ev.push({ k, txt: "CAMBIO DE MODO · CH5=3 → GUIDED · SEARCH: giro de 360° buscando personas", col: COL.nominal, marca: true });
+    if (c.fase === 1 && c.bloq && !p.bloq) ev.push({ k, txt: "BLOQUEO FRONTAL · " + (c.msg.includes("persona") ? "persona" : "obstáculo") + " al frente: avance anulado", col: COL.peligro, marca: true });
+    if (c.fase !== 2) return;
+    if (c.est === 1 && p.est !== 1) ev.push({ k, txt: "EVASIÓN · " + NOMBRES_TXT[c.cl] + (fijado(c) ? " (amenaza confirmada)" : " (regla de seguridad)"), col: COL.alerta, marca: true });
+    if (c.per && !p.per) ev.push({ k, txt: "PERÍMETRO 2 m · persona muy cerca: el giro de búsqueda queda en pausa", col: COL.peligro });
+    else if (c.amz && !p.amz && k - ultimaAmz > 15) { ev.push({ k, txt: "AMENAZA · persona cerca y acercándose", col: COL.peligro }); ultimaAmz = k; }
+    if (c.modo !== undefined) {
+      if (c.modo === 1 && p.modo !== 1) ev.push({ k, txt: `ALERTA AL OPERADOR · persona ID ${idDe(candidato(c))} en foco (hover): clic sobre ella para confirmar`, col: COL.precaucion, marca: true });
+      if (c.op === 2) ev.push({ k, txt: `SIN CONFIRMACIÓN DEL OPERADOR · ID ${idDe(candidato(p))} descartado, la búsqueda continúa`, col: COL.suave, marca: true });
+      if (c.op === 1) ev.push({ k, txt: `CLIC DEL OPERADOR · sospechoso confirmado: lock-on ID ${idDe(ladDe(k))} (TARGET_LOCKED)`, col: COL.ok, marca: true });
+      if (c.modo === 0 && p.modo === 1 && !c.op) ev.push({ k, txt: "CANDIDATO FUERA DE VISTA antes de la confirmación · la búsqueda continúa", col: COL.alerta });
+      const nDet = (c.det || []).length;
+      if (c.modo === 0 && p.modo === 0 && c.bf === 1 && p.bf !== 1) ev.push({ k, txt: nDet ? `BARRIDO SIN RESULTADO · FLANQUEO PROFUNDO: rodea la esquina del panel ${(c.pj ?? 0) + 1} (visto por el LiDAR) y queda detrás del muro${c.va ? " · por encima: la ruta no tenía margen" : ""}` : "BARRIDO SIN RESULTADO · el LiDAR no detectó paneles: vuela al centro de la zona", col: COL.nominal, marca: true });
+      if (c.modo === 0 && c.bf === 2 && p.bf !== 2) ev.push({ k, txt: `DETRÁS DEL PANEL · rota hacia la ${ladoTxt(c)}, hacia el interior de la zona que estaba oculta`, col: COL.nominal });
+      if (c.nadir && !p.nadir) ev.push({ k, txt: "SOBREVUELO DE PANEL · cámara en nadir (−85°) para ver la base del muro", col: COL.nominal });
+      if (c.modo === 6 && p.modo !== 6) ev.push({ k, txt: "OBJETIVO SALIÓ DEL CUADRO · intercepción predictiva: sigue su trayectoria 2 s con la nariz y el gimbal en el punto predicho", col: COL.alerta, marca: true });
+      if (c.modo === 3 && p.modo !== 3) ev.push({ k, txt: (p.modo === 6 ? "INTERCEPCIÓN SIN ÉXITO · " : "OBJETIVO PERDIDO · ") + (c.flq ? "FLANQUEO PROFUNDO: rodea la esquina por la que desapareció y queda detrás del muro" : `en campo abierto: punto de separación antes de su última posición (${c.ux.toFixed(1)}, ${c.uy.toFixed(1)})`), col: COL.alerta, marca: true });
+      if (c.modo === 4 && p.modo !== 4) ev.push({ k, txt: c.flq ? `DETRÁS DEL MURO · rota hacia la ${ladoTxt(c)}, hacia la zona que estaba oculta (por donde entró el ladrón)` : `ASOMO · gira primero hacia la ${ladoTxt(c)}, por donde iba el ladrón`, col: COL.alerta });
+      const lc_ = (c.pers || []).find(q => q.rol === "ladron"), lp_ = (p.pers || []).find(q => q.rol === "ladron");
+      if (lc_ && lc_.sz > 0 && !(lp_ && lp_.sz > 0)) ev.push({ k, txt: `SALTO · el ladrón corre hacia el dron y salta para tumbarlo (dron a ${c.d[2].toFixed(1)} m; alcance de 2.5 a 2.7 m)`, col: COL.peligro, marca: true });
+      if (c.modo === 7 && p.modo !== 7) ev.push({ k, txt: `OBJETIVO PERDIDO · BÚSQUEDA POR IA: la política conserva motores y gimbal y lo busca con su última posición (${c.ux.toFixed(1)}, ${c.uy.toFixed(1)}), sin ruta fija`, col: COL.alerta, marca: true });
+      if (c.dsc && !p.dsc) ev.push({ k, txt: "RE-ADQUISICIÓN · el ladrón volvió a entrar en el cuadro: bono de descubrimiento para la táctica que lo logró", col: COL.ok, marca: true });
+      if (c.rfx && !p.rfx) ev.push({ k, txt: "ESQUIVE REFLEJO · alguien corre hacia el dron para tumbarlo: el árbitro sube y se aparta", col: COL.peligro, marca: true });
+      if (c.modo === 5 && p.modo !== 5) ev.push({ k, txt: `SIN RESULTADO · VENTAJA DE ALTURA: sube a ${(pt.z_alto ?? 6.5).toFixed(1)} m sobre la zona de pérdida en vez de rodear el panel`, col: COL.peligro, marca: true });
+      if (c.modo === 2 && p.modo >= 3) ev.push({ k, txt: `OBJETIVO RECUPERADO · ID ${idDe(ladDe(k))} reconfirmado (ReID)${p.modo === 5 ? " desde la altura" : p.modo === 4 ? " en el asomo" : p.modo === 6 ? " con la intercepción predictiva" : p.modo === 7 ? " con la búsqueda de la IA" : ""}: la IA retoma la persecución`, col: COL.ok, marca: true });
+      if (c.trk === 4 && p.trk !== 4 && c.modo >= 2) ev.push({ k, txt: "OBJETIVO EN CÁMARA · confirmando su identidad por apariencia (ReID)", col: COL.precaucion });
+    } else if (c.modo === undefined && c.trk !== undefined && c.trk !== p.trk && c.trk === 1 && !p.trk) {
+      ev.push({ k, txt: `OBJETIVO DESIGNADO · ID ${idDe(ladDe(k))} por el operador`, col: COL.ok, marca: true });
+    }
+  });
+  const res = RESULTADOS[pt.resultado];
+  if (res && C.length > 1) ev.push({ k: C.length - 1, txt: res[0], col: res[1], marca: true });
+  return ev;
+}
+async function cargarPartida(fuente) {
+  try {
+    partida = normalizar(await cargarJSON(fuente));
+    eventos = calcularEventos(partida);
+    tPartida = 0; kAnterior = -1;
+    clicsK = partida.cuadros.map((c, k) => k).filter(k => partida.cuadros[k + 1] && partida.cuadros[k + 1].op === 1);
+    confirmados = new Set(); esperaClic = null; fpvVista.style.cursor = "";
+    prepararEscenario(partida);
+    $("resumen").classList.remove("ver");
+    const C = partida.cuadros, n1 = C.filter(c => c.fase === 1).length, N = C.length - 1;
+    $("s1").style.width = (100 * n1 / C.length) + "%";
+    $("s2").style.left = (100 * n1 / C.length) + "%";
+    $("marcas").innerHTML = eventos.filter(e => e.marca).map(e => `<div class="ev" style="left:${100 * e.k / N}%;background:${e.col}" title="${e.txt}"></div>`).join("");
+    if (modoCam === "arriba" || modoCam === "orbita") ponerCamara(modoCam);
+  } catch (e) {}
+}
+async function llenarSelector() {
+  const actual = sel.value;
+  const opciones = [["salida/replay_mision.json", "Misión completa · en vivo"], ["salida/replay_adv.json", "Partida en zona · en vivo"]];
+  try {
+    const hitos = await cargarJSON("salida/hitos/lista.json");
+    hitos.slice().reverse().forEach(h => opciones.push(["salida/hitos/" + h.archivo, `Hito ${(h.pasos / 1e6).toFixed(1)} M · ${h.mision ? "misión" : "partida"}`]));
+  } catch (e) {}
+  sel.innerHTML = opciones.map(([v, t]) => `<option value="${v}">${t}</option>`).join("");
+  if (actual && opciones.some(o => o[0] === actual)) sel.value = actual;
+}
+sel.addEventListener("change", () => cargarPartida(sel.value));
+function alternarPausa() { pausa = !pausa; $("pausa").textContent = pausa ? "▶" : "❚❚"; $("pausa").classList.toggle("activo", pausa); }
+$("pausa").addEventListener("click", alternarPausa);
+addEventListener("keydown", e => { if (e.code === "Space" && e.target.tagName !== "SELECT") { e.preventDefault(); alternarPausa(); } });
+$("velocidad").addEventListener("change", e => vel = +e.target.value);
+$("pista-t").addEventListener("click", e => {
+  if (!partida) return;
+  const r = e.currentTarget.getBoundingClientRect();
+  tPartida = limitar((e.clientX - r.left) / r.width, 0, 1) * (partida.cuadros.length - 1) * partida.dt;
+  confirmados = new Set([...confirmados].filter(q => q * partida.dt < tPartida));
+  esperaClic = null; fpvVista.style.cursor = "";
+  kAnterior = -1;
+  $("resumen").classList.remove("ver");
+});
+function ponerCamara(modo) {
+  document.querySelectorAll("[data-cam]").forEach(x => x.classList.toggle("activo", x.dataset.cam === modo));
+  modoCam = modo;
+  if (modo === "arriba") { camara.position.set(0, 62, 22); controles.target.set(0, 0, 0); }
+  if (modo === "orbita") { camara.position.set(-34, 24, 30); controles.target.set(0, 0, 0); }
+}
+document.querySelectorAll("[data-cam]").forEach(b => b.addEventListener("click", () => ponerCamara(b.dataset.cam)));
+function redimensionar() {
+  renderer.setSize(innerWidth, innerHeight);
+  camara.aspect = innerWidth / innerHeight;
+  camara.updateProjectionMatrix();
+}
+addEventListener("resize", redimensionar);
+
+// ======================================================================= estado actual → paneles
+let avisoHasta = 0;
+function aviso(txt, col, seg = 3) { const a = $("aviso"); a.textContent = txt; a.style.setProperty("--c", col); a.style.color = col; a.classList.add("ver"); avisoHasta = performance.now() + seg * 1000; }
+function lineaEstado(c, lad) {
+  if (c.fase === 1) return [c.bloq ? "BLOQUEO" : "MANUAL", c.bloq ? COL.peligro : COL.suave, c.msg];
+  const ped = (c.pers || []).find(p => p.rol === "peaton" && p.vis && !p.cand);
+  if (c.rfx) return ["ESQUIVE", COL.peligro, "Ataque detectado: alguien corre hacia el dron · el árbitro sube y se aparta hacia el lado contrario sin esperar a la IA"];
+  if (c.modo === 6) return ["PREDICCIÓN", COL.alerta, `Salió del cuadro corriendo · el dron sigue su trayectoria extrapolada (${Math.hypot(c.wx - c.d[0], c.wy - c.d[1]).toFixed(1)} m al punto predicho) mientras el gimbal intenta re-encuadrarlo`];
+  if (c.est === 1) return ["EVASIÓN", COL.alerta, "Amenaza confirmada: " + (fijado(c) ? "la IA ejecuta" : "la regla de seguridad ejecuta") + " «" + NOMBRES_TXT[c.cl] + "»" + (c.vis ? " sin dejar de apuntar al objetivo" : " · la guiñada sigue su curso")];
+  if (c.est === 2) return ["ESTABILIZA", COL.precaucion, "Estabilizando después de la evasión"];
+  if (c.fase === 2 && c.per && (c.modo === 0 || c.modo >= 4)) return ["PERÍMETRO", COL.peligro, "Persona a menos de 2 m: el giro de búsqueda queda en pausa hasta que se aleje"];
+  if (c.modo === 7) return ["BÚSQUEDA IA", COL.alerta, `La IA busca al objetivo perdido hace ${(c.tsv ?? 0).toFixed(1)} / ${partida.t_busqueda_ia ?? 60} s · última posición a ${Math.hypot(c.ux - c.d[0], c.uy - c.d[1]).toFixed(1)} m · altura ${c.d[2].toFixed(1)} m · gimbal ${(c.gmb ?? 0).toFixed(0)}°`];
+  if (c.modo === 3) return ["INVESTIGA", COL.alerta, (c.flq ? `Flanqueo profundo · rodea la esquina por la que desapareció, sin rozarla, para quedar detrás del muro (${(c.ruta || []).length} punto${(c.ruta || []).length === 1 ? "" : "s"} de ruta)` : `Objetivo perdido en campo abierto · se detiene ${Math.hypot(c.wx - c.d[0], c.wy - c.d[1]).toFixed(1)} m antes de su última posición`) + (c.va ? " · por encima de los paneles" : "")];
+  if (c.modo === 4) return ["ASOMO", COL.alerta, c.flq ? `Detrás del muro · paneo de 360° que empieza hacia la ${ladoTxt(c)}, hacia el interior de la zona que estaba oculta` : `Paneo de 360° que empieza hacia la ${ladoTxt(c)}, por donde iba el ladrón`];
+  if (c.modo === 5) return ["ALTURA", COL.peligro, c.d[2] < (partida.z_alto ?? 6.5) - 0.2 ? `Ventaja de altura · sube rápido a ${(partida.z_alto ?? 6.5).toFixed(1)} m sobre la zona de pérdida (no rodea el panel)` : "Barrido de 360° desde la altura con la cámara a −65°: el panel ya no tapa · si no lo reconfirma, misión fallida"];
+  if (c.modo === 0) {
+    if (c.bf === 1) return ["INSPECCIÓN", COL.nominal, `Búsqueda activa · flanqueo profundo del panel ${(c.pj ?? 0) + 1} visto por el LiDAR: rodea su esquina y queda detrás (${(c.ruta || []).length} punto${(c.ruta || []).length === 1 ? "" : "s"} de ruta)` + (c.va ? " · por encima de los paneles" : "") + (c.nadir ? " · cámara en nadir" : "")];
+    if (c.bf === 2) return ["INSPECCIÓN", COL.nominal, `Detrás del panel ${(c.pj ?? 0) + 1} · paneo de 360° hacia la ${ladoTxt(c)} primero (${c.ninsp ?? 0} revisado${(c.ninsp ?? 0) === 1 ? "" : "s"} en esta ronda)`];
+    const nIgn = (c.pers || []).filter(p => p.ign).length;
+    if (ped && ped.ign) return ["SEARCH", COL.nominal, `ID ${pad2(ped.id)} ya descartado por el operador: el giro continúa sin detenerse`];
+    return ["SEARCH", COL.nominal, "Giro continuo de 360° sobre su eje buscando personas con YOLO" + (nIgn ? ` · ${nIgn} ID descartado${nIgn > 1 ? "s" : ""} por el operador` : "")];
+  }
+  if (c.modo === 1) {
+    const q = candidato(c);
+    return ["VERIFICA", COL.precaucion, `Hover · persona ID ${q ? pad2(q.id) : "--"} ${q && q.vis ? "centrada en cámara" : "fuera de vista (el operador decide con lo que alcanzó a ver)"} · esperando el clic del operador sobre la persona`];
+  }
+  if (c.giro && ped && !c.amz && !c.vis && !c.per) return ["GIRO", COL.nominal, `Persona ID ${pad2(ped.id ?? 0)} en cámara sin amenaza: el giro continúa (rotar sobre su eje no acerca a nadie)`];
+  switch (c.trk) {
+    case 0: return ["BÚSQUEDA", COL.suave, "Buscando personas · esperando que el operador designe al sospechoso"];
+    case 1: return ["TRACK", COL.ok, `Objetivo ID ${pad2(lad.id)} fijado a ${c.dh.toFixed(1)} m` + (c.tf !== undefined ? ` · rastreo ${c.tf.toFixed(0)} / ${partida.t_rastreo ?? 30} s` : "")
+      + (c.cp !== undefined ? (c.dh < 3.5 ? " · muy cerca: frena para no sobrevolarlo" : c.dh <= 5 ? " · en la distancia óptima (3.5–5 m)" : " · navegación predictiva: corta hacia donde va") : "")
+      + (c.gmb !== undefined ? (Math.abs(c.ang) <= 0.1 * HFOV ? " · dentro de la banda muerta: yaw en 0" : " · fuera de la banda: el yaw lo recentra") : "") + (c.a === 6 ? " · acortando distancia (nunca a menos de 8 m)" : "")];
+    case 2: return ["MEMORIA", COL.nominal, "Objetivo oculto · el tracker conserva su pista hasta 1 s"];
+    case 3: return ["PERDIDO", COL.alerta, (lad && lad.tap ? "Objetivo detrás de un panel" : "Objetivo fuera de cámara") + " · empieza el protocolo de búsqueda"];
+    case 4: return ["RE-ID", COL.precaucion, "Objetivo en cámara · confirmando por apariencia que es el mismo ID (no cambia de objetivo por su cuenta)"];
+  }
+  return ["IA", COL.nominal, c.vis ? "Objetivo a la vista" : "Buscando al objetivo"];
+}
+function actualizarPaneles(c, b, k, info) {
+  const C = partida.cuadros, lad = (c.pers || []).find(p => p.rol === "ladron");
+  const f1 = c.fase === 1;
+  // barra superior
+  $("i-modo").textContent = f1 ? "MANUAL" : "GUIDED";
+  $("i-modo").style.color = f1 ? COL.texto : COL.nominal;
+  $("i-fuente").textContent = f1 ? "PILOTO · RC" : c.modo === 0 ? (c.bf ? "AUTO · INSPECCIÓN" : "AUTO · SEARCH") : c.modo === 1 ? "AUTO · HOVER"
+    : c.modo === 3 ? "AUTO · INVESTIGA" : c.modo === 4 ? "AUTO · ASOMO" : c.modo === 5 ? "AUTO · ALTURA" : c.modo === 6 ? "AUTO · PREDICCIÓN" : c.modo === 7 ? "IA · BÚSQUEDA" : "IA · MAVLink";
+  const [trkTxt, trkCol] = f1 ? ["IA INACTIVA", COL.tenue] : TRK[c.trk ?? (c.vis ? 1 : 0)];
+  const cnd = candidato(c);
+  $("i-obj").textContent = trkTxt + (fijado(c) && lad ? " · ID " + pad2(lad.id ?? 0) : c.modo === 1 && cnd ? " · ID " + pad2(cnd.id) : "");
+  $("i-obj").style.color = trkCol;
+  const arb = f1 ? (c.bloq ? ["BLOQUEO FRONTAL", COL.peligro] : ["NOMINAL", COL.ok]) : c.est === 1 ? ["EVASIÓN", COL.alerta] : c.per ? ["PERÍMETRO 2 m", COL.peligro] : c.amz ? ["AMENAZA", COL.peligro] : ["NOMINAL", COL.ok];
+  $("i-arb").textContent = arb[0]; $("i-arb").style.color = arb[1];
+  // telemetría
+  const dv = c.dv || [0, 0], gs = Math.hypot(dv[0], dv[1]);
+  const hdg = ((90 - c.d[3] * 180 / Math.PI) % 360 + 360) % 360;
+  const yawRate = -difAngGrados(b.d[3], c.d[3]) / partida.dt;
+  $("t-alt").textContent = c.d[2].toFixed(2) + " m";
+  $("t-gs").textContent = gs.toFixed(2) + " m/s";
+  $("t-hdg").textContent = hdg.toFixed(0).padStart(3, "0") + "°";
+  $("t-yaw").textContent = (yawRate >= 0 ? "+" : "") + yawRate.toFixed(0) + " °/s";
+  $("t-lid").textContent = lidarTxt(c);
+  $("t-vista").textContent = info.vista === null ? "–" : (info.vista * 100).toFixed(0) + " %";
+  // objetivo y pistas del tracker
+  const tag = $("obj-tag");
+  tag.textContent = trkTxt; tag.style.color = trkCol;
+  const nIgn = (c.pers || []).filter(p => p.ign).length;
+  $("obj-det").textContent = f1 ? "fase de piloto" : c.modo === 0 ? (c.bf ? `panel ${(c.pj ?? 0) + 1} · ${c.ninsp ?? 0} revisados` : nIgn ? `${nIgn} ID descartado${nIgn > 1 ? "s" : ""}` : "sin designación")
+    : c.modo === 1 ? "esperando el clic del operador" : c.modo >= 3 ? `última pos. (${c.ux.toFixed(1)}, ${c.uy.toFixed(1)})`
+    : c.trk === 1 ? `ID ${pad2(lad.id)} · ${c.dh.toFixed(1)} m · ${c.ang >= 0 ? "+" : ""}${c.ang.toFixed(0)}°` : c.trk >= 2 ? "último rumbo conocido" : "";
+  const filas = [];
+  (c.pers || []).forEach(p => {
+    const esObj = p.rol === "ladron" && fijado(c);
+    const det = f1 && p.vis === undefined ? enCampo(c, p) : p.vis;
+    if (!det && !esObj && !p.cand) return;
+    const d = Math.hypot(p.p[0] - c.d[0], p.p[1] - c.d[1]);
+    let rol, col, estado;
+    if (esObj) { rol = "OBJETIVO"; col = TRK[c.trk][1]; estado = TRK[c.trk][0]; }
+    else if (p.cand) { rol = "candidato"; col = COL.precaucion; estado = "VERIFICANDO"; }
+    else if (p.ign) { rol = "persona"; col = COL.tenue; estado = "DESCARTADO"; }
+    else { rol = "persona"; col = COL.nominal; estado = "OBSTÁCULO"; }
+    filas.push(`<div class="pista ${esObj ? "objetivo" : ""}" data-cand="${p.cand ? 1 : 0}"><span class="led on" style="--c:${col}"></span><span>ID ${pad2(p.id ?? 61)}</span><span class="rol">${rol} · ${d.toFixed(1)} m</span><span class="tag" style="color:${col}">${estado}</span></div>`);
+  });
+  $("pistas").innerHTML = filas.join("") || `<div class="pista"><span class="led"></span><span>—</span><span class="rol">sin personas en cámara</span><span></span></div>`;
+  // decisiones
+  const iaActiva = !f1 && (c.modo === undefined || c.modo === 2 || c.modo === 7);     // la política decide tras el lock-on y al buscarlo si lo pierde
+  const nombresAcc = c.modo === 7 ? NOMBRES_BUSQ : NOMBRES;
+  filasDec.forEach((fila, i) => { const sp = fila.querySelector("span:not(.led)"); if (sp.textContent !== nombresAcc[i]) sp.textContent = nombresAcc[i]; });
+  $("p-dec").classList.toggle("apagado", !iaActiva);
+  const pr = NOMBRES.map((_, i) => !f1 && c.pr && c.pr.length ? c.pr[i] ?? 0 : 0);
+  const elegida = !iaActiva ? -1 : c.est === 1 ? c.cl : c.a ?? pr.indexOf(Math.max(...pr));
+  filasDec.forEach((fila, i) => {
+    fila.querySelector("i").style.width = (pr[i] * 100).toFixed(1) + "%";
+    fila.querySelector("b").textContent = pr[i].toFixed(2);
+    fila.classList.toggle("sel", i === elegida);
+    fila.querySelector(".led").classList.toggle("on", i === elegida);
+  });
+  const vetada = iaActiva && c.modo !== 7 && c.est === 0 && c.a >= 1 && c.a <= 3 && !c.amz;
+  const sinEfecto = iaActiva && c.modo !== 7 && c.est === 0 && c.a >= 7;
+  $("veto").textContent = f1 ? "IA inactiva · solo actúa el bloqueo frontal (regla fija)"
+    : c.modo === 0 ? (c.bf ? "Búsqueda activa tras los paneles · lógica fija; la política PPO actúa después del lock-on" : "Modo SEARCH · lógica fija; la política PPO actúa después del lock-on")
+    : c.modo === 1 ? "Modo VERIFICACIÓN · hover a la espera del clic del operador"
+    : c.modo === 7 ? (c.est === 1 ? "Evasión en curso · la regla de seguridad manda durante la maniobra" : "Búsqueda por IA · la política controla motores y gimbal; recibe un bono si el ladrón vuelve a entrar en el cuadro")
+    : c.modo >= 3 ? "Protocolo de pérdida (determinista) · la política retoma al reconfirmar el ID"
+    : sinEfecto ? "«" + NOMBRES_TXT[c.a] + "» sin efecto con el objetivo fijado · la altura y el gimbal siguen las reglas de seguimiento"
+    : vetada ? "ÁRBITRO: «" + NOMBRES_TXT[c.a] + "» vetada · no hay amenaza real (la altura no se usa para seguir: eso lo hace el gimbal)"
+    : c.est === 1 ? "Evasión en curso · la política no decide durante la maniobra"
+    : c.giro ? "Giro comprometido · ninguna detección lo interrumpe salvo el perímetro de 2 m" : "";
+  $("veto").style.color = !iaActiva ? COL.tenue : vetada || c.est === 1 ? COL.alerta : COL.nominal;
+  // árbitro
+  const led = (id, on) => { $(id).classList.toggle("on", on); $(id).querySelector(".led").classList.toggle("on", on); };
+  led("l-bloq", !!(f1 && c.bloq));
+  led("l-amz", !!(!f1 && (c.amz || c.per)));
+  led("l-eva", !f1 && c.est === 1);
+  led("l-giro", !f1 && !c.per && ((c.modo === 0 && c.bf !== 1) || c.modo === 4 || (c.modo === 5 && c.d[2] > (partida.z_alto ?? 6.5) - 0.2) || (!!c.giro && !c.vis)));
+  led("l-dist", !f1 && c.vis && c.dh < 8.5);
+  // línea de estado
+  const [et, ec, txt] = lineaEstado(c, lad);
+  $("estado-tag").textContent = et; $("estado-tag").style.color = ec;
+  $("estado-txt").textContent = txt;
+  // bitácora
+  if (k !== kAnterior) {
+    const t = partida.dt;
+    $("log").innerHTML = eventos.filter(e => e.k <= k).slice(-4).map(e => `<div style="color:${e.col}"><i>${reloj(e.k * t)}</i>${e.txt}</div>`).join("");
+  }
+}
+// ---- confirmación del operador con un clic sobre la persona en foco ----
+let operadorManual = true, esperaClic = null, confirmados = new Set(), clicsK = [], clicVisual = null, cajasActuales = [];
+function confirmarClic(x, y) {
+  if (esperaClic === null) return;
+  confirmados.add(esperaClic);
+  esperaClic = null;
+  clicVisual = { x, y, t0: performance.now() };
+  fpvVista.style.cursor = "";
+  aviso("CLIC DEL OPERADOR · sospechoso confirmado: lock-on", COL.ok, 2.5);
+}
+$("b-operador").addEventListener("click", e => {
+  operadorManual = !operadorManual;
+  e.currentTarget.textContent = operadorManual ? "Operador · MANUAL" : "Operador · AUTO";
+  e.currentTarget.classList.toggle("activo", operadorManual);
+  if (!operadorManual && esperaClic !== null) { const c = cajasActuales.find(q => q.tipo === "cand"); confirmarClic(c ? (c.x0 + c.x1) / 2 : 0, c ? (c.y0 + c.y1) / 2 : 0); }
+});
+// el LiDAR va acoplado a la cámara: distancia y tipo de lo que hay en el centro de la imagen
+function lidarTxt(c) {
+  if (c.lt === undefined || !c.lh) return c.lid && c.lid < 19.9 ? c.lid.toFixed(2) + " m" : "> 20 m";
+  if (!c.lt) return "> 20 m";
+  const d = Math.hypot(c.lh[0] - c.d[0], c.lh[1] - c.d[1], c.lh[2] - c.d[2]).toFixed(1);
+  return (c.lt === 1 ? "suelo " : c.lt === 2 ? "obstáculo " : "persona ") + d + " m";
+}
+function enCampo(c, p) { return Math.abs(difAngGrados(Math.atan2(p.p[1] - c.d[1], p.p[0] - c.d[0]), c.d[3])) < HFOV / 2; }
+
+// ======================================================================= HUD de la cámara FPV
+const camDron = new THREE.PerspectiveCamera(VFOV, Math.tan(HFOV / 2 * Math.PI / 180) / Math.tan(VFOV / 2 * Math.PI / 180), 0.1, 700);
+const fpvVista = $("fpv-vista"), hud = $("hud-fpv"), hctx = hud.getContext("2d");
+function cajasPersonas(c, pers) {
+  const W = fpvVista.clientWidth, H = fpvVista.clientHeight, cajas = [];
+  const adelante = new THREE.Vector3();
+  camDron.getWorldDirection(adelante);
+  pers.forEach(pp => {
+    const det = c.fase === 1 && pp.vis === undefined ? enCampo(c, pp) : pp.vis;
+    if (!det) return;
+    const base = mundo(pp.p[0], pp.p[1], 0);
+    if (base.clone().sub(camDron.position).dot(adelante) <= 0.3) return;
+    let x0 = 1, x1 = -1, y0 = 1, y1 = -1;
+    [[-0.3, -0.3], [0.3, -0.3], [-0.3, 0.3], [0.3, 0.3]].forEach(([ox, oz]) => [0.0, 1.95].forEach(hy => {
+      const q = new THREE.Vector3(base.x + ox, hy, base.z + oz).project(camDron);
+      x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y);
+    }));
+    x0 = Math.max(x0, -1); x1 = Math.min(x1, 1); y0 = Math.max(y0, -1); y1 = Math.min(y1, 1);
+    if (x1 <= x0 || y1 <= y0) return;
+    const esL = pp.rol === "ladron", d = Math.hypot(pp.p[0] - c.d[0], pp.p[1] - c.d[1]);
+    let tipo = "persona";
+    if (esL && fijado(c) && c.trk === 1) tipo = "objetivo";
+    else if (esL && fijado(c) && c.trk === 4) tipo = "reid";
+    else if (pp.cand) tipo = "cand";
+    else if (pp.ign) tipo = "ign";
+    const pc = new THREE.Vector3(base.x, 0.9, base.z).project(camDron);       // centro del torso: el punto que siguen el yaw y el gimbal
+    cajas.push({ x0: (x0 + 1) / 2 * W, x1: (x1 + 1) / 2 * W, y0: (1 - y1) / 2 * H, y1: (1 - y0) / 2 * H, tipo, id: pp.id ?? 61, d,
+                 px: (pc.x + 1) / 2 * W, py: (1 - pc.y) / 2 * H });
+  });
+  return cajas;
+}
+fpvVista.addEventListener("click", e => {
+  if (esperaClic === null) return;
+  const r = fpvVista.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  const c = cajasActuales.find(q => q.tipo === "cand");
+  if (c && x >= c.x0 - 10 && x <= c.x1 + 10 && y >= c.y0 - 10 && y <= c.y1 + 10) confirmarClic(x, y);
+  else aviso("Haga clic dentro del recuadro de la persona en foco", COL.precaucion, 2);
+});
+$("pistas").addEventListener("click", e => {
+  const fila = e.target.closest(".pista");
+  if (!fila || fila.dataset.cand !== "1" || esperaClic === null) return;
+  const c = cajasActuales.find(q => q.tipo === "cand");
+  confirmarClic(c ? (c.x0 + c.x1) / 2 : fpvVista.clientWidth / 2, c ? (c.y0 + c.y1) / 2 : fpvVista.clientHeight / 2);
+});
+function dibujarHUD(s) {
+  const W = fpvVista.clientWidth, H = fpvVista.clientHeight, dpr = Math.min(devicePixelRatio, 2);
+  if (hud.width !== Math.round(W * dpr)) { hud.width = Math.round(W * dpr); hud.height = Math.round(H * dpr); }
+  const g = hctx;
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, W, H);
+  const C1 = "rgba(150,235,255,0.92)", C2 = "rgba(150,235,255,0.5)", cx = W / 2, cy = H / 2, ppd = H / VFOV;
+  const L = (a, b, c2, d) => { g.beginPath(); g.moveTo(a, b); g.lineTo(c2, d); g.stroke(); };
+  const texto = (t, x, y, al = "left", col = C1, peso = 500, tam = 9.5) => { g.font = `${peso} ${tam}px 'Roboto Mono', monospace`; g.textAlign = al; g.fillStyle = "rgba(0,0,0,.55)"; g.fillText(t, x + 1, y + 1); g.fillStyle = col; g.fillText(t, x, y); };
+  g.lineWidth = 1; g.strokeStyle = C1;
+  // horizonte artificial y escalera de cabeceo (la cámara va estabilizada en alabeo; el horizonte se mueve con el pitch del gimbal)
+  g.save(); g.beginPath(); g.rect(40, 30, W - 80, H - 60); g.clip();
+  const hy = cy + s.gimbal * ppd;
+  L(40, hy, cx - 34, hy); L(cx + 34, hy, W - 40, hy);
+  g.setLineDash([3, 3]);
+  [-20, -10, 10, 20].forEach(p => {
+    const y = hy - p * ppd;
+    if (p < 0) g.setLineDash([3, 3]); else g.setLineDash([]);
+    L(cx - 56, y, cx - 26, y); L(cx + 26, y, cx + 56, y);
+    g.setLineDash([]);
+    texto(Math.abs(p) + "", cx - 60, y + 3, "right", C2, 500, 8.5); texto(Math.abs(p) + "", cx + 60, y + 3, "left", C2, 500, 8.5);
+  });
+  g.restore();
+  // retícula central
+  g.strokeStyle = C1; g.lineWidth = 1.2;
+  L(cx - 16, cy, cx - 6, cy); L(cx + 6, cy, cx + 16, cy); L(cx, cy - 16, cx, cy - 6); L(cx, cy + 6, cx, cy + 16);
+  g.beginPath(); g.arc(cx, cy, 2, 0, Math.PI * 2); g.stroke();
+  // cinta de rumbo
+  const tx0 = cx - 70, tx1 = cx + 70, ty = 22;
+  g.save(); g.beginPath(); g.rect(tx0, 0, tx1 - tx0, 32); g.clip();
+  for (let a = Math.floor(s.hdg / 5) * 5 - 40; a <= s.hdg + 40; a += 5) {
+    const x = cx + (a - s.hdg) * 1.75, n = ((a % 360) + 360) % 360;
+    L(x, ty, x, ty - (n % 15 === 0 ? 6 : 3));
+    if (n % 30 === 0) texto({ 0: "N", 90: "E", 180: "S", 270: "W" }[n] ?? String(n).padStart(3, "0"), x, ty - 9, "center", C2, 500, 8);
+  }
+  g.restore();
+  g.fillStyle = "rgba(6,12,18,.8)"; g.fillRect(cx - 17, ty + 2, 34, 13); g.strokeRect(cx - 17, ty + 2, 34, 13);
+  texto(String(Math.round(s.hdg) % 360).padStart(3, "0") + "°", cx, ty + 12, "center", "#fff", 600, 9.5);
+  // indicador de alabeo (actitud del vehículo)
+  g.save(); g.translate(cx, H - 18); g.strokeStyle = C2;
+  [-30, -20, -10, 0, 10, 20, 30].forEach(r => { const a = (r - 90) * Math.PI / 180; L(Math.cos(a) * 30, 8 + Math.sin(a) * 30 + 22, Math.cos(a) * (r % 30 === 0 ? 24 : 27), 8 + Math.sin(a) * (r % 30 === 0 ? 24 : 27) + 22); });
+  g.rotate(s.roll * Math.PI / 180); g.fillStyle = C1; g.beginPath(); g.moveTo(0, -0.5); g.lineTo(-4, 6); g.lineTo(4, 6); g.closePath(); g.fill();
+  g.restore();
+  // cinta de altitud (derecha) y velocidad (izquierda)
+  const ax = W - 38, ay0 = cy - 52, ay1 = cy + 52;
+  g.save(); g.beginPath(); g.rect(ax, ay0, 32, ay1 - ay0); g.clip(); g.strokeStyle = C2;
+  for (let a = Math.floor((s.alt - 3) * 2) / 2; a <= s.alt + 3; a += 0.5) { const y = cy - (a - s.alt) * 34; L(ax, y, ax + (a % 1 === 0 ? 7 : 4), y); if (a % 1 === 0 && a >= 0) texto(a.toFixed(0), ax + 10, y + 3, "left", C2, 500, 8.5); }
+  g.restore();
+  g.strokeStyle = C1; g.fillStyle = "rgba(6,12,18,.8)"; g.fillRect(ax - 4, cy - 7, 38, 14); g.strokeRect(ax - 4, cy - 7, 38, 14);
+  texto(s.alt.toFixed(1), ax + 15, cy + 3.5, "center", "#fff", 600, 9.5);
+  texto("ALT m", ax + 15, ay0 - 4, "center", C2, 500, 8);
+  g.fillStyle = "rgba(6,12,18,.8)"; g.fillRect(6, cy - 7, 36, 14); g.strokeRect(6, cy - 7, 36, 14);
+  texto(s.gs.toFixed(1), 24, cy + 3.5, "center", "#fff", 600, 9.5);
+  texto("GS m/s", 24, cy - 12, "center", C2, 500, 8);
+  // datos en las esquinas
+  texto("● REC " + reloj(s.t), 8, 13, "left", "#ff6b6b", 600, 9);
+  texto(`R ${s.roll >= 0 ? "+" : ""}${s.roll.toFixed(1)}°  P ${s.pitch >= 0 ? "+" : ""}${s.pitch.toFixed(1)}°`, W - 8, 13, "right", C2, 500, 8.5);
+  texto("LiDAR " + (s.lidarTxt ?? (s.lidar < 19.9 ? s.lidar.toFixed(2) + " m" : "> 20 m")), 8, H - 8, "left", C1, 500, 9);
+  texto(`GMB ${s.gimbal >= 0 ? "+" : ""}${s.gimbal.toFixed(0)}° · HFOV 38.9°`, W - 8, H - 8, "right", C1, 500, 9);
+  // detecciones de YOLO con el ID del tracker
+  s.cajas.forEach(k => {
+    const col = k.tipo === "objetivo" ? "#ff5a5f" : k.tipo === "reid" || k.tipo === "cand" ? "#f5c542" : k.tipo === "ign" ? "#8b9bb0" : "#7fd8ff";
+    const w = k.x1 - k.x0, h = k.y1 - k.y0, e = Math.min(10, w / 3, h / 3);
+    g.strokeStyle = col; g.lineWidth = k.tipo === "objetivo" ? 1.8 : 1.2;
+    if (k.tipo === "reid" || k.tipo === "cand") { g.setLineDash([4, 3]); g.strokeRect(k.x0, k.y0, w, h); g.setLineDash([]); }
+    else [[k.x0, k.y0, 1, 1], [k.x1, k.y0, -1, 1], [k.x0, k.y1, 1, -1], [k.x1, k.y1, -1, -1]].forEach(([x, y, sx, sy]) => { L(x, y, x + sx * e, y); L(x, y, x, y + sy * e); });
+    const et = k.tipo === "objetivo" ? `ID ${pad2(k.id)} OBJ ${k.d.toFixed(1)}m` : k.tipo === "reid" ? `ID ${pad2(k.id)} REID…`
+      : k.tipo === "cand" ? `ID ${pad2(k.id)} ¿OBJETIVO?` : k.tipo === "ign" ? `ID ${pad2(k.id)} DESCARTADO` : `ID ${pad2(k.id)} PERSONA`;
+    g.font = "600 9px 'Roboto Mono', monospace";
+    const tw = g.measureText(et).width + 8, ly = k.y0 > 16 ? k.y0 - 13 : k.y0 + 1, lx = limitar(k.x0, 0, W - tw);
+    g.fillStyle = col; g.fillRect(lx, ly, tw, 12);
+    g.fillStyle = "#06101a"; g.textAlign = "left"; g.fillText(et, lx + 4, ly + 9);
+    if (k.tipo === "objetivo") { g.strokeStyle = "rgba(255,90,95,.55)"; g.setLineDash([2, 3]); L(cx, cy, (k.x0 + k.x1) / 2, (k.y0 + k.y1) / 2); g.setLineDash([]); }
+  });
+  // retícula fija: el cuadrado es la banda muerta (20% central del FOV horizontal y vertical). Mientras el punto del
+  // objetivo esté dentro, ni el yaw ni el gimbal corrigen; si sale, lo traen de vuelta al centro.
+  const obj = s.cajas.find(q => q.tipo === "objetivo");
+  const bw = W * 0.2, bh = H * 0.2;
+  let dentro = null;
+  if (obj) {
+    const ox = obj.px, oy = obj.py;
+    dentro = Math.abs(ox - cx) <= bw / 2 && Math.abs(oy - cy) <= bh / 2;
+    const ex = (ox - cx) / W * HFOV, ey = (oy - cy) / H * VFOV;
+    g.save(); g.shadowColor = "#ff5a5f"; g.shadowBlur = 10; g.fillStyle = "#ffe3e3";
+    g.beginPath(); g.arc(ox, oy, 3.2, 0, Math.PI * 2); g.fill(); g.restore();
+    g.strokeStyle = "rgba(255,90,95,.9)"; g.lineWidth = 1; g.beginPath(); g.arc(ox, oy, 6, 0, Math.PI * 2); g.stroke();
+    texto(`ERR  X ${ex >= 0 ? "+" : ""}${ex.toFixed(1)}°  Y ${ey >= 0 ? "+" : ""}${ey.toFixed(1)}°`, cx, cy + bh / 2 + 13, "center", dentro ? "#7ff0b0" : "#ffb35c", 600, 9);
+  }
+  const colB = dentro === null ? C2 : dentro ? "#33d17a" : "#ff9f1a";
+  g.strokeStyle = colB; g.lineWidth = dentro === null ? 1 : 1.4;
+  const e2 = 7, x0 = cx - bw / 2, x1 = cx + bw / 2, y0 = cy - bh / 2, y1 = cy + bh / 2;
+  [[x0, y0, 1, 1], [x1, y0, -1, 1], [x0, y1, 1, -1], [x1, y1, -1, -1]].forEach(([x, y, sx, sy]) => { L(x, y, x + sx * e2, y); L(x, y, x, y + sy * e2); });
+  g.setLineDash([2, 4]); g.strokeRect(x0, y0, bw, bh); g.setLineDash([]);
+  if (dentro !== null) texto(dentro ? "EN BANDA · YAW 0" : "CORRIGIENDO", cx, y0 - 4, "center", colB, 600, 8);
+  // confirmación del operador: guía de clic, cursor del operador simulado y onda del clic
+  const cnd = s.cajas.find(q => q.tipo === "cand");
+  if (s.esperando && cnd) {
+    const pul = 3 + 2 * Math.sin(performance.now() / 160);
+    g.strokeStyle = "#f5c542"; g.lineWidth = 2; g.setLineDash([5, 4]);
+    g.strokeRect(cnd.x0 - pul, cnd.y0 - pul, cnd.x1 - cnd.x0 + 2 * pul, cnd.y1 - cnd.y0 + 2 * pul); g.setLineDash([]);
+    texto("CLIC PARA CONFIRMAR", (cnd.x0 + cnd.x1) / 2, Math.min(cnd.y1 + 16, H - 22), "center", "#f5c542", 700, 9.5);
+  }
+  if (s.cursor) {
+    const { x, y } = s.cursor;
+    g.fillStyle = "#ffffff"; g.strokeStyle = "#06101a"; g.lineWidth = 1.2;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 14); g.lineTo(x + 4, y + 10.5); g.lineTo(x + 7, y + 16); g.lineTo(x + 9, y + 15); g.lineTo(x + 6.2, y + 9.5); g.lineTo(x + 11, y + 9.5); g.closePath(); g.fill(); g.stroke();
+  }
+  if (clicVisual) {
+    const tc = (performance.now() - clicVisual.t0) / 700;
+    if (tc < 1) { g.strokeStyle = `rgba(51,209,122,${1 - tc})`; g.lineWidth = 2; g.beginPath(); g.arc(clicVisual.x, clicVisual.y, 6 + tc * 26, 0, Math.PI * 2); g.stroke(); }
+    else clicVisual = null;
+  }
+  // estado del tracker
+  const t = $("fpv-trk");
+  t.textContent = s.trk[0]; t.style.color = s.trk[1];
+}
+
+// ======================================================================= animación
+function animarPersona(g, d, dtReal, ahora, aDron) {
+  const u = g.userData, rap = Math.hypot(d.v[0], d.v[1]);
+  if (rap > 0.12) g.rotation.y = lerpAng(g.rotation.y, Math.atan2(d.v[1], d.v[0]), 0.25);
+  u.fase += dtReal * (d.run ? 12 : 7.5) * Math.min(rap / 1.3, 1.5);
+  const amp = Math.min(rap / 1.3, 1) * (d.run ? 0.95 : 0.6);
+  u.pi.rotation.z = Math.sin(u.fase) * amp; u.pd.rotation.z = -Math.sin(u.fase) * amp;
+  u.bi.rotation.z = -Math.sin(u.fase) * amp * 0.9; u.bd.rotation.z = Math.sin(u.fase) * amp * 0.9;
+  u.cuerpo.position.y = Math.abs(Math.sin(u.fase)) * 0.05 * Math.min(rap, 1) + Math.sin(ahora / 600) * 0.008;
+  u.cuerpo.rotation.z = lerp(u.cuerpo.rotation.z, -(d.run ? 0.22 : 0.06) * Math.min(rap, 1), 0.2);
+  if (aDron) {
+    const rel = Math.atan2(-(aDron.z - g.position.z), aDron.x - g.position.x) - g.rotation.y;
+    u.cabeza.rotation.y = lerp(u.cabeza.rotation.y, limitar(Math.atan2(Math.sin(rel), Math.cos(rel)), -1, 1), 0.15);
+  }
+}
+function mostrarResumen() {
+  const C = partida.cuadros, f2 = C.filter(q => q.fase === 2), n1 = C.length - f2.length, t = partida.dt;
+  const pv = f2.length ? f2.filter(q => q.vis).length / f2.length : 0;
+  const kDes = f2.findIndex(q => q.op === 1 || (q.modo === undefined && q.trk === 1));
+  const perdidas = eventos.filter(e => e.txt.startsWith("OBJETIVO PERDIDO")).length;
+  const recuperadas = eventos.filter(e => e.txt.startsWith("OBJETIVO RECUPERADO")).length;
+  const desdeAltura = eventos.filter(e => e.txt.startsWith("OBJETIVO RECUPERADO") && e.txt.includes("desde la altura")).length;
+  const inspecciones = eventos.filter(e => e.txt.startsWith("BARRIDO SIN RESULTADO · búsqueda activa")).length;
+  const descartes = f2.filter(q => q.op === 2).length;
+  const [resTxt, resCol, ok] = RESULTADOS[partida.resultado] || RESULTADOS["tiempo"];
+  const tf = f2.length && f2[f2.length - 1].tf !== undefined ? f2[f2.length - 1].tf : null;
+  $("res-tag").textContent = ok ? "CUMPLIDA" : "FALLIDA";
+  $("res-tag").style.color = ok ? COL.ok : COL.peligro;
+  const fila = (a, b, col) => `<tr><td>${a}</td><td style="color:${col || "inherit"}">${b}</td></tr>`;
+  $("res-tabla").innerHTML = fila("Resultado", resTxt.replace(/^MISIÓN (CUMPLIDA|FALLIDA|INCONCLUSA) · /, ""), resCol)
+    + (tf !== null && kDes >= 0 ? fila("Rastreo tras el lock-on", `${tf.toFixed(1)} / ${partida.t_rastreo ?? 30} s`, ok ? COL.ok : COL.alerta) : "")
+    + fila("Objetivo en vista (fase IA)", (pv * 100).toFixed(0) + " %", pv >= 0.5 ? COL.ok : pv >= 0.2 ? COL.precaucion : COL.alerta)
+    + fila("Tiempo hasta el lock-on", kDes >= 0 ? (kDes * t).toFixed(1) + " s" : "no fijado")
+    + fila("Personas descartadas por el operador", descartes)
+    + fila("Paneles inspeccionados (búsqueda activa)", inspecciones)
+    + fila("Pérdidas / recuperaciones del objetivo", `${perdidas} / ${recuperadas}`, perdidas && recuperadas === perdidas ? COL.ok : perdidas ? COL.alerta : "")
+    + fila("Recuperaciones con ventaja de altura", desdeAltura)
+    + fila("Maniobras de evasión", partida.maniobras ?? "–")
+    + fila("Duración (piloto + IA)", `${(n1 * t).toFixed(0)} s + ${(f2.length * t).toFixed(0)} s`)
+    + fila("Política", `${(partida.pasos / 1e6).toFixed(1)} M pasos · it ${partida.iteracion ?? "–"}`);
+  $("resumen").classList.add("ver");
+}
+
+let tPrevio = performance.now();
+function animar(ahora) {
+  requestAnimationFrame(animar);
+  const dtReal = Math.min((ahora - tPrevio) / 1000, 0.1);
+  tPrevio = ahora;
+  rotores.forEach(r => r.rotor.rotation.y += r.sentido * dtReal * 80);
+  ventilador.rotation.y += dtReal * 25;
+  estrobo.visible = Math.floor(ahora / 110) % 12 === 0;
+  if (ahora > avisoHasta) $("aviso").classList.remove("ver");
+  if (!$("monitor").classList.contains("plegado")) Object.values(OSC).forEach(o => o.dibujar(ahora));
+  if (partida && partida.cuadros.length > 1) {
+    const C = partida.cuadros, dt = partida.dt;
+    if (!pausa && esperaClic === null) {
+      const tNuevo = tPartida + dtReal * vel;
+      // modo MANUAL: la repetición se detiene en la alerta hasta que el operador haga clic sobre la persona
+      const kc = operadorManual ? clicsK.find(q => !confirmados.has(q) && (q + 0.01) * dt >= tPartida - 1e-6 && (q + 0.01) * dt <= tNuevo) : undefined;
+      if (kc !== undefined) {
+        tPartida = (kc + 0.01) * dt;
+        esperaClic = kc;
+        fpvVista.style.cursor = "crosshair";
+      } else tPartida = tNuevo;
+    }
+    if (esperaClic !== null) {
+      const a = $("aviso");
+      a.textContent = "CONFIRMACIÓN DEL OPERADOR · clic sobre la persona (cámara FPV o lista del tracker)";
+      a.style.setProperty("--c", COL.precaucion); a.style.color = COL.precaucion; a.classList.add("ver");
+      avisoHasta = ahora + 400;
+    }
+    const total = (C.length - 1) * dt;
+    if (tPartida >= total) {
+      tPartida = total;
+      if (!$("resumen").classList.contains("ver") && !recargando) {
+        mostrarResumen();
+        recargando = true;
+        setTimeout(async () => { await cargarPartida(sel.value); recargando = false; }, 5000);
+      }
+    }
+    const k = Math.min(Math.floor(tPartida / dt), C.length - 2), f = (tPartida - k * dt) / dt;
+    const a = C[k], b = C[k + 1];
+    if (kAnterior >= 0 && k > kAnterior) {     // avisos de los eventos que acaban de ocurrir
+      eventos.filter(e => e.k > kAnterior && e.k <= k && e.marca).forEach(e => {
+        aviso(e.txt, e.col);
+        if (e.txt.startsWith("CAMBIO DE MODO")) pulso.userData.t0 = ahora;
+      });
+    }
+    const dx = lerp(a.d[0], b.d[0], f), dy = lerp(a.d[1], b.d[1], f), dz = lerp(a.d[2], b.d[2], f), psi = lerpAng(a.d[3], b.d[3], f);
+    dron.position.copy(mundo(dx, dy, dz + Math.sin(ahora / 380) * 0.01));
+    dron.rotation.y = psi;
+    const tp = (ahora - (pulso.userData.t0 || -1e9)) / 1000;
+    pulso.material.opacity = tp >= 0 && tp < 1.5 ? 0.8 * (1 - tp / 1.5) : 0;
+    pulso.scale.setScalar(0.5 + Math.max(tp, 0) * 6);
+    pulso.position.copy(mundo(dx, dy, 0.05));
+    const dv = a.dv || [0, 0];
+    const vAdel = dv[0] * Math.cos(psi) + dv[1] * Math.sin(psi), vDer = dv[0] * Math.sin(psi) - dv[1] * Math.cos(psi);
+    // inclinación del chasis: la de la simulación (cabeceo por la aceleración) o, en repeticiones viejas, por la velocidad
+    chasis.rotation.z = a.cp !== undefined ? lerp(a.cp, b.cp ?? a.cp, f) * Math.PI / 180 : lerp(chasis.rotation.z, -vAdel * 0.11, 0.12);
+    chasis.rotation.x = a.cr !== undefined ? lerp(a.cr, b.cr ?? a.cr, f) * Math.PI / 180 : lerp(chasis.rotation.x, vDer * 0.11, 0.12);
+    const colEstado = a.fase === 1 ? (a.bloq ? 0xff4d4f : 0x8b9bb0) : a.est === 1 ? 0xff9f1a : a.modo === 1 ? 0xf5c542 : a.vis ? 0x33d17a : 0x2db7ff;
+    halo.material.color.set(colEstado);
+    ponerEtiqueta(etqDron, a.fase === 1 ? "UAV · MANUAL" : a.modo !== undefined ? "UAV · " + MODOS[a.modo] : "UAV · GUIDED");
+    leds.forEach(l => l.visible = l.userData.frontal || Math.floor(ahora / 450) % 2 === 0);
+    cono.position.copy(mundo(dx, dy, dz - 0.09));
+    cono.rotation.y = psi;
+    cono.material.uniforms.fuerza.value = a.fase === 2 && a.vis ? 1.1 : 0.6;
+    cono.material.uniforms.color.value.set(a.fase === 2 && a.vis ? 0x33d17a : 0x2db7ff);
+    sombraDron.position.set(dx, 0.013, -dy);
+    sombraDron.material.opacity = Math.max(0.15, 1 - dz / 6);
+    // personas: el color es la verdad del simulador; la etiqueta es lo que sabe el dron
+    const pa = a.pers || [], pb = b.pers || [];
+    let iPea = 0;
+    ladron.visible = false;
+    peatones.forEach(p => p.visible = false);
+    pa.forEach((pp, i) => {
+      const q = pb[i] && pb[i].rol === pp.rol ? pb[i] : pp;
+      const g = pp.rol === "ladron" ? ladron : peatones[iPea++];
+      if (!g) return;
+      g.visible = true;
+      g.position.copy(mundo(lerp(pp.p[0], q.p[0], f), lerp(pp.p[1], q.p[1], f), lerp(pp.sz ?? 0, q.sz ?? 0, f)));
+      animarPersona(g, pp, dtReal, ahora, pp.rol === "ladron" ? dron.position : null);
+      const u = g.userData, id = pad2(pp.id ?? 61), det = a.fase === 1 && pp.vis === undefined ? enCampo(a, pp) : pp.vis;
+      let texto = null, fondo = "rgba(14,20,28,0.92)", borde = "rgba(127,216,255,0.7)", anilloOp = 0, anilloCol = 0x7fd8ff, anilloTex = TEX_ANILLO;
+      if (pp.rol === "ladron" && fijado(a)) {
+        const [tt, cc] = TRK[a.trk];
+        texto = `ID ${id} · OBJETIVO · ${tt}`; borde = cc; anilloOp = 0.9; anilloCol = parseInt(cc.slice(1), 16);
+        if (a.trk !== 1) anilloTex = TEX_ANILLO_G;
+      } else if (pp.cand) {
+        texto = `ID ${id} · VERIFICANDO`; borde = COL.precaucion; anilloOp = 0.9; anilloCol = 0xf5c542; anilloTex = TEX_ANILLO_G;
+      } else if (det) {
+        texto = `ID ${id} · ${pp.ign ? "DESCARTADO" : "PERSONA"}`; anilloOp = pp.ign ? 0.3 : 0.55;
+        if (pp.ign) { borde = "rgba(139,155,176,0.6)"; anilloCol = 0x8b9bb0; }
+      }
+      ponerEtiqueta(u.etq, texto, fondo, borde);
+      u.marca.material.opacity = lerp(u.marca.material.opacity, anilloOp, 0.2);
+      u.marca.material.color.set(anilloCol);
+      if (u.marca.material.map !== anilloTex) { u.marca.material.map = anilloTex; u.marca.material.needsUpdate = true; }
+      u.marca.rotation.z += dtReal * 0.6;
+    });
+    const lad = pa.find(p => p.rol === "ladron");
+    // el gimbal apunta al objetivo fijado o, al verificar, a la persona en foco
+    const enfoque = fijado(a) ? (a.vis ? lad : null) : a.modo === 1 ? candidato(a) : null;
+    const dEnf = enfoque && enfoque.vis !== false ? Math.hypot(enfoque.p[0] - dx, enfoque.p[1] - dy) : 0;
+    gimbalPitch.rotation.z = a.gmb !== undefined ? lerp(a.gmb, b.gmb ?? a.gmb, f) * Math.PI / 180      // pitch real del gimbal (entorno)
+      : lerp(gimbalPitch.rotation.z, dEnf ? -Math.atan2(dz - 1.0, Math.max(dEnf, 0.5)) : -0.17, 0.2);
+    marcaUlt.visible = protocolo(a);
+    if (marcaUlt.visible) { marcaUlt.position.set(a.ux, 0.03, -a.uy); marcaUlt.rotation.y += dtReal * 0.8; }
+    marcaWp.visible = a.fase === 2 && ((a.modo === 0 && a.bf >= 1) || a.modo === 3 || a.modo === 4 || a.modo === 5);
+    dibujarMapaLidar(a.fase === 2 ? a.det : null);
+    lineaRuta.visible = a.fase === 2 && !!(a.ruta && a.ruta.length);
+    if (lineaRuta.visible) {
+      lineaRuta.geometry.setFromPoints([mundo(dx, dy, 0.06), ...a.ruta.map(q => mundo(q[0], q[1], 0.06))]);
+      lineaRuta.computeLineDistances();
+    }
+    // flecha de escape: el último vector de movimiento del ladrón (de ahí sale el lado del paneo dirigido)
+    const ev_ = a.ev || [0, 0], vev = Math.hypot(ev_[0], ev_[1]);
+    flechaEscape.visible = a.fase === 2 && (a.modo === 3 || a.modo === 4 || a.modo === 6 || a.modo === 7) && vev > 0.8;
+    if (flechaEscape.visible) {
+      flechaEscape.position.set(a.ux, 0.08, -a.uy);
+      flechaEscape.setDirection(new THREE.Vector3(ev_[0] / vev, 0, -ev_[1] / vev));
+      flechaEscape.setLength(Math.min(1.5 * vev, 5), 0.6, 0.35);
+    }
+    if (marcaWp.visible) { marcaWp.position.set(a.wx, 0.03, -a.wy); marcaWp.rotation.y -= dtReal * 0.8; }
+    // LiDAR
+    const origen = mundo(dx, dy, dz - 0.12);
+    let fin;
+    if (a.lh && a.lt) { const q = b.lh || a.lh; fin = mundo(lerp(a.lh[0], q[0], f), lerp(a.lh[1], q[1], f), lerp(a.lh[2], q[2], f)); }
+    else if (a.lh) { const Ld = 20, th_ = gimbalPitch.rotation.z; fin = mundo(dx + Ld * Math.cos(th_) * Math.cos(psi), dy + Ld * Math.cos(th_) * Math.sin(psi), dz - 0.12 + Ld * Math.sin(th_)); }
+    else if (a.las && lad) fin = mundo(lad.p[0], lad.p[1], 1.1);
+    else { const Ld = a.lid ? Math.min(a.lid, 20) : 20; fin = mundo(dx + Ld * Math.cos(psi), dy + Ld * Math.sin(psi), a.lid && a.lid < 19.9 ? dz - 0.12 : Math.max(dz - 1.6, 0.05)); }
+    laser.geometry.setFromPoints([origen, fin]);
+    puntoLaser.position.copy(fin);
+    if (lad && fijado(a) && (a.vis || lad.tap)) {
+      lineaVista.visible = true;
+      lineaVista.material.color.set(a.vis ? 0x33d17a : 0xff4d4f);
+      lineaVista.geometry.setFromPoints([origen, mundo(lad.p[0], lad.p[1], 1.3)]);
+      lineaVista.computeLineDistances();
+    } else lineaVista.visible = false;
+    const hist = C.slice(Math.max(0, k - 60), k + 1);
+    actualizarRastro(rastroDron, hist.map(c => [c.d[0], 0.03, -c.d[1]]));
+    const histL = hist.filter(c => c.fase === 2 && c.pers && c.pers[0] && c.pers[0].rol === "ladron").map(c => [c.pers[0].p[0], 0.03, -c.pers[0].p[1]]);
+    rastroLadron.visible = histL.length > 1;
+    if (histL.length > 1) actualizarRastro(rastroLadron, histL);
+    // paneles
+    const f2h = C.slice(0, k + 1).filter(q => q.fase === 2);
+    actualizarPaneles(a, b, k, { vista: f2h.length ? f2h.filter(q => q.vis).length / f2h.length : null });
+    kAnterior = k;
+    const giro = -difAngGrados(b.d[3], a.d[3]) / dt / 60, subida = (b.d[2] - a.d[2]) / dt;
+    if (a.fase === 1) { const [adel, der] = a.piloto || [0, 0]; dibujarRadio([giro, a.d[2] < 2.2 ? 0.9 : subida], [der, adel], 1, !!a.bloq); }
+    else dibujarRadio([giro, subida / 0.7], [vDer / 1.5, vAdel / 1.5], 2, false);
+    // cámara del dron (FPV) y su HUD
+    const pitch = gimbalPitch.rotation.z;
+    camDron.position.copy(mundo(dx + 0.08 * Math.cos(psi), dy + 0.08 * Math.sin(psi), dz - 0.12));
+    camDron.lookAt(camDron.position.clone().add(new THREE.Vector3(Math.cos(psi) * Math.cos(pitch), Math.sin(pitch), -Math.sin(psi) * Math.cos(pitch))));
+    camDron.updateMatrixWorld();
+    const trk = a.fase === 1 ? ["IA INACTIVA", COL.tenue] : a.trk === undefined ? (a.vis ? TRK[1] : TRK[3]) : TRK[a.trk];
+    const cajas = cajasPersonas(a, pa);
+    cajasActuales = cajas;
+    let cursorSim = null;
+    const cajaCand = cajas.find(q => q.tipo === "cand");
+    if (!operadorManual && cajaCand) {
+      const kc = clicsK.find(q => k >= q - 10 && k <= q);
+      if (kc !== undefined) {
+        const pr_ = limitar((k + f - (kc - 10)) / 10, 0, 1), e_ = 1 - Math.pow(1 - pr_, 3);
+        const tx = (cajaCand.x0 + cajaCand.x1) / 2, ty = (cajaCand.y0 + cajaCand.y1) / 2;
+        cursorSim = { x: lerp(fpvVista.clientWidth - 18, tx, e_), y: lerp(fpvVista.clientHeight - 24, ty, e_) };
+        if (k === kc && !confirmados.has(kc)) { confirmados.add(kc); clicVisual = { x: tx, y: ty, t0: performance.now() }; }
+      }
+    }
+    dibujarHUD({ esperando: esperaClic !== null, cursor: cursorSim, gimbal: pitch * 180 / Math.PI, hdg: ((90 - psi * 180 / Math.PI) % 360 + 360) % 360, roll: chasis.rotation.x * 180 / Math.PI,
+                 pitch: -chasis.rotation.z * 180 / Math.PI, alt: dz, gs: Math.hypot(dv[0], dv[1]), lidar: a.lid || 20, lidarTxt: lidarTxt(a), t: k * dt, trk, cajas });
+    $("cursor").style.left = (100 * k / (C.length - 1)) + "%";
+    $("reloj").textContent = reloj(k * dt);
+    // cámara de la escena
+    const objDron = new THREE.Vector3(dx, dz, -dy);
+    if (modoCam === "seguir") {
+      controles.target.lerp(objDron, 0.12);
+      camara.position.lerp(new THREE.Vector3(dx - 3.0 * Math.cos(psi), dz + 1.0, -(dy - 3.0 * Math.sin(psi))), 0.06);
+    } else if (modoCam === "cine") {
+      let rumbo = psi, dist = 4.6, alto = 1.9;
+      const foco = objDron.clone();
+      const quien = protocolo(a) ? { p: [a.wx ?? a.ux, a.wy ?? a.uy] } : a.modo === 0 && a.bf >= 1 ? { p: [a.wx, a.wy] } : lad && fijado(a) ? lad : a.modo === 1 ? candidato(a) : null;
+      if (quien) {
+        const rx = quien.p[0] - dx, ry = quien.p[1] - dy, Ld = Math.hypot(rx, ry);
+        rumbo = Math.atan2(ry, rx);
+        dist = Math.min(4.8 + Ld * 0.3, 11);
+        alto = 2.2 + Ld * 0.16;
+        foco.lerp(new THREE.Vector3(quien.p[0], 1.0, -quien.p[1]), 0.4);
+      }
+      angCine = lerpAng(angCine, rumbo, 0.03);
+      controles.target.lerp(foco, 0.07);
+      camara.position.lerp(new THREE.Vector3(dx - dist * Math.cos(angCine) + 1.6 * Math.sin(angCine), dz + alto, -(dy - dist * Math.sin(angCine) - 1.6 * Math.cos(angCine))), 0.04);
+    }
+    sol.position.set(dx - 25, 45, -dy + 20);
+    sol.target.position.set(dx, 0, -dy);
+  }
+  controles.update();
+  renderer.setScissorTest(false);
+  renderer.setViewport(0, 0, innerWidth, innerHeight);
+  renderer.shadowMap.needsUpdate = true;
+  renderer.render(escena, camara);
+  if (partida) {     // la cámara del dron se dibuja dentro del recuadro FPV
+    const rv = fpvVista.getBoundingClientRect(), x = rv.left, y = innerHeight - rv.bottom;
+    const ocultos = [dron, cono, laser, puntoLaser, lineaVista, pulso, rastroDron, rastroLadron, sombraDron, marcaUlt, marcaWp, mapaLidar, flechaEscape, lineaRuta,
+                     ...[ladron, ...peatones].flatMap(p => [p.userData.etq, p.userData.marca])].filter(o => o && o.visible);
+    ocultos.forEach(o => o.visible = false);
+    renderer.setScissorTest(true);
+    renderer.setViewport(x, y, rv.width, rv.height);
+    renderer.setScissor(x, y, rv.width, rv.height);
+    renderer.render(escena, camDron);
+    ocultos.forEach(o => o.visible = true);
+  }
+}
+
+(async () => {
+  try { await Promise.all([document.fonts.load("500 44px 'Roboto Mono'"), document.fonts.load("700 20px Inter")]); } catch (e) {}
+  redimensionar();
+  requestAnimationFrame(animar);
+  await llenarSelector();
+  await cargarPartida(sel.value || "salida/replay_mision.json");
+  await actualizarMetricas();
+  setInterval(actualizarMetricas, 5000);
+  setInterval(llenarSelector, 30000);
+})();
+</script>
+</body>
+</html>
