@@ -1,0 +1,7 @@
+flowchart LR
+    A["<b>1 · Simulación</b><br/>protocolo a–e<br/>100 vuelos por variante"] --> B["<b>2 · Banco sin hélices</b><br/>GUIDED y retoma<br/>latencia &lt; 150 ms"]
+    B --> C["<b>3 · Datos reales</b><br/>dron en carrito<br/>conos de 2 a 15 m"]
+    C --> D["<b>4 · Modo sombra</b><br/>decide y registra,<br/>no manda"]
+    D --> E["<b>5 · Vuelos</b><br/>cartón → maniquí<br/>→ persona (10/10)"]
+    E --> F["<b>6 · Protocolo en campo</b><br/>10 repeticiones<br/>por escenario"]
+    D -. "decide distinto:<br/>ajustar o reentrenar" .-> C

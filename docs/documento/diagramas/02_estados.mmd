@@ -1,0 +1,19 @@
+stateDiagram-v2
+    [*] --> PILOTO
+    PILOTO: PILOTO (LOITER a 2.3 m)<br/>el sistema solo observa
+    VIGILANDO: VIGILANDO<br/>modo experimental activo (CH7)
+    DETENER: DETENER<br/>velocidad horizontal = 0
+    ASCENDER: DETENER Y ASCENDER<br/>GUIDED, subir a 3.30 m
+    RETENIDO: RETENIDO<br/>espera al operador a 3.30 m
+    PILOTO --> VIGILANDO: piloto activa CH7
+    VIGILANDO --> PILOTO: piloto desactiva CH7
+    VIGILANDO --> DETENER: IA con P ≥ 0.7 en 2 cuadros<br/>(árbitro aún no autoriza subir)
+    VIGILANDO --> ASCENDER: LiDAR < 3 m avanzando<br/>o persona < 3 m<br/>o persona < 8 m acercándose
+    DETENER --> ASCENDER: el árbitro autoriza el ascenso
+    DETENER --> VIGILANDO: el riesgo desaparece
+    ASCENDER --> RETENIDO: altura ≥ 3.30 m
+    RETENIDO --> PILOTO: piloto mueve CH5 (retoma el mando)
+    VIGILANDO --> PARADA: CH8
+    DETENER --> PARADA: CH8
+    ASCENDER --> PARADA: CH8
+    PARADA: PARADA DE EMERGENCIA<br/>(manda sobre todo)

@@ -1,0 +1,115 @@
+# Diagnóstico del Word del proyecto de grado
+
+Revisión del archivo `Proyecto de grado Dron IA.docx` (89 páginas, 2026-10-12) contra la carta al comité, el repositorio y
+la plantilla APA de la USB (`Plantilla_APA_TesisUSBCo_2022_v.6.docx`). Todo lo de esta tabla ya está marcado en la copia
+intervenida con rojo, verde, amarillo o turquesa.
+
+## 1. Inconsistencias encontradas
+
+| # | Dónde | Problema | Qué se hizo en la copia |
+|---|---|---|---|
+| 1 | Introducción, planteamiento, justificación, alcances, 1.7.3, 1.9.3, 2.1.2, 2.1.10 | Dice Raspberry Pi (33 menciones) | Cambiado a Jetson Orin Nano donde describe el sistema; se dejó como historia en 2.1.3–2.1.8 con una aclaración |
+| 2 | Limitaciones | "Dron fijo, sin evasión" contradice "detención y ascenso" | Reescrita: el modo estático es un escenario más |
+| 3 | Limitaciones | "No es validación por repeticiones" contradice el objetivo 3 | Reemplazada por la de 10 repeticiones con intervalo de confianza |
+| 4 | Limitaciones | "Sin sensores adicionales" frente a cámara, estabilizador y GPS | Reescrita: sin sensores **de percepción** adicionales |
+| 5 | Limitaciones | "Sin entrenamiento desde cero" frente al MLP entrenado | Reescrita: se refiere al detector |
+| 6 | 2.2.6 | El MLP tenía 3 entradas y 4 salidas con evasión izquierda/derecha | Reemplazado por el decisor real: 15 entradas, una salida (CONTINUAR / DETENER_Y_ASCENDER) |
+| 7 | 2.2.6, Figura 28 | El diagrama de evasión muestra izquierda/derecha y umbral 60 % | Marcado para eliminar; nuevas Figuras N2 (arquitectura) y N3 (estados) |
+| 8 | 2.1.10 | TF-Luna; el sistema usa TF03. Lógica "YOLO + LiDAR deben coincidir" no es la implementada | Corregido; agregada Tabla N3 con d_safe por velocidad |
+| 9 | 2.2.2, 2.2.5 | 921600 baudios, Ubuntu 20.04, cámara CSI | 115200, Ubuntu 24.04, cámara USB |
+| 10 | Tabla 14 | LiDAR y MAVLink "pendientes" | Actualizados a verificados con fecha |
+| 11 | Tablas 8 y 9 | Los totales no salen de los pesos de la Tabla 7 (se probaron todas las combinaciones de pesos enteros de 1 a 10) | REVISAR + Tabla N2 recalculada con pesos explícitos |
+| 12 | Tabla 10 | Es una copia de la Tabla 9 (mismas filas y números) | REVISAR: rehacerla con criterios de control de vuelo |
+| 13 | Tabla 9 | La matriz eligió la Raspberry Pi, que falló | Párrafo de reevaluación con datos medidos (propuesta) |
+| 14 | 1.9.3, Figura 16 | La imagen dice "Raspberry Pi" y "entorno indoor" | Figura corregida (mismo dibujo, dos textos cambiados) |
+| 15 | 2.1.2, Figura 18 | Dice Raspberry Pi, cámara CSI, UBEC 5 V y repite un bloque | REVISAR: rehacer |
+| 16 | Figuras 21, 22, 24 | "Elaboración por Gemini" | Nota corregida + REVISAR (declarar IA o usar foto real) |
+| 17 | Numeración | Dos "Figura 28"; la lista salta de 11 a 15; "Tabla 16/17" citadas con títulos 13/14; "Tabla 9/10" en vez de 8/9 | Referencias corregidas; REVISAR para actualizar índices |
+| 18 | Figura 29 | Vacía | REVISAR |
+| 19 | Anexos | Se citan Anexo B, Anexo C, Tablas 20–22, que no existen | Propuesta de anexos A–F |
+| 20 | Referencias | Ahmed et al. (2022) y Kurunathan et al. (2022) son el mismo artículo; el DOI no resuelve; la versión de revista es de 2024 | Ahmed en rojo; Kurunathan corregido a 2024 |
+| 21 | Referencias | Faltan 13 fuentes citadas; 4 referencias no se citan (Jiang, Lahmeri, Palossi, ArduPilot s. f.-b) | Agregadas las verificadas; las no citadas en rojo |
+| 22 | Referencias | URL de PX4 con `?utm_source=chatgpt.com`; "PX4, 2025" frente a "(s. f.)" | Enlace limpiado; REVISAR para el año |
+| 23 | 1.6.3 | "(Analog Devices, 2021)": el artículo tiene autor | Cambiado a (Brand, 2021) |
+| 24 | Portada | Asesor "Magíster (MSc) en" cortado; grupo y línea sin elegir; dedicatoria de plantilla | REVISAR |
+| 25 | Resumen | Iba a pasar de 250 palabras con lo nuevo | Recortado a 241 palabras |
+| 26 | Conclusiones | Un párrafo que cuenta un hecho del desarrollo | Marcado; esqueleto por objetivo |
+| 27 | Capítulo 3 | Vacío | Esqueleto con los resultados verificados de simulación y tablas listas para campo |
+| 28 | Capítulo 2 | Anuncia un tercer bloque (validación) que no existe | Nuevo 2.3 con escenarios, el porqué de cada número y la estadística |
+
+## 2. Presupuesto de páginas (límite de 100)
+
+Medido con LibreOffice sobre la versión limpia (sin lo rojo). Las páginas reales en Word pueden variar ±3.
+
+| Parte | Original | Copia limpia | Meta |
+|---|---:|---:|---:|
+| Preliminares (portada a listas) | 9 | 9 | 9 |
+| Resumen, abstract, introducción | 4 | 4 | 4 |
+| 1.1–1.4 Planteamiento a limitaciones | 7 | 7 | 7 |
+| 1.5 Estado del arte | 7 | 5 | 4 |
+| 1.6–1.7 Marcos teórico y conceptual | 8 | 6 | 6 |
+| 1.8 Marco normativo | 3 | 3 | 3 |
+| 1.9 Metodología (no se tocó el texto) | 5 | 7 | 6 |
+| 2.1 Arquitectura (Pugh, QFD) | 24 | 28 | **20** (mover Tablas 2–4 a un anexo) |
+| 2.2 Integración | 15 | 17 | 15 |
+| 2.3 Protocolo y porqué de los números (nuevo) | 0 | 5 | 5 |
+| 3 Resultados | 1 | 3 | 10 (con campo) |
+| 4–5 Conclusiones y recomendaciones | 2 | 3 | 3 |
+| Referencias | 2 | 4 | 4 |
+| **Total sin anexos** | **87** | **101** | **96** |
+
+La metodología creció en la copia porque tiene la figura corregida y una nota [REVISAR]; al aceptar los cambios vuelve a
+unas 6 páginas.
+
+Para llegar a la meta sin tocar la metodología: (1) mover las Tablas 2, 3 y 4 de 2.1 a un anexo (≈ 7 páginas), (2) dejar
+los diagramas en tamaño moderado, y (3) confirmar con la Facultad si los anexos cuentan dentro de las 100 páginas. La
+plantilla no lo dice.
+
+## 3. Lo que pide la plantilla de la USB (68 comentarios, resumidos)
+
+**Formato general**
+- APA 7, márgenes de 2.5 cm, una sola fuente (Times New Roman 12 en este documento), interlineado 1.5, texto
+  justificado, sangría de primera línea de 1.25 cm (estilo "Párr.APA").
+- Títulos: nivel 1 centrado y en negrita, siempre en página nueva; nivel 2 a la izquierda en negrita; nivel 3 en
+  negrita y cursiva; niveles 4 y 5 con el texto en la misma línea. Usar los botones "Nivel 1 APA"… "Nivel 5 APA".
+- Encabezado: primeras palabras del título en mayúsculas sostenidas, 10 puntos, sin que pase a dos líneas (ya cumple).
+- Un espacio sencillo entre párrafos; dos entre título y párrafo, párrafo e imagen, tabla y párrafo.
+- Pocas cursivas y negritas; nada de subrayado; comillas "inglesas".
+
+**Preliminares**
+- Portada: nombres completos con tildes; asesor con su título más alto; el mismo año en portada, cita y referencia.
+- Página legal obligatoria en 10 puntos, con la cita y la referencia APA del propio trabajo.
+- Las dos imágenes del repositorio solo si autores y asesor aceptan publicar en el repositorio institucional.
+- Grupo y línea de investigación de la lista oficial (si no aparecen, preguntar al asesor).
+- Dedicatoria y agradecimientos: opcionales, máximo una página entre las dos.
+- No borrar el salto de sección antes del resumen (es el que numera las páginas).
+
+**Resumen y abstract**
+- Entre 150 y 250 palabras cada uno: objetivo, metodología, resultados y conclusiones.
+- 3 a 7 palabras clave, en minúsculas, separadas por coma. Keywords con la terminología de bases de datos.
+- No usar traductores automáticos para el abstract.
+
+**Tablas y figuras**
+- Rótulo con Referencias > Insertar título: "Tabla N" o "Figura N" en negrita y el título en cursiva en la línea
+  siguiente, ambos en 12 puntos y a la izquierda. Así aparecen en las listas.
+- La nota va debajo: "Nota." en cursiva, todo en 10 puntos, justificado y con punto final.
+- Si la tabla o figura es de autoría propia **no hace falta** escribir "Elaboración propia".
+- Tablas editables (nunca una captura de pantalla de una tabla), sin todas las líneas de borde, datos de 9 a 12 puntos,
+  sin partirlas entre páginas; si son muy anchas, en página horizontal.
+- Toda imagen se llama "Figura" (fotos, diagramas, gráficas).
+- Referencias cruzadas con Referencias > Referencia cruzada (para que el número se actualice solo).
+
+**Citas y referencias**
+- Toda cita tiene su referencia y toda referencia se cita al menos una vez.
+- Recomiendan Mendeley; no mezclar métodos (Mendeley, Word o manual).
+- Evitar blogs, Wikipedia y portales que no son fuentes primarias (por eso se marcaron las figuras de Medium, ResearchGate,
+  visionplatform, gidahatari y Coptrz).
+- Unos 75 % de redacción propia y 25 % de citas; pocas citas textuales.
+- Tres o más autores: "et al." desde la primera cita.
+
+**Estructura**
+- Indispensables: resumen, abstract, introducción y referencias. Lo demás se adapta al trabajo.
+- La plantilla trae "Discusión" como capítulo; en la copia se propone como sección 3.6.
+- En la tabla de contenido solo va "Anexos", no "Anexo A", "Anexo B"…
+- "Lista de tablas" y "Lista de figuras" no van en la tabla de contenido.
+- Al final, borrar todos los comentarios (Revisar > Eliminar > Eliminar todos los comentarios del documento).

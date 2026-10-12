@@ -1,0 +1,5 @@
+flowchart LR
+    S["Medidas ruidosas<br/>distancia por la caja (error ~2× de cerca)<br/>cuadros perdidos · rumbo con ruido"] --> R["Solo reglas<br/>umbrales fijos: 3 m / 8 m"]
+    S --> M["IA + envolvente<br/>el MLP combina las 15 medidas<br/>las reglas siguen mandando"]
+    R --> R1["Discriminación: 91.2 %<br/>44 activaciones innecesarias"]
+    M --> M1["Discriminación: 94.0 %<br/>30 activaciones innecesarias<br/>McNemar p = 0.0013"]
