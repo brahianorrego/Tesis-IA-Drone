@@ -98,6 +98,7 @@ export class Partida {
 const pad2 = n => String(n).padStart(2, "0");
 export function calcularEventos(P) {
   const C = P.C, ev = [];
+  let ultimaAmz = -1e9;                 // el aviso de amenaza no se repite antes de 5 s
   const lad = c => (c.pers || []).find(p => p.rol === "ladron");
   const idTxt = p => p && p.id !== undefined ? "ID " + pad2(p.id) : "el objetivo";
   C.forEach((c, k) => {
@@ -114,7 +115,7 @@ export function calcularEventos(P) {
     if (c.modo === 2 && p.modo >= 3 && p.modo !== 9) ev.push({ k, txt: `Objetivo recuperado (${idTxt(l)})`, tipo: "ok", marca: true });
     if (c.modo === 10 && p.modo !== 10) ev.push({ k, txt: "Revisando detrás del muro (muro de canto)", tipo: "info" });
     if (c.modo === 9 && p.modo !== 9) ev.push({ k, txt: "¿Sigue siendo él? Cruce con otra persona: confirme", tipo: "aviso", marca: true });
-    if (c.amz && !p.amz) ev.push({ k, txt: "Amenaza: persona cerca y acercándose", tipo: "peligro", marca: true });
+    if (c.amz && !p.amz && k - ultimaAmz > 50) { ev.push({ k, txt: "Amenaza: persona cerca y acercándose", tipo: "peligro", marca: true }); ultimaAmz = k; }
     if (c.rfx && !p.rfx) ev.push({ k, txt: "Esquive: el dron sube y se aparta", tipo: "peligro" });
     const s = l && l.salto, sp = lp && lp.salto;
     if ((s && s[0] === 1 && !(sp && sp[0] === 1)) || (!s && l && l.sz > 0 && !(lp && lp.sz > 0)))

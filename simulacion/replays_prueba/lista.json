@@ -6,5 +6,9 @@
  {
   "archivo": "demo_v16_salto.json",
   "titulo": "Prueba · el ladrón salta para agarrar el dron (14 s)"
+ },
+ {
+  "archivo": "sim_v16_semilla3.json",
+  "titulo": "Entorno V16 (sesión A) · política V15 sin reentrenar · semilla 3 (120 s)"
  }
 ]
