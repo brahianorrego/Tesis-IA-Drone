@@ -65,3 +65,40 @@ que diga `replays_prueba/lista.json`; la sesión A puede agregar ahí sus repeti
   **Pendiente que Brahian lo mida en el portátil**: panel "Ingeniería" → "Cuadros por segundo".
 
 **Qué sigue:** B2, personas con esqueleto y animación (la figura actual es provisional).
+
+### 2026-10-12 · Fase B2 · Personas con esqueleto y animación
+
+**Qué se hizo**
+- `visor/humano.js`: cada persona es una malla con piel (SkinnedMesh) sobre **21 huesos** (cadera, columna, pecho, cuello,
+  cabeza, clavículas, brazos, antebrazos, manos, muslos, piernas, pies y dedos), con proporciones reales para 1.72 m y
+  escalada a la estatura de cada persona (`est`). La piel se deforma suave en codos, rodillas y hombros (pesos
+  automáticos por distancia a cada hueso).
+- Ropa y piel según el ID (siempre la misma para la misma persona): tonos de piel trigueños, camisa de manga corta o
+  larga, gorra, cuerpo más ancho o con barriga; el sospechoso con buzo oscuro y capucha.
+- No se pudieron descargar modelos GLTF (Quaternius, Mixamo y Kenney están bloqueados desde la nube); por eso el cuerpo
+  y **todas** las animaciones son procedurales sobre los huesos, como el plan permite para lo que no trae el paquete.
+- Animación por **poses que se mezclan** (transiciones, no saltos de pose) y **cinemática inversa** de 2 huesos en
+  brazos y piernas:
+  - quieto (respira y cambia el peso de pierna), caminar, trotar y correr: los pies avanzan con la distancia recorrida,
+    así en el apoyo quedan **quietos en el piso** (no patinan); el talón se levanta al despegar; la cadera sube y baja;
+    los brazos van al contrario de las piernas y al correr el codo se dobla;
+  - agachado y caminar agachado; gatear en cuatro patas (manos y rodillas en el piso, gateo cruzado);
+  - recostado de espalda contra la pared con un pie apoyado en el muro, **asomándose** cada tanto hacia el borde más
+    cercano del muro;
+  - **salto para agarrar el dron**: impulso (se agacha con los brazos atrás y estalla), vuelo (brazo derecho estirado
+    hacia el dron, cuerpo arqueado, piernas recogidas en el punto alto; la altura sale de la altura de la mano que da
+    la simulación), aterrizaje (pies anclados, amortigua con las rodillas) y recuperación mirando el dron;
+  - civiles: mirar el dron ("chismoseando": visera con la mano, brazos cruzados o manos en la cintura), **grabar con el
+    celular** (aparece el teléfono en la mano), esquivar (se encoge y se cubre) y seguir caminando mirando de reojo;
+  - rendirse: manos arriba a los lados de la cabeza.
+- Cámara externa automática: plano de lado; **en el salto corta a un plano bajo y cercano con el sol a la espalda** y
+  la repetición pasa a **cámara lenta** (0.3×, se puede apagar en Ingeniería); si un muro tapa al sospechoso, corta al
+  otro lado.
+- Galería de animaciones: `http://127.0.0.1:8765/visor/probador.html` muestra las 13 animaciones a la vez
+  (`?i=8` solo el salto).
+
+**Números**
+- 96 pruebas pasan. Malla de ~7 000 vértices por persona.
+
+**Qué sigue:** B3, la imagen de las cámaras como la del sensor real (distorsión, ruido, exposición, desenfoque), las cajas
+de YOLO como en `jetson/visor_web.py` y el clic del operador.

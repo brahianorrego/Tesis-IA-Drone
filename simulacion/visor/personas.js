@@ -1,8 +1,9 @@
 // Personas de la escena: crea, actualiza y retira una figura por cada persona de la repetición.
 import * as THREE from "three";
 import { mundo } from "./util.js";
+import { Humano } from "./humano.js";
 
-class FiguraSimple {          // provisional (fase B1): se reemplaza por el humano con esqueleto en la fase B2
+export class FiguraSimple {   // figura mínima (solo para pruebas sin esqueleto)
   constructor(p) {
     this.raiz = new THREE.Group();
     const m = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, p.est - 0.4, 4, 12),
@@ -18,7 +19,7 @@ class FiguraSimple {          // provisional (fase B1): se reemplaza por el huma
 }
 
 export class Personas {
-  constructor(escena, Clase = FiguraSimple) {
+  constructor(escena, Clase = Humano) {
     this.escena = escena;
     this.Clase = Clase;
     this.mapa = new Map();

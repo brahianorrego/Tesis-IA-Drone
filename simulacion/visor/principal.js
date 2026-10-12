@@ -183,8 +183,17 @@ function ponerCalidad(q) {
 addEventListener("resize", () => renderer.setSize(innerWidth, innerHeight, false));
 
 // ------------------------------------------------------------------------------------------------ cámara externa
+// ¿algún panel corta la línea (en planta) entre la cámara y el punto? (coordenadas three: x, z)
+function tapado(c, p) {
+  return (P.paneles || []).some(([x1, y1, x2, y2]) => {
+    const ax = x1, az = -y1, bx = x2, bz = -y2;
+    const d1 = (bx - ax) * (c.z - az) - (bz - az) * (c.x - ax), d2 = (bx - ax) * (p.z - az) - (bz - az) * (p.x - ax);
+    const d3 = (p.x - c.x) * (az - c.z) - (p.z - c.z) * (ax - c.x), d4 = (p.x - c.x) * (bz - c.z) - (p.z - c.z) * (bx - c.x);
+    return d1 * d2 < 0 && d3 * d4 < 0;
+  });
+}
 const mira = new THREE.Vector3(), deseo = new THREE.Vector3(), miraDeseo = new THREE.Vector3();
-let ladoCine = 1;
+let ladoCine = 1, corte = false, enSalto = false;
 function saltoCerca(tt) { return tiemposSalto.find(ts => tt > ts - 1.4 && tt < ts + 2.6); }
 function moverCamaraExterna(e, dt) {
   const pd = mundo(e.x, e.y, e.z);
@@ -211,12 +220,20 @@ function moverCamaraExterna(e, dt) {
     const aCam = new THREE.Vector3().subVectors(camExt.position, pd).setY(0);
     if (aCam.dot(lado) * ladoCine < -2) ladoCine *= -1;      // no cruzar el eje salvo que ya esté del otro lado
     const centro = pd.clone().lerp(pl, 0.5);
+    // si un muro tapa al sospechoso desde este lado, la cámara se pasa al otro
+    const probar = lc => deseo.copy(centro).addScaledVector(lado, lc * (5.5 + sep * 0.9)).addScaledVector(eje, -(5.5 + sep * 0.9) * 0.35);
+    if (P && tapado(probar(ladoCine), pl) && !tapado(probar(-ladoCine), pl)) { ladoCine *= -1; corte = true; }
     if (ts !== undefined && lad) {
-      // salto: plano bajo y cercano, de lado, mirando entre la mano y el dron
+      // salto: plano bajo y cercano, de lado, con el sol a la espalda (sin contraluz), mirando entre la mano y el dron
       const pj = mundo(lad.x, lad.y, 0);
+      if (lado.dot(M.dirSol) * ladoCine < 0) ladoCine *= -1;
+      if (!enSalto) corte = true;
+      enSalto = true;
       deseo.copy(pj).addScaledVector(lado, ladoCine * 4.6).addScaledVector(eje, -1.2).setY(0.75);
       miraDeseo.copy(pj).lerp(pd, 0.55).setY(lerp(1.2, e.z, 0.5));
     } else {
+      if (enSalto) corte = true;
+      enSalto = false;
       const dist = 5.5 + sep * 0.9;
       deseo.copy(centro).addScaledVector(lado, ladoCine * dist).addScaledVector(eje, -dist * 0.35).setY(2.2 + sep * 0.22);
       miraDeseo.copy(centro).setY(lerp(1.0, e.z, 0.45));
@@ -224,8 +241,12 @@ function moverCamaraExterna(e, dt) {
     // no meter la cámara dentro de un muro ni bajo el piso
     deseo.y = Math.max(deseo.y, 0.4);
   }
-  camExt.position.lerp(deseo, k);
-  mira.lerp(miraDeseo, k * 1.4);
+  // corte de cámara (como en cine) al cambiar de lado o al empezar y terminar el salto; si no, se desliza suave
+  const kk = corte ? 1 : 1 - Math.exp(-dt * 2.2);
+  if (corte) mira.copy(miraDeseo);
+  corte = false;
+  camExt.position.lerp(deseo, kk);
+  mira.lerp(miraDeseo, Math.min(1, kk * 1.4));
   camExt.lookAt(mira);
   controles.target.copy(mira);
 }
@@ -271,7 +292,7 @@ function bucle(ahora) {
   bucle.kPrev = e.k;
   // ---- mundo
   dron.actualizar(e, dtSim, ahora);
-  personas.actualizar(e, dtSim, { dron: dron.raiz.position, ahora, t });
+  personas.actualizar(e, dtSim, { dron: dron.raiz.position, ahora, t, muros: P.paneles, dtReal });
   foco.copy(dron.raiz.position).setY(0);
   const lad = e.personas.find(p => p.rol === "ladron");
   if (lad) foco.lerp(mundo(lad.x, lad.y), 0.5);

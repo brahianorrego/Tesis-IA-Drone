@@ -4,14 +4,14 @@
 import * as THREE from "three";
 import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
-import { mundo, azar, uvMetros } from "./util.js";
+import { mundo, azar, uvMetros, RAIZ } from "./util.js";
 
 export const CAPA_AYUDAS = 1;
 const ARENA = 25;
 
 export const CIELOS = {
-  amanecer: { archivo: "recursos/cielo/spruit_sunrise_1k.hdr", azimut: 36, elev: 28, sol: 3.1, color: 0xfff1e4, niebla: 0xb9c3c9, rot: 0 },
-  mediodia: { archivo: "recursos/cielo/quarry_01_1k.hdr", azimut: 30, elev: 52, sol: 3.6, color: 0xfff4e6, niebla: 0xc6d2dc, rot: 0 },
+  amanecer: { archivo: RAIZ + "recursos/cielo/spruit_sunrise_1k.hdr", azimut: 36, elev: 28, sol: 3.1, color: 0xfff1e4, niebla: 0xb9c3c9, rot: 0 },
+  mediodia: { archivo: RAIZ + "recursos/cielo/quarry_01_1k.hdr", azimut: 30, elev: 52, sol: 3.6, color: 0xfff4e6, niebla: 0xc6d2dc, rot: 0 },
 };
 
 function cargarTex(cargador, ruta, srgb, rep, aniso) {
@@ -24,7 +24,7 @@ function cargarTex(cargador, ruta, srgb, rep, aniso) {
 }
 export function juegoTexturas(renderer, nombre, rep = 1) {
   const c = new THREE.TextureLoader(), a = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-  const r = `recursos/texturas/${nombre}`;
+  const r = `${RAIZ}recursos/texturas/${nombre}`;
   return { map: cargarTex(c, r + "_color.jpg", true, rep, a), normalMap: cargarTex(c, r + "_normal.jpg", false, rep, a),
            roughnessMap: cargarTex(c, r + "_rugosidad.jpg", false, rep, a) };
 }

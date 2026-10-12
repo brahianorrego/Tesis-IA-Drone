@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Galería de animaciones · V16</title>
+<!-- Todas las posturas y acciones de las personas del visor V16 a la vez (sin repetición). Se abre con el servidor del
+     visor: http://127.0.0.1:8765/visor/probador.html  · ?solo=salto para ver una sola, ?t=1.2 para congelar el reloj -->
+<script type="importmap">
+{ "imports": { "three": "../recursos/three/three.module.min.js", "three/addons/": "../recursos/three/addons/" } }
+</script>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0d0f12; color: #d9dee4; font: 13px "Segoe UI", system-ui, sans-serif; }
+  canvas { display: block; }
+  #rotulos { position: fixed; left: 0; right: 0; bottom: 10px; text-align: center; pointer-events: none; }
+  #info { position: fixed; left: 12px; top: 10px; color: #8b949e; }
+  .rot { position: fixed; transform: translateX(-50%); font-size: 12px; color: #e8ecf0; text-shadow: 0 1px 2px #000; white-space: nowrap; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="info">Galería de animaciones del visor V16 · arrastre para girar · <b>Desarrollado por Brahian Andrés Orrego Osorio</b></div>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { Mundo } from "./escena.js";
+import { Humano } from "./humano.js";
+import { Dron } from "./dron.js";
+import { mundo } from "./util.js";
+
+const q = new URLSearchParams(location.search);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.92;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap;
+document.body.appendChild(renderer.domElement);
+const M = new Mundo(renderer);
+await M.ponerCielo("amanecer");
+M.ponerParedes([[-1, 3.0, 26, 3.0, 2.6]]);      // un muro detrás (para recostarse contra él)
+const camara = new THREE.PerspectiveCamera(35, innerWidth / innerHeight, 0.05, 500);
+const ctl = new OrbitControls(camara, renderer.domElement);
+
+// cada caso: [rótulo, función(t) -> datos de la persona como los da datos.js]
+const T = 3.2;      // ciclo del salto (s)
+const casos = [
+  ["quieto", t => ({})],
+  ["camina 1.4 m/s", t => ({ vx: 1.4, mov: 1 })],
+  ["trota 3 m/s", t => ({ vx: 3.0, mov: 1 })],
+  ["corre 5.5 m/s", t => ({ vx: 5.5, mov: 1 })],
+  ["agachado", t => ({ pos: 1 })],
+  ["camina agachado", t => ({ pos: 1, vx: 0.8, mov: 1 })],
+  ["gatea", t => ({ pos: 3, vx: 0.6, mov: 1 })],
+  ["recostado · se asoma", t => ({ pos: 2, mira: -Math.PI / 2, pegado: 1 })],
+  ["salta al dron", t => {
+    const u = t % T;
+    const ph = [[0, 0.6, 0], [0.6, 0.3, 1], [0.9, 0.65, 2], [1.55, 0.3, 3], [1.85, 0.9, 4], [2.75, 9, 0]].find(([a, d]) => u >= a && u < a + d) || [0, 1, 0];
+    const av = Math.min((u - ph[0]) / ph[1], 1), f = ph[2];
+    const hm = f === 2 ? 2.27 + 0.62 * 4 * av * (1 - av) + 0.05 * (1 - av) : f === 1 ? 1.71 * (1.18 - 0.25 * Math.sin(Math.PI * Math.min(av * 1.3, 1))) : 2.27;
+    return { salto: [f, hm, av], mira: 0 };
+  }],
+  ["mira el dron", t => ({ civ: 1 })],
+  ["graba con el celular", t => ({ civ: 4 })],
+  ["esquiva", t => ({ civ: 2, vx: -1.2, mov: 1 })],
+  ["se rinde", t => ({ rinde: true })],
+];
+const solo = q.get("solo");
+const lista = q.get("i") !== null ? [casos[+q.get("i")]] : solo ? casos.filter(c => c[0].startsWith(solo)) : casos;
+const sep = 2.0;
+const gente = lista.map(([rot, f], k) => {
+  const h = new Humano({ rol: k % 3 === 0 ? "ladron" : "peaton", id: 3 + k * 5, est: 1.72 });
+  M.escena.add(h.raiz);
+  const el = document.createElement("div"); el.className = "rot"; el.textContent = rot; document.body.appendChild(el);
+  return { h, f, x: k * sep, el };
+});
+const dron = new Dron();
+M.escena.add(dron.raiz);
+const ancho = (lista.length - 1) * sep;
+const dist = +(q.get("d") || Math.max(6, ancho * 0.75)), alt = +(q.get("h") || 2.0), lat = +(q.get("x") || 0);
+camara.position.set(ancho / 2 + lat, alt, dist);
+ctl.target.set(ancho / 2, +(q.get("ty") || 1.0), 0);
+ctl.update();
+M.actualizarSol(new THREE.Vector3(ancho / 2, 0, 0));
+M.sol.shadow.camera.left = M.sol.shadow.camera.bottom = -Math.max(16, ancho);
+M.sol.shadow.camera.right = M.sol.shadow.camera.top = Math.max(16, ancho);
+M.sol.shadow.camera.updateProjectionMatrix();
+
+const reloj = new THREE.Timer();
+let t = 0;
+const fijo = q.get("t");
+window.__probador = { irA: v => { t = v; } };
+let calentar = 240;          // cuadros de animación sin dibujar al inicio (para que todos lleguen a su paso)
+function bucle(ms) {
+  requestAnimationFrame(bucle);
+  reloj.update(ms);
+  do { paso(ms); } while (calentar-- > 0);
+  renderer.shadowMap.needsUpdate = true;
+  renderer.render(M.escena, camara);
+}
+function paso(ms) {
+  const dt = fijo !== null || calentar > 0 ? 1 / 60 : Math.min(reloj.getDelta(), 0.05);
+  t += dt;
+  const tt = fijo !== null ? +fijo - Math.max(calentar, 0) / 60 : t;
+  // el dron flota a 3.3 m delante de la fila
+  const dx = ancho / 2 + Math.sin(tt * 0.3) * ancho * 0.4, dy = -2.4;
+  dron.actualizar({ x: dx, y: dy, z: 3.3, psi: Math.PI / 2, cp: 0, cr: 0, gmb: -30 }, dt, ms);
+  gente.forEach(g => {
+    const d = g.f(tt);
+    // los que caminan lo hacen "en el sitio", como sobre una cinta (la posición no cambia, la velocidad sí)
+    const p = { rol: "peaton", id: 1, est: 1.72, x: g.x, y: d.pegado ? 2.8 : 0, vx: d.vx || 0, vy: 0, pos: d.pos ?? 0, pt: 1,
+                mira: d.mov ? undefined : (d.mira ?? -Math.PI / 2), civ: d.civ ?? null, salto: d.salto, rinde: d.rinde, sz: 0 };
+    g.h.actualizar(p, dt, { dron: d.salto ? mundo(g.x + 0.6, 0.4, 3.3) : dron.raiz.position, muros: [[-1, 3.0, 26, 3.0, 2.6]], t: tt });
+    const v = new THREE.Vector3(g.x, 2.0, d.pegado ? -2.8 : 0).project(camara);
+    g.el.style.left = ((v.x + 1) / 2 * innerWidth) + "px";
+    g.el.style.top = ((1 - v.y) / 2 * innerHeight) + "px";
+  });
+}
+requestAnimationFrame(bucle);
+addEventListener("resize", () => { renderer.setSize(innerWidth, innerHeight); camara.aspect = innerWidth / innerHeight; camara.updateProjectionMatrix(); });
+</script>
+</body>
+</html>

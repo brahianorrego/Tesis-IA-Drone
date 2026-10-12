@@ -1,6 +1,9 @@
 // Utilidades comunes del visor V16.
 import * as THREE from "three";
 
+// carpeta simulacion/ (los recursos se buscan desde aquí, abra la página que se abra)
+export const RAIZ = new URL("../", import.meta.url).href;
+
 // Ejes: la simulación usa (x, y) en el piso y z hacia arriba; three.js usa y hacia arriba. psi = 0 mira a +x.
 export const mundo = (x, y, z = 0) => new THREE.Vector3(x, z, -y);
 export const enMundo = (v, x, y, z = 0) => v.set(x, z, -y);
