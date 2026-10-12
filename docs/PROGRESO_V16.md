@@ -102,3 +102,30 @@ que diga `replays_prueba/lista.json`; la sesión A puede agregar ahí sus repeti
 
 **Qué sigue:** B3, la imagen de las cámaras como la del sensor real (distorsión, ruido, exposición, desenfoque), las cajas
 de YOLO como en `jetson/visor_web.py` y el clic del operador.
+
+### 2026-10-12 · Fase B3 · Cámaras reales e interfaz
+
+**Qué se hizo**
+- `visor/camaras.js`: cada cámara del dron se dibuja en una imagen de **640 × 480** (la resolución que recibe YOLO) y
+  pasa por un revelado como el del sensor real: distorsión de barril del lente (sin bordes negros), aberración de color
+  en los bordes, viñeteo, ruido del sensor (más en las sombras), **exposición automática lenta** como una webcam (si mira
+  al cielo, el piso se oscurece) y **desenfoque por movimiento** según cuánto giró la cámara mientras el obturador
+  estuvo abierto (1/60 s). La imagen se refresca a 30 cuadros por segundo, como la cámara real.
+  - Principal: HFOV 38.9°, en el gimbal (−45° a +15°).
+  - Al piso: IMX219, 62.2° × 48.8°, fija al chasis y recta hacia abajo (más distorsión y viñeteo, lente gran angular).
+- **Cajas de YOLO como en `jetson/visor_web.py`**: rectángulo verde, `ID n  +x.x deg` (el ángulo respecto a la nariz
+  calculado igual que en la Jetson) más la confianza; línea cian de la nariz; cuadros por segundo en rojo arriba a la
+  izquierda. Las cajas salen de proyectar el esqueleto de cada persona con la misma distorsión del lente. La confianza
+  baja agachado, recostado y gateando (o la que mande la simulación). La cámara al piso usa `cam_piso`.
+- **Clic del operador**: en modo manual la repetición se detiene cuando hay que confirmar; la persona aparece con caja
+  ámbar punteada "¿Es el sospechoso? clic aquí" y se confirma con un clic dentro de la caja (probado: espera en
+  8.95 s, el clic confirma y la partida sigue).
+- Interfaz limpia: en pantalla solo lo que verá el operador en vuelo (las dos cámaras, el mapa pequeño con lo que sabe
+  el dron, modo, altura y altura objetivo, batería, velocidad, ángulo de la cámara, estado del objetivo y tiempo a la
+  vista). Todo lo técnico (estado de la búsqueda, árbitro, personas, recompensas, bitácora) está en **Ingeniería**
+  (tecla I), plegado por defecto. La vista externa es un recuadro que se agranda con un clic (o tecla V).
+
+**Números**
+- 96 pruebas pasan.
+
+**Qué sigue:** B4, la vista previa de escenarios futuros (hangar y campo con árboles).

@@ -8,7 +8,8 @@ import { Dron } from "./dron.js";
 import { Partida, listarRepeticiones, cargarJSON } from "./datos.js";
 import { Personas } from "./personas.js";
 import { Interfaz } from "./interfaz.js";
-import { $, mundo, lerp, limitar, angNorm } from "./util.js";
+import { SensorCamara, cajaDe, dibujarDetecciones, confianza } from "./camaras.js";
+import { $, mundo, lerp, limitar, angNorm, pad2, CAM, CAM_PISO } from "./util.js";
 
 // ------------------------------------------------------------------------------------------------ calidad y render
 const CALIDAD = {
@@ -61,7 +62,7 @@ function rotular() {
   $("t-1").innerHTML = vistas.chica === "camara" ? tCam : tExt;
   $("modos-ext").style.display = vistas.chica === "externa" ? "flex" : "none";
 }
-$("v-1").addEventListener("click", ev => { if (!ev.target.closest("button")) intercambiar(); });
+$("v-1").addEventListener("click", ev => { if (!ev.target.closest("button") && !ev.defaultPrevented && !(esperaClic !== null && vistas.chica === "camara")) intercambiar(); });
 document.querySelectorAll("[data-cam]").forEach(b => b.addEventListener("click", ev => {
   ev.stopPropagation();
   modoCam = b.dataset.cam;
@@ -86,11 +87,51 @@ export function encajar(r, aspecto) {
   if (h > r.h) { h = r.h; w = h * aspecto; }
   return { x: r.x + (r.w - w) / 2, y: r.y + (r.h - h) / 2, w, h };
 }
-// fase B1: las cámaras del dron se dibujan directo; la fase B3 las reemplaza por la imagen del sensor (camaras.js)
+// las cámaras del dron se ven como la imagen de su sensor (camaras.js): 640 x 480, lente, ruido, exposición, desenfoque
+const sensorP = new SensorCamara(renderer, dron.camara, { ancho: CAM.ancho, alto: CAM.alto, k1: 0.05, k2: 0.01, aberracion: 0.0018, vineteo: 0.32, ruido: 0.018, hfov: CAM.hfov });
+const sensorPiso = new SensorCamara(renderer, dron.camaraPiso, { ancho: CAM_PISO.ancho, alto: CAM_PISO.alto, k1: 0.16, k2: 0.03, aberracion: 0.0035, vineteo: 0.55, ruido: 0.03, hfov: CAM_PISO.hfov });
 export const camarasDron = {
-  principal: (r) => { const c = encajar(r, 4 / 3); dibujar(dron.camara, c); return c; },
-  piso: (r) => { const c = encajar(r, 4 / 3); dibujar(dron.camaraPiso, c); return c; },
+  principal: (r, e, dt) => { const c = encajar(r, 4 / 3); sensorP.dibujar(M.escena, c, dt, performance.now(), 30); return c; },
+  piso: (r, e, dt) => { const c = encajar(r, 4 / 3); sensorPiso.dibujar(M.escena, c, dt, performance.now(), calidad === "alta" ? 30 : 15); return c; },
 };
+// rectángulo de three (y desde abajo) -> rectángulo de la página
+const aPagina = r => r ? { x: r.x, y: innerHeight - r.y - r.h, w: r.w, h: r.h } : null;
+let cajasActuales = [];
+function superposiciones(e) {
+  const lienzoCam = marcoDe("camara").querySelector("canvas.sobre"), lienzoExt = marcoDe("externa").querySelector("canvas.sobre");
+  dibujarDetecciones(lienzoExt, null, []);
+  // cámara principal: YOLO detecta a las personas que el simulador da por visibles
+  const dets = [];
+  e.personas.forEach(p => {
+    if (!p.vis) return;
+    const f = personas.figura(p.clave);
+    const c = f && cajaDe(sensorP, f);
+    if (!c) return;
+    dets.push({ c, id: p.id !== undefined ? pad2(p.id) : "--", clave: p.clave, conf: confianza(p), objetivo: p.rol === "ladron" && e.modo >= 2,
+                esperando: esperaClic !== null && p.cand });
+  });
+  cajasActuales = dibujarDetecciones(lienzoCam, aPagina(bucle.rCam), dets, { nariz: true, fps: sensorP.fps, hfov: CAM.hfov });
+  // cámara al piso: sus propias detecciones (cam_piso) o, si la repetición no las trae, las personas que caen en su imagen
+  const dp = [];
+  const lista = e.cam_piso;
+  e.personas.forEach(p => {
+    const d = lista ? lista.find(q => q.id === p.id) : null;
+    if (lista && !d) return;
+    const f = personas.figura(p.clave);
+    const c = f && cajaDe(sensorPiso, f);
+    if (!c || (c.x1 - c.x0) * (c.y1 - c.y0) < 0.002) return;
+    dp.push({ c, id: p.id !== undefined ? pad2(p.id) : "--", conf: d ? d.cf : confianza(p) * 0.85, objetivo: p.rol === "ladron" && e.modo >= 2 });
+  });
+  dibujarDetecciones($("s-piso"), aPagina(bucle.rPiso), dp, { hfov: CAM_PISO.hfov });
+  marcoDe("camara").style.cursor = esperaClic !== null ? "crosshair" : "";
+}
+// clic del operador sobre la persona en la cámara del dron (confirma al sospechoso)
+["s-grande", "s-1"].forEach(id => $(id).addEventListener("click", ev => {
+  if (esperaClic === null || marcoDe("camara").querySelector("canvas.sobre") !== ev.currentTarget) return;
+  const c = cajasActuales.find(q => q.esperando && ev.clientX >= q.x0 - 8 && ev.clientX <= q.x1 + 8 && ev.clientY >= q.y0 - 8 && ev.clientY <= q.y1 + 8);
+  if (c) { ev.stopPropagation(); ev.preventDefault(); repro.confirmar(); }
+  else ui.aviso("Haga clic dentro del recuadro de la persona", "aviso", 1.5);
+}));
 export { dron, renderer, camExt, ui };
 
 // ------------------------------------------------------------------------------------------------ reproducción
@@ -274,8 +315,8 @@ function bucle(ahora) {
   if (lenta && tiemposSalto.some(ts => t > ts - 0.25 && t < ts + 1.9)) factor *= 0.3;
   if (!pausa && esperaClic === null) {
     const tn = t + dtReal * factor;
-    const kc = operadorManual ? P.clics.find(k => !confirmados.has(k) && (k + 0.5) * P.dt >= t && (k + 0.5) * P.dt <= tn) : undefined;
-    if (kc !== undefined) { t = (kc + 0.5) * P.dt; esperaClic = kc; $("confirmar").classList.add("ver"); }
+    const kc = operadorManual ? P.clics.find(k => !confirmados.has(k) && (k + 0.3) * P.dt >= t && (k + 0.3) * P.dt <= tn) : undefined;
+    if (kc !== undefined) { t = (kc + 0.3) * P.dt; esperaClic = kc; $("confirmar").classList.add("ver"); }
     else t = tn;
   }
   if (t >= P.total) {
@@ -311,6 +352,7 @@ function bucle(ahora) {
   renderer.shadowMap.needsUpdate = false;
   bucle.rCam = camarasDron.principal(rectDe(marcoDe("camara")), e, dtReal);
   bucle.rPiso = camarasDron.piso(rectDe($("v-piso")), e, dtReal);
+  superposiciones(e);
   ui.actualizar(e, t, ahora, { fps, calidad });
   if (bucle.alDibujar) bucle.alDibujar(e, dtReal);
 }
@@ -331,5 +373,7 @@ window.__v16 = {
   fps: () => fps,
   vista(tipo) { if (vistas.grande !== tipo) intercambiar(); },
   modo(m) { const b = document.querySelector(`[data-cam="${m}"]`); if (b) b.click(); },
+  jugarDesde(tt) { t = tt; esperaClic = null; confirmados = new Set(); if (pausa) alternarPausa(); },
+  cajas: () => cajasActuales, esperando: () => esperaClic, tiempo: () => t,
 };
 if (!window.__V16_SIN_ARRANQUE) arrancar();
