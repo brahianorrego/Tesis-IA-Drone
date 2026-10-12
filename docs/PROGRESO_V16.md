@@ -279,3 +279,99 @@ o descartará cada uno.
 escape y multa de sobrevuelo, sin términos V16 en la V15). Total: 116 pruebas, todas pasan.
 
 **Qué sigue**: fase A5 (escenarios fijos de 2 paneles, corrida corta y comando del entrenamiento largo).
+
+---
+
+## Fase A5 · Evaluación y preparación del entrenamiento (Sesión A, 2026-10-12)
+
+**Qué se hizo**:
+- **Seis escenarios fijos de 2 paneles** en `simulacion/herramientas/evaluar_politica.py` (`--escenarios v16`): escape tras el
+  muro, agachado detrás del muro, gateo entre muros, recostado contra la pared y ataque, salto bajo el dron y civiles
+  curiosos. Las rutas del ladrón ahora llevan **postura y espera** en cada punto. Además de lo de siempre (cumplida = 30 s
+  seguidos a la vista, alcanzado, re-adquisición, suavidad), mide la **vista por postura** del ladrón, la **vista por
+  altura** del dron, el **punto ciego** y la **cámara al piso**. También acepta la política `.json` de la Jetson.
+- **`entrenar_master.py` para la V16** (copia previa `entrenar_master_v15b.py`): una sola partida, sin currículo; arranca de
+  la V15 con las 3 entradas nuevas en cero (empieza decidiendo exactamente igual que la V15) y congela en la primera capa
+  las conexiones de las 192 entradas viejas (`--congelar viejas`); el crítico viene del `.zip` de la V15. Guarda en
+  `modelos_v16/` y archiva la salida de la V15 en `salida_v15/`. La intensidad (viento, rapidez del ladrón) sube con la
+  custodia. El log muestra cada 5 iteraciones la línea `V16 (N partidas) CUSTODIA ≥60s …`. Las repeticiones van a
+  `salida/replay_v16.json` (y `replay_nivel_5.json` y `replay_adv.json`, para que el visor de hoy las muestre). Los pesos
+  para la Jetson van a `modelos/dron_politica_v16.json` (195 entradas): **`modelos/dron_politica.json` (la de la Jetson de
+  hoy) no se toca** hasta adaptar su código a las 3 entradas nuevas.
+- Opciones nuevas: `--desde ZIP`, `--desde-json`, `--congelar {viejas,capa,nada}`, `--set CONSTANTE=valor` (con y sin un
+  término), `--repeticiones N` (0 = sin grabar), `--semilla`, `--hilos`.
+
+**Escenarios fijos** (50 partidas por escenario, 120 s; informes `simulacion/informes/evaluacion_v16-escenarios-*.md`):
+
+| Escenario | V15 sin reentrenar: cumplida | Corrida corta V16: cumplida | Vista | Lo que dice |
+|---|---:|---:|---:|---|
+| escape_muro | 98 % | 96 % | 66 % | Lo encuentra detrás del muro casi siempre |
+| agachado_muro | 68 % | 62 % | 44 % | Agachado detrás del muro se ve solo el 38 % del tiempo |
+| gateo_muros | **0 %** | **0 %** | 28 % | Gateando se ve el 24 % del tiempo: el caso más difícil |
+| recostado_ataque | 100 % | 100 % | 92 % | Lo sigue cuando sale; a 3.30 m el salto no lo alcanza |
+| salto_debajo | 78 % | 82 % | 55 % | La cámara al piso lo ve el 26-30 % del tiempo, cuando la principal no puede |
+| civiles_curiosos | 100 % | 100 % | 92 % | Los civiles que miran o graban no lo confunden |
+
+Ningún escenario terminó en "alcanzado". En agachado y gateo el dron pasa por encima del ladrón (distancia mínima 0.2-0.8 m):
+no lo alcanza porque va a 3.30 m, pero lo pierde de vista: es lo que la recompensa de abordaje (A4) busca corregir.
+
+**Corrida corta en la nube** (12 min, 1.4 M pasos, 32 entornos, desde la política de la Jetson): el entrenamiento corre de
+punta a punta (checkpoints, `ultimo.zip`, métricas, repeticiones con todos los campos del contrato) y **aprende en la
+dirección esperada**: el jitter con la red al mando bajó de 0.044 a 0.033 por segundo (−24 %) y el error del crítico de 4.8 a
+3.2, aunque la intensidad subió de 0 a 1 (más viento, ladrón más rápido). La custodia se mantuvo (~90 %). En 1.4 M pasos no
+cambia más: el trabajo de verdad es el entrenamiento largo.
+
+**Un hallazgo para el diseño**: con el ladrón a la vista, la custodia la hace casi toda la lógica determinista (seguimiento,
+punto ciego, búsqueda). Cuatro estilos de pilotaje muy distintos (la V15, avanzar siempre, quieto, al azar) dan 42-51 s de
+vista en 150 s. La red decide poco porque sus acciones con el objetivo a la vista son casi todas "no hacer nada". Si se
+quiere que la IA aprenda a abordar al ladrón, el paso siguiente es darle una acción de rodear (`ORBITA_V16`, ya escrita y
+apagada) y medirla.
+
+**Pruebas**: 2 nuevas (los 6 escenarios corren y sus posturas ocurren; el arranque desde la política de la Jetson decide
+igual que la V15 y las entradas nuevas arrancan en cero). Total: 118 pruebas, todas pasan.
+
+### Comando para entrenar la V16 en el portátil (Windows)
+
+1. **Detener la V15** si sigue entrenando (Ctrl+C en su ventana): la V16 arranca del checkpoint más nuevo de `modelos_v15\`.
+2. Traer la rama (en la carpeta del repositorio):
+   ```
+   git fetch origin
+   git checkout v16-simulacion
+   git pull
+   ```
+3. Comprobar que todo pasa (unos 5 minutos), desde `simulacion\`:
+   ```
+   .venv\Scripts\python.exe -m unittest discover -s tests
+   ```
+4. **Entrenar** (desde `simulacion\`):
+   ```
+   .venv\Scripts\python.exe -u entrenar_master.py
+   ```
+   La primera vez dice `V16 · arranca desde modelos_v15\checkpoints\... · entradas 192 -> 195`. Para detenerlo, Ctrl+C;
+   para seguir, el mismo comando o `CONTINUAR_ENTRENAMIENTO.bat` (retoma `modelos_v16\ultimo.zip`).
+   - Si no estuvieran los modelos de la V15: `.venv\Scripts\python.exe -u entrenar_master.py --desde-json modelos\dron_politica.json`
+     (arranca solo con el actor; el crítico aprende de cero).
+5. **Qué mirar**: la línea `V16 (N partidas) CUSTODIA ≥60s … · ≥90s … | rendición …` cada 5 iteraciones, y el visor
+   (`ABRIR_VISOR.bat`, opción "Nivel 5 · Misión V16 (2 paneles) · en vivo"). Propuesta: evaluar a los **50 M pasos**:
+   ```
+   .venv\Scripts\python.exe herramientas\medir_v16.py --modelo modelos_v16\ultimo.zip --n 256
+   .venv\Scripts\python.exe herramientas\evaluar_politica.py --modelo modelos_v16\ultimo.zip --escenarios v16 --version v16-50M
+   ```
+   y comparar con las tablas de arriba (V15 sin reentrenar). Un punto de referencia: en la nube, 32 entornos con 1 hilo
+   dan ~2 000 pasos/s; con 512 entornos y 8 hilos el portátil debería ir varias veces más rápido.
+6. (Opcional) **Comparar los términos de la recompensa** de verdad (20 M pasos cada uno, en carpetas aparte):
+   ```
+   .venv\Scripts\python.exe -u entrenar_master.py --pasos 2e7 --repeticiones 0 --salida salida_sin_cob --dir-master modelos_v16_sin_cob --dir-modelos modelos_sin_cob --set K_COB=0
+   ```
+   (igual con `--set K_JERK_V16=0`, con `--set K_ESC=0 --set R_SOBREVUELO=0 --set R_ANGULO_GMB=0`, y una con todo) y medir
+   cada `ultimo.zip` con `medir_v16.py`.
+
+**Decisiones abiertas para Brahian**:
+1. **Altímetro** (fase A3): el error del barómetro se come el margen de la altura segura. ¿TF-Luna mirando al piso
+   (`ALTIMETRO = "luna"`), subir la altura que se pide o dejarlo así?
+2. **Órbita** (fase A4): ¿encender `ORBITA_V16` para que la red pueda elegir desde dónde abordar al ladrón? (cambia el
+   sentido de EVADIR_IZQ/DER sin amenaza).
+3. **Código de la Jetson**: la política V16 tiene 195 entradas (las 3 últimas: la cámara al piso ve al objetivo, adelante y
+   a la izquierda, en metros / 5). Hay que agregarlas en la Jetson antes de usar `dron_politica_v16.json`.
+
+**Qué sigue**: entrenamiento largo en el portátil; la Sesión B integra esta rama en el visor (`git merge origin/v16-simulacion`).

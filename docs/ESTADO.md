@@ -9,6 +9,12 @@ El hardware está configurado y probado en banco; la IA se entrena en simulació
 
 ## Simulación y entrenamiento
 
+- **V16 · Sesión A (simulación) terminada** en la rama `v16-simulacion` (fases A1-A5, avance y números en
+  `docs/PROGRESO_V16.md`): misión única de 2 paneles, alturas de 2.0-3.0 m solo sin gente a menos de 8 m, posturas humanas
+  y salto con el brazo, civiles realistas, cámara al piso, TF03 al chasis y TF-Luna en el gimbal, desenfoque, gimbal BaseCam o
+  servo, GPS y barómetro con error, recompensa de custodia con coberturas y abordaje, 6 escenarios fijos y el entrenamiento
+  listo para lanzar en el portátil. 118 pruebas. Decisiones abiertas: altímetro, órbita y entradas nuevas en la Jetson.
+
 - **Mínimo indispensable del proyecto de grado** (`simulacion/minimo_tesis/`, carpeta congelada e independiente del
   entrenamiento). El piloto avanza de frente; el sistema solo frena y sube a 3.30 m ante un riesgo definido (obstáculo
   por LiDAR, persona por YOLO según el árbitro); el operador siempre manda; modo estático. Protocolo del comité
@@ -118,7 +124,7 @@ El hardware está configurado y probado en banco; la IA se entrena en simulació
 
 ## Pendientes (por prioridad)
 
-1. Brahian: revisar las decisiones abiertas de la fase E y confirmar el lanzamiento de la V15 (comando en `CLAUDE.md`).
+1. Brahian: lanzar el entrenamiento de la V16 (comando en `docs/PROGRESO_V16.md`) y decidir altímetro y órbita.
 2. Escenario "debajo" (0 %): decidir si se acepta como límite físico o si se agrega una regla anti-acecho en la búsqueda.
 3. Brahian: copiar `modelos_master/` (1,1 GB) a Google Drive.
 4. Ciclo de mejora: pasar `informes/resumen_*` y `barrido_*` a `supervisor-rl` y decidir sus cambios.

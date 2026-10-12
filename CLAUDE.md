@@ -56,7 +56,7 @@ autojuego), con reglas deterministas alrededor y un operador humano que confirma
 | `simulacion/entrenar.py` | PPO propio en torch (versiones v1–v9) y utilidades que reutiliza el master |
 | `simulacion/mision.py` | Misión completa para el visor (fase 1 piloto + fase 2 IA) |
 | `simulacion/evaluar.py` | Comparación IA vs reglas (desactualizado: revisar antes de usar) |
-| `simulacion/herramientas/` | `resumir_metricas.py` (informe corto de un entrenamiento) y `evaluar_politica.py` (escenarios fijos) |
+| `simulacion/herramientas/` | `resumir_metricas.py` (informe corto de un entrenamiento), `evaluar_politica.py` (escenarios fijos; `--escenarios v16`), `medir_v16.py` (misión V16 con `--set`), `politica_json.py` y `analizar_recompensa_v16.py` |
 | `simulacion/informes/` | Resúmenes, evaluaciones y diagnósticos (`resumen_*`, `evaluacion_*`, `barrido_*`, `diagnostico_*`) |
 | `simulacion/tests/` | Pruebas: reglas duras, el entorno arranca, episodio corto, herramientas |
 | `.claude/agents/` | `supervisor-rl` (diagnostica, no toca código) e `implementador` (aplica cambios aprobados) |
@@ -65,6 +65,7 @@ autojuego), con reglas deterministas alrededor y un operador humano que confirma
 | `simulacion/*_vN.*` | Versiones anteriores de cada archivo (no editar) |
 | `simulacion/modelos/dron_politica.json` | Pesos de la política para la Jetson (sí se versiona) |
 | `simulacion/modelos_master/` | Modelos SB3 de la V10 (`ultimo.zip`, `base_v9.zip`, un checkpoint por millón de pasos). **No va a Git** |
+| `simulacion/modelos_v16/` | Modelos SB3 de la V16 (misión de 2 paneles, desde la V15, 195 entradas). **No va a Git**. Pesos para la Jetson: `modelos/dron_politica_v16.json` |
 | `simulacion/modelos_v15/` | Modelos SB3 de la V15 (5 niveles y rendición, desde la V14). **No va a Git** |
 | `simulacion/modelos_v14/` | Modelos SB3 de la V14 (currículo progresivo, desde la V12). **No va a Git** |
 | `simulacion/modelos_v12/` | Modelos SB3 de la V12 (fine-tuning desde la V10: `base_v12.zip`, `ultimo.zip`, checkpoints). **No va a Git** |
@@ -74,9 +75,10 @@ autojuego), con reglas deterministas alrededor y un operador humano que confirma
 ## Comandos (Windows, desde `simulacion\`)
 
 ```
-:: entrenar la V15 (plan docs\PLAN_V15_CURRICULO.md): la primera vez arranca del checkpoint más nuevo de modelos_v14\ en
-:: el nivel 0 y guarda la salida de la V14 en salida_v14\; después retoma solo modelos_v15\ultimo.zip con su nivel
+:: entrenar la V16 (rama v16-simulacion, docs\PROGRESO_V16.md): la primera vez arranca del checkpoint más nuevo de
+:: modelos_v15\ (entradas nuevas en cero) y guarda la salida de la V15 en salida_v15\; después retoma modelos_v16\ultimo.zip
 .venv\Scripts\python.exe -u entrenar_master.py
+:: (la V15 sigue en la rama v15-curriculo, con entrenar_master_v15b.py como copia)
 
 :: primera vez desde una política propia
 .venv\Scripts\python.exe -u entrenar_master.py --base modelos\ultimo.pt --pasos 1e9

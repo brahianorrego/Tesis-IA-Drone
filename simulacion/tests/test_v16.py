@@ -416,5 +416,48 @@ class TestA4Recompensa(unittest.TestCase):
             self.assertTrue(np.all(info["jerk"] == 0))
 
 
+
+class TestA5EvaluacionYEntrenamiento(unittest.TestCase):
+
+    def test_escenarios_fijos_v16(self):
+        import os
+        import sys
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "herramientas"))
+        import evaluar_politica as V
+
+        class Quieta(object):
+            def predict(self, obs, deterministic=True):
+                return np.zeros(len(obs), int), None
+        self.assertEqual(set(V.ESCENARIOS_V16), {"escape_muro", "agachado_muro", "gateo_muros", "recostado_ataque",
+                                                 "salto_debajo", "civiles_curiosos"})
+        posturas = {"agachado_muro": E.AGACHADO, "recostado_ataque": E.RECOSTADO, "gateo_muros": E.GATEANDO}
+        for nombre in V.ESCENARIOS_V16:
+            fila = V.resumir(V.correr_escenario(Quieta(), nombre, 2, 0, 25.0, 0.1))
+            self.assertAlmostEqual(sum(fila[k] for k in V.RESULTADOS), 1.0)
+            self.assertAlmostEqual(sum(fila["tiempo_postura"]), 1.0)
+            if nombre in posturas:                         # la postura del guion sí ocurre
+                self.assertGreater(fila["tiempo_postura"][posturas[nombre]], 0.05, nombre)
+
+    def test_arranque_desde_la_politica_de_la_jetson(self):
+        import os
+        import torch
+        import entrenar_master as M
+        sys_ = __import__("sys")
+        sys_.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "herramientas"))
+        from politica_json import PoliticaJSON
+        ruta = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "modelos", "dron_politica.json")
+        venv = M.VecDron(4, 0, M.red_ladron(None))
+        modelo, _ = M.desde_json(ruta, venv, 1e-4)
+        o = np.random.default_rng(0).normal(size=(64, E.OBS_DRON)).astype(np.float32)
+        lg = modelo.policy.get_distribution(torch.tensor(o)).distribution.logits.detach().numpy()
+        ref = PoliticaJSON(ruta, E.OBS_DRON).logits(o)
+        ref = ref - np.log(np.exp(ref - ref.max(1, keepdims=True)).sum(1, keepdims=True)) - ref.max(1, keepdims=True)
+        np.testing.assert_allclose(lg, ref, atol=1e-4)                 # empieza decidiendo igual que la V15
+        w = modelo.policy.mlp_extractor.policy_net[0].weight.detach().numpy()
+        if w.shape[1] > E.OBS_DRON - E.N_OBS_V16:
+            self.assertTrue(np.all(w[:, E.OBS_DRON - E.N_OBS_V16:] == 0))   # las entradas nuevas arrancan en cero
+        self.assertEqual(E.EntornoDronPersona.nivel_inicial, E.NIVEL_V16)
+
+
 if __name__ == "__main__":
     unittest.main()

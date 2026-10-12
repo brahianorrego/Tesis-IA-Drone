@@ -684,7 +684,7 @@ class Maestro(BaseCallback):
                                                                "objetivo": self.objetivo, "t": time.time(), "nivel": m["nivel"],
                                                                "version": VERSION, "curriculo": m.get("curriculo"),
                                                                "competencia": m.get("competencia"),
-                                                               "replays_nivel": self.replays_nivel, "niveles": NIVELES})
+                                                               "replays_nivel": self.replays_nivel, "niveles": NIVELES + [NOMBRE_V16]})
         pol = PoliticaSB3(self.model)
         nv = cur.nivel if cur is not None else N_NIVELES - 1
         if nv != self.nivel_ant:
@@ -695,7 +695,8 @@ class Maestro(BaseCallback):
             rep = grabar_nivel(pol, self.red_p, NIVEL_V16, it, it, pasos)
             guardar_json(os.path.join(SALIDA, "replay_v16.json"), rep)
             guardar_json(os.path.join(SALIDA, "replay_adv.json"), rep)
-            self.replays_nivel["v16"] = it
+            guardar_json(os.path.join(SALIDA, "replay_nivel_%d.json" % NIVEL_V16), rep)   # el visor V15 lo muestra como nivel 5
+            self.replays_nivel["v16"] = self.replays_nivel[NIVEL_V16] = it
             guardar_json(os.path.join(SALIDA, "replay_mision.json"), grabar_mision(pol, self.red_p, actuar, it, pasos, it + 2))
             self.replays_nivel["mision"] = it
         elif rep_ok and (it % 5 == 0 or it == 1):
@@ -715,7 +716,7 @@ class Maestro(BaseCallback):
                                                                "objetivo": self.objetivo, "t": time.time(), "nivel": m["nivel"],
                                                                "version": VERSION, "curriculo": m.get("curriculo"),
                                                                "competencia": m.get("competencia"),
-                                                               "replays_nivel": self.replays_nivel, "niveles": NIVELES})
+                                                               "replays_nivel": self.replays_nivel, "niveles": NIVELES + [NOMBRE_V16]})
         # hitos del nivel actual: cada 5 iteraciones durante sus primeras 50, después cada 20; la misión cada 20
         en_nivel = it - self.it_ini_nivel
         if rep_ok and ((it % 5 == 0 and en_nivel <= 50) or it % 20 == 0 or it == 1):
@@ -734,7 +735,8 @@ class Maestro(BaseCallback):
                 "current_level": cur.nivel if cur is not None else None,
                 "pasos_inicio_nivel": cur.pasos_inicio if cur is not None else None,
                 "historia_curriculo": cur.historia if cur is not None else []})
-            guardar_json(os.path.join(MODELOS, "dron_politica.json"), exportar(self.model, iteracion=it, pasos=pasos))
+            # V16: archivo aparte (195 entradas); el de la Jetson (dron_politica.json, 192) no se toca hasta adaptar su código
+            guardar_json(os.path.join(MODELOS, "dron_politica_v16.json"), exportar(self.model, iteracion=it, pasos=pasos))
         if it % 5 == 0 or it < 5:
             e = m["adv"] or {}
             c = control or {}
