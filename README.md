@@ -5,7 +5,7 @@ cuadricóptero autónomo en exteriores. La IA corre a bordo en una NVIDIA Jetson
 órdenes a una Pixhawk con ArduPilot por MAVLink.
 
 Proyecto de grado en Ingeniería Aeronáutica, Universidad de San Buenaventura · Brahian Andrés Orrego Osorio
-([@brahianorrego](https://github.com/brahianorrego)) y Tania.
+([@brahianorrego](https://github.com/brahianorrego)).
 
 ## La misión
 
