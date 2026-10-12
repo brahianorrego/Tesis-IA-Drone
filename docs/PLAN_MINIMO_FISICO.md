@@ -86,6 +86,12 @@ actual (FLTMODE, GUIDED en CH5 posición 3).
 Pendiente desde hace días: **copiar `~/Escritorio/dron_ia` de la Jetson a `jetson/` del repositorio** (sin IPs ni
 claves).
 
+> **No mover el LiDAR durante el mínimo (condición del arquitecto, 2026-10-12).** El plan V16
+> (`docs/PLAN_V16_REALISMO.md`, sección 6) recomienda pasar el TF03 a fijo al chasis y poner un TF-Luna en el gimbal.
+> Ese cambio físico **no se hace hasta terminar los pasos 4-7 del mínimo**. Si se hace antes, primero hay que
+> re-simular `simulacion/minimo_tesis/` con la geometría nueva del LiDAR y repetir su protocolo, porque el decisor se
+> entrenó con el TF03 alineado a la cámara a −5°.
+
 ## 5. Hoja de ruta física (un paso a la vez; no se avanza sin la confirmación de Brahian)
 
 Reglas de todos los pasos: **sin hélices** hasta el paso 6; vigilar el voltaje de la batería por MAVLink (aviso 14.4 V,

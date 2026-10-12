@@ -169,6 +169,11 @@ acumulada y nunca "perdido") y **rendición** (V15 con C1-C3) como secundario. L
 
 ## 6. Sensores y gimbal (recomendación del supervisor)
 
+> **Condición del arquitecto (2026-10-12):** el cambio físico de los LiDAR **no se hace hasta terminar el mínimo
+> indispensable** (pasos 4-7 de `docs/PLAN_MINIMO_FISICO.md`). Si se hace antes, primero se re-simula
+> `simulacion/minimo_tesis/` con la geometría nueva y se repite su protocolo: el decisor se entrenó con el TF03
+> alineado a la cámara a −5°. En la V16 (simulación) sí se modela desde ya. `minimo_tesis/` no se toca.
+
 - **TF03 fijo al chasis, mirando al frente, horizontal (0° a +2°), fuera del gimbal.**
   - Es el sensor de frenado: a 4 m/s hacen falta ~6-9 m contando la latencia medida (0.6-1.4 s), y solo el TF03 los
     da en exteriores.
