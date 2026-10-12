@@ -22,7 +22,7 @@ class TestEntorno(unittest.TestCase):
         env = E.EntornoDronPersona(8, semilla=0)
         self.assertEqual(env.obs_dron().shape, (8, E.OBS_DRON))
         self.assertEqual(env.obs_persona().shape, (8, E.OBS_PERSONA))
-        self.assertEqual(E.OBS_DRON, 192)
+        self.assertEqual(E.OBS_DRON, 192 + E.N_OBS_V16)        # V16: + cámara al piso
         self.assertEqual(len(E.CLASES), 10)
         self.assertTrue(np.isfinite(env.obs_dron()).all())
 
@@ -89,9 +89,12 @@ class TestPolitica(unittest.TestCase):
         capas = p["capas"]
         self.assertEqual(len(capas), 3)
         dims = [np.array(c["W"]).shape for c in capas]
-        self.assertEqual(dims, [(128, E.OBS_DRON), (128, 128), (len(E.CLASES), 128)])
+        # V16: hasta que se entrene la V16, en Git sigue la política de la V15 (sin las N_OBS_V16 entradas nuevas)
+        n_in = dims[0][1]
+        self.assertIn(n_in, (E.OBS_DRON, E.OBS_DRON - E.N_OBS_V16))
+        self.assertEqual(dims, [(128, n_in), (128, 128), (len(E.CLASES), 128)])
         self.assertEqual(p["clases"], E.CLASES)
-        x = np.random.default_rng(0).normal(size=E.OBS_DRON)
+        x = np.random.default_rng(0).normal(size=n_in)
         for i, c in enumerate(capas):
             x = np.array(c["W"]) @ x + np.array(c["b"])
             if i < 2:

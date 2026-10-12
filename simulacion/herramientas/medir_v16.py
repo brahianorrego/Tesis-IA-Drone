@@ -40,7 +40,7 @@ def medir(pol, n=256, seg=300.0, semilla=0, nivel=E.NIVEL_V16):
     res = collections.Counter()
     fin = []
     pasos = int(seg / E.DT) + 5
-    t_bajo = t_tot = t_real8 = t_real8_bajo = 0
+    t_bajo = t_tot = t_real8 = t_real8_bajo = t_real8_300 = t_piso = 0
     jit = np.zeros(3)
     n_jit = 0
     extra = collections.defaultdict(float)
@@ -59,6 +59,8 @@ def medir(pol, n=256, seg=300.0, semilla=0, nivel=E.NIVEL_V16):
         t_bajo += int((vivo & (env.dz < E.Z_SEGURA - 0.05)).sum())
         t_real8 += int(r8.sum())
         t_real8_bajo += int((r8 & (env.dz < E.Z_SEGURA - 0.05)).sum())
+        t_real8_300 += int((r8 & (env.dz < 3.0)).sum())
+        t_piso += int((vivo & env.piso_obj).sum())
         posturas += np.bincount(env.pos[vivo, 0], minlength=4)[:4]
         saltos += int((vivo & (env.salto_f == 1) & (f0 == 0)).sum())
         ac = env.activa[:, 1:] & vivo[:, None]
@@ -88,6 +90,8 @@ def medir(pol, n=256, seg=300.0, semilla=0, nivel=E.NIVEL_V16):
            "frac_bajo_330": round(t_bajo / max(t_tot, 1), 4),
            "frac_persona_real_8m": round(t_real8 / max(t_tot, 1), 3),
            "bajo_330_con_persona_real_8m": round(t_real8_bajo / max(t_real8, 1), 4),
+           "altura_real_bajo_300_con_persona_8m": round(t_real8_300 / max(t_real8, 1), 4),
+           "cam_piso_ve_al_objetivo": round(t_piso / max(t_tot, 1), 4),
            "jitter_por_paso": [round(float(x), 4) for x in jit / max(n_jit, 1)]}
     out["posturas_ladron"] = {E.NOMBRE_POSTURA[k]: round(float(v / max(posturas.sum(), 1)), 3) for k, v in enumerate(posturas)}
     out["saltos_por_partida"] = round(saltos / max(N, 1), 2)
@@ -110,7 +114,7 @@ def main():
     for kv in a.set:
         k, v = kv.split("=", 1)
         viejo = getattr(E, k)
-        setattr(E, k, type(viejo)(float(v)) if not isinstance(viejo, str) else v)
+        setattr(E, k, v if isinstance(viejo, str) else (bool(float(v)) if isinstance(viejo, bool) else type(viejo)(float(v))))
     t0 = time.time()
     out = medir(cargar_politica(a.modelo), a.n, a.seg, a.semilla, a.nivel)
     out["config"] = {"set": a.set, "nivel": a.nivel, "seg": a.seg, "segundos_reloj": round(time.time() - t0)}

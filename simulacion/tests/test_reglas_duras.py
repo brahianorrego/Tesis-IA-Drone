@@ -125,6 +125,15 @@ class TestDinamica(unittest.TestCase):
                 ang = gb.paso(np.full(4, consigna), np.full(4, d_chasis), E.DT)
                 self.assertTrue(np.all(ang >= E.GIMBAL_MIN - EPS) and np.all(ang <= E.GIMBAL_MAX + EPS))
 
+    def test_gimbal_servo_recorta_comandos_extremos(self):
+        # V16: el servo MG90D (topes mecánicos) tampoco pasa de -45°/+15°, con comandos extremos y el chasis cabeceando
+        gb = control.GimbalMixto(4)
+        gb.elegir(np.ones(4, bool), 1.0)
+        for consigna, d_chasis in ((-120.0, -10.0), (60.0, 10.0), (-120.0, 25.0)):
+            for _ in range(100):
+                ang = gb.paso(np.full(4, consigna), np.full(4, d_chasis), E.DT)
+                self.assertTrue(np.all(ang >= E.GIMBAL_MIN - EPS) and np.all(ang <= E.GIMBAL_MAX + EPS))
+
     def test_humano_en_el_lazo(self):
         a_fijado = [(a, c) for a, b, c in self.transiciones if b == E.FIJADO]
         self.assertTrue(any(a == E.VERIFICAR for a, _ in a_fijado), "la prueba no vio ningún lock-on")

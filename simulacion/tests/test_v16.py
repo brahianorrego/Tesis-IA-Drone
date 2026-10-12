@@ -13,15 +13,16 @@ LEJOS = np.array([[40.0, 40.0], [41.0, 40.0]])
 
 
 def corrida(n=48, pasos=1500, semilla=11, acciones=None):
-    """Partidas V16 con acciones al azar (o fijas). Devuelve el entorno y una lista de registros por paso."""
+    """Partidas V16 con acciones al azar (o fijas). Devuelve el entorno y una lista de registros por paso. Las alturas son
+    las que cree la Pixhawk (con el error del barómetro, fase A3): es lo que controla la lógica de alturas."""
     rng = np.random.default_rng(semilla)
     env = E.EntornoDronPersona(n, semilla=semilla, nivel=E.NIVEL_V16)
     reg = []
     for _ in range(pasos):
-        a0, z0 = env.alt_obj.copy(), env.dz.copy()
+        a0, z0 = env.alt_obj.copy(), env.dz + env.e_baro          # V16 · A3: la altura que cree la Pixhawk
         acc = rng.integers(0, len(E.CLASES), n) if acciones is None else np.full(n, acciones)
         _, _, done, info = env.step(acc, np.full(n, QUIETO), auto_reset=False)
-        reg.append(dict(a0=a0, z0=z0, a1=env.alt_obj.copy(), g8=env.gente8.copy(), dz=env.dz.copy(), vz=env.vz_cmd.copy(),
+        reg.append(dict(a0=a0, z0=z0, a1=env.alt_obj.copy(), g8=env.gente8.copy(), dz=env.dz + env.e_baro, vz=env.vz_cmd.copy(),
                         done=done.copy()))
         env.reset(done)
     return env, reg
@@ -45,7 +46,8 @@ class TestA1Escenario(unittest.TestCase):
         self.assertTrue((env.guion[:, 1:][env.activa[:, 1:]] == E.G_CIVIL).all())
         d = np.hypot(env.px[:, 1:] - env.dx[:, None], env.py[:, 1:] - env.dy[:, None])[env.activa[:, 1:]]
         self.assertGreater(np.mean(d > E.R_GENTE), 0.97)               # nacen lejos del 360° de entrada bajo
-        np.testing.assert_allclose(env.dz, E.Z_V16_ENTRADA)
+        # según su barómetro (A3); si el error lo dejaría por debajo de Z_MIN, en Z_MIN
+        np.testing.assert_allclose(env.dz, np.maximum(E.Z_V16_ENTRADA - env.e_baro, E.Z_MIN))
 
     def test_civiles_atraviesan_la_zona(self):
         env = E.EntornoDronPersona(64, semilla=2, nivel=E.NIVEL_V16)
@@ -78,7 +80,9 @@ class TestA1Alturas(unittest.TestCase):
     def test_usa_las_alturas_bajas(self):
         dz = np.concatenate([r["dz"] for r in self.reg])
         self.assertGreater(np.mean(dz < E.Z_SEGURA - 0.1), 0.005)      # sí baja a 2.0-3.0 m sin nadie cerca
-        self.assertGreaterEqual(dz.min(), E.Z_V16_INSPECCION - 0.15)
+        a1 = np.concatenate([r["a1"] for r in self.reg])
+        self.assertGreaterEqual(a1.min(), E.Z_V16_INSPECCION - 1e-9)        # nunca se pide menos de 2.0 m
+        self.assertGreaterEqual(dz.min(), E.Z_V16_INSPECCION - 0.25)        # (retardo del lazo y deriva del barómetro)
 
     def test_rampa_sin_escalones(self):
         for r in self.reg:
@@ -87,7 +91,8 @@ class TestA1Alturas(unittest.TestCase):
             # hacia arriba la rampa no pasa de la velocidad de subida de ArduPilot, salvo cuando se iguala a la altura
             # real (el árbitro subió esquivando, o un descenso bloqueado: no se acumula error)
             v = ~r["done"]
-            tope = np.maximum(r["a0"][v] + E.VEL_SUBIDA_RAPIDA * E.DT, r["z0"][v])
+            # (+0.1 m: lo que puede moverse el error del barómetro en un paso)
+            tope = np.maximum(r["a0"][v] + E.VEL_SUBIDA_RAPIDA * E.DT, r["z0"][v] + 0.1)
             self.assertTrue(np.all(r["a1"][v] <= tope + 1e-9))
 
     def test_persona_cerca_desde_el_inicio(self):
@@ -109,13 +114,14 @@ class TestA1Alturas(unittest.TestCase):
         env.v_forzada[:, :2] = 0.0
         env.reiniciar_mision(todos)
         env.alt_obj[:] = E.Z_SEGURA
+        env.baro_amp[:] = env.e_baro[:] = 0.0                       # aquí se prueba la lógica (el barómetro, aparte)
         env.gimbal[:] = env.gimbal_cmd[:] = env.cam_pitch[:] = -15.0
         env.gb.reset(todos, -15.0)
         env.obs_retraso = env._sensores()
         zmin = 99.0
         for _ in range(200):
             env.step(np.zeros(n, int), np.full(n, QUIETO), auto_reset=False)
-            zmin = min(zmin, float(env.dz.min()))
+            zmin = min(zmin, float((env.dz + env.e_baro).min()))     # la que sostiene la Pixhawk (con el barómetro)
         self.assertGreaterEqual(zmin, E.Z_SEGURA - 0.05)
 
 
@@ -274,6 +280,77 @@ class TestA2Civiles(unittest.TestCase):
         for p in f["pers"]:
             for k in ("pos", "pos0", "pt", "mira", "civ", "graba", "alto"):
                 self.assertIn(k, p)
+
+
+
+class TestA3Sensores(unittest.TestCase):
+
+    def test_tf03_fijo_al_chasis(self):
+        # a 2.0 m el TF03 (casi horizontal) ve un muro de 2.6 m a 20 m; a 3.30 m pasa por encima; con el chasis cabeceando
+        # 20° hacia abajo toca el suelo y la Jetson lo descarta (no es obstáculo)
+        for z, cab, espera in ((2.0, 0.0, True), (E.Z_SEGURA, 0.0, False), (2.0, -20.0, False)):
+            env = una_persona(n=4, dist=20.0, z=z)
+            env.activa[:, 0] = False
+            env.px[:, 0] = env.py[:, 0] = 999.0
+            env.pa[:, 0], env.pb[:, 0] = (20.0, -3.0), (20.0, 3.0)
+            env.e_baro[:] = 0.0
+            env.chasis_pitch[:] = cab
+            env._sensores()
+            self.assertEqual(bool((env.lidar < E.LIDAR_MAX - 1).all()), espera, (z, cab, env.lidar))
+
+    def test_luna_mide_a_la_persona_centrada(self):
+        # el TF-Luna (en el gimbal) da la distancia a la persona centrada solo dentro de su alcance
+        cerca = una_persona(n=64, dist=4.0)
+        cerca.luna_max[:] = 8.0
+        cerca._sensores()
+        lejos = una_persona(n=64, dist=12.0)
+        lejos.luna_max[:] = 8.0
+        lejos._sensores()
+        s_c, s_l = cerca.info_sensor, lejos.info_sensor
+        self.assertGreater((s_c["laser"][:, 0] & s_c["visible"][:, 0]).mean(), 0.5)
+        self.assertFalse(s_l["laser"][:, 0].any())
+
+    def test_camara_al_piso_ve_debajo(self):
+        abajo = una_persona(n=200, dist=0.5)
+        abajo._sensores()
+        lejos = una_persona(n=200, dist=6.0)
+        lejos._sensores()
+        self.assertGreater(abajo.piso_vis[:, 0].mean(), 0.6)
+        self.assertEqual(lejos.piso_vis[:, 0].mean(), 0.0)
+        # con el chasis inclinado 20° hacia adelante (frenando), la cámara al piso mira hacia adelante: la ve a 2 m adelante
+        inc = una_persona(n=200, dist=2.0)
+        inc.chasis_pitch[:] = 20.0
+        inc._sensores()
+        self.assertGreater(inc.piso_vis[:, 0].mean(), 0.5)
+
+    def test_desenfoque_baja_la_deteccion(self):
+        quieto = una_persona(n=2000, dist=10.0)
+        gira = una_persona(n=2000, dist=10.0)
+        gira.yaw_dps[:] = 120.0
+        quieto._sensores()
+        gira._sensores()
+        pq, pg = quieto.info_sensor["visible_real"][:, 0].mean(), gira.info_sensor["visible_real"][:, 0].mean()
+        self.assertLess(pg, pq - 0.15)
+
+    def test_gimbal_mixto(self):
+        env = E.EntornoDronPersona(400, semilla=8, nivel=E.NIVEL_V16)
+        self.assertTrue(0.4 < env.gb.servo.mean() < 0.6)                    # "mixto": la mitad de las partidas con servo
+        self.assertFalse(E.EntornoDronPersona(50, semilla=8, nivel=4).gb.servo.any())   # la V15, con la BaseCam
+
+    def test_deriva_del_gps_corre_el_mundo_recordado(self):
+        env = E.EntornoDronPersona(64, semilla=9, nivel=E.NIVEL_V16)
+        for _ in range(300):
+            env.step(np.full(env.n, 6), np.full(env.n, QUIETO))
+        self.assertTrue(np.all(np.abs(env.e_gps) < 3 * E.GPS_DERIVA[1]))
+        i = int(np.argmax(env.lid_ok.sum(1)))
+        k = np.where(env.lid_ok[i])[0]
+        x0, e0 = env.lid_px[i, k].copy(), env.e_gps[i].copy()
+        env._deriva_nav()
+        np.testing.assert_allclose(env.lid_px[i, k], x0 - (env.e_gps[i, 0] - e0[0]))
+
+    def test_v15_sin_ruido_de_navegacion(self):
+        env = E.EntornoDronPersona(16, semilla=1, nivel=4)
+        self.assertFalse(env.gps_amp.any() or env.baro_amp.any())
 
 
 if __name__ == "__main__":

@@ -9,6 +9,16 @@ VARIABLES (decisión 3): 2.5 m en el 360° de entrada, 3.0 m en tránsito y 2.0 
 sin personas conocidas a menos de R_GENTE (8 m: la que ve, la que vio y pudo seguir cerca, o el objetivo designado
 mientras pudiera estar a menos de 8 m); si no, nunca por debajo de la altura segura Z_SEGURA (3.30 m, D-043). La altura
 objetivo va en rampa (sin escalones).
+V16 · FASE A2 (posturas humanas en la física): de pie, agachado, recostado contra la pared y gateando cambian el alto del
+cuerpo, el ancho y la confianza de YOLO, la oclusión, la rapidez y el alcance; transiciones de 0.5-1 s. El ladrón táctico
+elige la postura y se corre gateando detrás del muro. SALTO en fases (impulso, vuelo balístico, aterrizaje) con la MANO
+hacia el dron: alcanzado si la mano entra en el cilindro del dron. CIVILES con máquina de estados (transitan, miran el dron,
+lo graban, lo esquivan, se alejan o salen de la zona; nunca pasan por debajo a propósito).
+V16 · FASE A3 (sensores): CÁMARA AL PISO (IMX219 fija al chasis, recta hacia abajo) para el punto ciego; TF03 FIJO AL
+CHASIS mirando al frente (descarta el suelo con la actitud) y TF-LUNA en el gimbal (distancia a lo que la cámara centra,
+2.5-8 m); DESENFOQUE POR MOVIMIENTO (guiñada, gimbal y movimiento relativo); gimbal BaseCam o SERVO MG90D por partida
+(control.GimbalMixto); deriva del GPS/EKF (el mundo recordado se corre) y error del BARÓMETRO (la Pixhawk sostiene la altura
+que ella cree). El clic del operador amarra el tracker 1 s; un "no es él" no puede re-fijar con la detección vieja.
 
 V15 · FASE A (sensores y mundo): LiDAR TF03 a 30 m con 10 rayos por paso (100 Hz); 360° de entrada BAJO (2.5 m, cámara
 -3°, con guarda) y 360° de búsqueda ALTO (altura segura); cansancio del ladrón (velocidad crítica + reserva D' + pulso);
@@ -123,7 +133,7 @@ La fase 1 (vuelo del piloto con bloqueo frontal) está en mision.py.
 """
 import numpy as np
 
-from control import AutopilotoArduPilot, GimbalBaseCam
+from control import AutopilotoArduPilot, GimbalBaseCam, GimbalMixto
 
 # ----------------------------------------------------------------------------- sensores
 DT = 0.1
@@ -447,7 +457,8 @@ R_GENTE = 8.0
 MASA_GENTE = 0.05                      # con más de esto de la nube del objetivo a menos de R_GENTE + 1.5 m, "está cerca"
 V_ALCANCE_OBJ = 2.5                    # m/s: rapidez sostenida del ladrón (VC_LADRON) para acotar dónde puede estar
 T_GENTE_MEM = 20.0                     # s que el dron recuerda a una persona vista para decidir la altura
-Z_V16_ENTRADA = 2.5                    # 360° de entrada (mapea los muros con el LiDAR)
+Z_V16_ENTRADA = 2.0                    # 360° de entrada (mapea los muros con el LiDAR). A3: con el TF03 fijo al chasis (casi
+                                       # horizontal) a 2.0 m mapea muros de 2.6 m hasta 25 m; a 2.5 m pierde los de más de ~6 m
 Z_V16_TRANSITO = 3.0                   # vuelos entre puntos (por encima de los muros de 2.6 m)
 Z_V16_INSPECCION = 2.0                 # mirar detrás de un muro (barridos de los pasos 1 y 2, muro de canto, inspección)
 # transiciones suaves: la altura objetivo no salta, se mueve en rampa (la de subida de emergencia es la de ArduPilot)
@@ -490,6 +501,39 @@ T_MIRA_CIVIL = (5.0, 20.0)
 T_ALEJA_CIVIL = (6.0, 12.0)
 D_ESQUIVA_CIVIL = 5.0                                  # esquivando, no se acerca a menos de esto del dron
 D_RESPETO_V16 = 4.5                                    # todos: empiezan a rodear el dron desde esta distancia (inercia)
+# FASE A3 · SENSORES (decisiones 2 y 11, sección 6 del plan). Solo en las partidas V16 (las de la V15 quedan iguales).
+# Cámara al piso: CSI IMX219 fija al chasis (no estabilizada: se inclina con él), recta hacia abajo. HFOV a lo ancho del
+# dron (izquierda-derecha), VFOV a lo largo. Mismo ruido, pérdidas y retardo que la principal. Sirve para el punto ciego.
+CAM_PISO_HFOV, CAM_PISO_VFOV, CAM_PISO_PITCH = 62.2, 48.8, -90.0
+P_DET_PISO = 0.9               # YOLO con la persona vista desde arriba (cabeza y hombros), antes de postura y desenfoque
+SIG_PISO = 0.15                # m: error de la posición en el piso medida por la cámara de abajo (crece con la distancia)
+# LiDAR: TF03 FIJO AL CHASIS mirando al frente (0° a +2°, fuera del gimbal): frena y mapea; descarta los impactos en el
+# suelo con la actitud de la Pixhawk (obstáculo solo si d < h / sin(cabeceo hacia abajo) - 0.4 m). TF-LUNA EN EL GIMBAL,
+# coaxial con la cámara: mide la distancia a lo que la cámara centra, con un alcance de 2.5 a 8 m según el blanco y el sol.
+TF03_PITCH = 1.0               # ° sobre el plano del chasis
+LUNA_MAX = (3.0, 8.0)          # m: alcance del TF-Luna en la partida (oscuro a pleno sol ... blanco claro)
+# Desenfoque por movimiento: con exposición T_EXP el objeto se corre en la imagen ω·T_EXP·px_por_grado píxeles; YOLO
+# pierde confianza como 1 / (1 + (desenfoque / B_BLUR)²). Le da a la red un motivo físico para moverse suave.
+T_EXP = 0.004                  # s (exterior de día)
+B_BLUR = 12.0                  # px de desenfoque a los que la detección cae a la mitad
+# Tipo de gimbal: "basecam" (hoy), "servo" (MG90D estabilizado por la Pixhawk) o "mixto" (cada partida uno, al azar)
+GIMBAL_TIPO = "mixto"
+# Ruido de navegación: deriva del GPS/EKF (amplitud por partida, proceso de Ornstein-Uhlenbeck) y error del barómetro.
+# La memoria del dron (mapa, última posición, nube...) queda en el marco que él cree: al derivar, el mundo recordado se
+# corre respecto al real. La geocerca de ArduPilot usa la posición estimada (por eso un margen mayor).
+GPS_DERIVA = (0.5, 1.5)        # m
+TAU_GPS = 30.0                 # s
+BARO_ERROR = (0.3, 0.5)        # m
+TAU_BARO = 20.0                # s
+MARGEN_CERCA_V16 = MARGEN_CERCA + GPS_DERIVA[1]
+RUIDO_NAV = True               # False: sin deriva del GPS ni error del barómetro (para comparar)
+RUIDO_GPS, RUIDO_BARO = True, True   # cada uno por separado (para comparar)
+# Altímetro: "baro" (hoy: la Pixhawk con su barómetro) o "luna" (alternativa de la sección 6: un segundo TF-Luna mirando al
+# piso como telémetro de altura; ArduPilot lo usa por debajo de su alcance, con un error de ~ERROR_LUNA_ALT)
+ALTIMETRO = "baro"
+ERROR_LUNA_ALT = 0.05          # m
+T_CLIC_FIRME = 1.0             # s que el tracker queda amarrado a la persona del clic del operador
+N_OBS_V16 = 3                  # entradas nuevas de la red: cámara al piso (ve al objetivo, adelante, izquierda)
 
 # ----------------------------------------------------------------------------- personas
 N_PERS = 4                     # 0 = ladrón, 1-2 = peatones de la zona, 3 = transeúnte de la ruta (misión)
@@ -580,7 +624,7 @@ G_DISTRACTOR = 7               # V14 (nivel 2): civil que cruza una y otra vez l
 G_CIVIL = 8                    # V16: civil realista (atraviesa la zona; al notar el dron lo mira, lo esquiva o se va)
 VEL_CIVIL_V16 = (1.1, 1.5)     # m/s: caminan tranquilos
 
-OBS_DRON = 21 + 7 + N_SECT + 2 + 10 + GRID_N * GRID_N
+OBS_DRON = 21 + 7 + N_SECT + 2 + 10 + GRID_N * GRID_N + N_OBS_V16
 # + memoria espacial (perdido, última posición x/y, tiempo sin verlo, gimbal, su último vector de movimiento x/y)
 # + sectores del LiDAR + v9: dónde estaría ahora el ladrón si siguió igual (x/y), estado propio del dron (velocidad,
 # aceleración, vertical, guiñada, consignas de la búsqueda) y la grilla del mapa descubierto
@@ -752,6 +796,18 @@ class EntornoDronPersona(object):
         self.salto_f, self.salto_tf, self.salto_v0 = zi(), z(), z()   # fase del salto (0 no, 1 impulso, 2 vuelo, 3 aterriza)
         self.salto_vx, self.salto_vy = z(), z()
         self.mano = np.zeros((n, 3))                     # mano del ladrón (x, y, z)
+        # V16 · A3: sensores nuevos y ruido de navegación
+        self.luna_max = np.full(n, LUNA_MAX[1])          # alcance del TF-Luna en la partida
+        self.luna_hit = np.zeros((n, 3))                 # punto que mide el TF-Luna (visor)
+        self.piso_vis = zb(N_PERS)                       # la cámara al piso detecta a cada persona
+        self.piso_x, self.piso_y = z(N_PERS), z(N_PERS)  # posición medida por la cámara al piso
+        self.piso_obj = zb()                             # la cámara al piso ve a la persona seguida (designada)
+        self.cam_pitch_prev, self.chasis_prev = np.full(n, -10.0), z()
+        self.e_gps, self.gps_amp = np.zeros((n, 2)), z()   # deriva del GPS/EKF (m) y su amplitud en la partida
+        self.e_baro, self.baro_amp = z(), z()            # error del barómetro (m) y su amplitud
+        self.dz_est = z()                                # altura que cree la Pixhawk
+        self.t_clic = np.full(n, 99.0)                   # V16: s desde el último clic del operador (tracker amarrado)
+        self.blur = z(N_PERS)                            # desenfoque de cada persona en la cámara principal (px)
         self.alt_obj = np.full(n, Z_V16_ENTRADA)         # V16 · A1: altura objetivo en rampa (lo que se le pide a la Pixhawk)
         self.gente8 = zb()                               # V16 · A1: hay una persona conocida a menos de R_GENTE
         self.vz_cmd = z()                                # V16: consigna vertical que se manda a la Pixhawk
@@ -801,7 +857,7 @@ class EntornoDronPersona(object):
         self.phi = z()
         # controladores de bajo nivel del hardware (control.py): la política solo da consignas
         self.ap = AutopilotoArduPilot(n, self.rng)
-        self.gb = GimbalBaseCam(n)
+        self.gb = GimbalMixto(n, rng=self.rng)          # V16: BaseCam o servo por partida (GIMBAL_TIPO)
         # CURRÍCULO: 0 = condiciones suaves, 1 = las más exigentes (lo sube el entrenamiento según el desempeño)
         self.nivel = 0.0
         self.v_sprint = np.full(n, V_SPRINT[0])           # D-041: rapidez de esprint del ladrón (por partida)
@@ -1091,10 +1147,38 @@ class EntornoDronPersona(object):
         self.salto_tf[m] = self.salto_v0[m] = self.salto_vx[m] = self.salto_vy[m] = 0.0
         self.mano[m] = 0.0
         self.c_noto[m] = False
+        self.t_clic[m] = 99.0
+        # V16 · A3: tipo de gimbal, alcance del TF-Luna y ruido de navegación de la partida (solo en la V16)
+        iv = np.where(m)[0][lv == NIVEL_V16]
+        inv_ = np.where(m)[0][lv != NIVEL_V16]
+        mv = np.zeros(self.n, bool)
+        mv[iv] = True
+        mo = np.zeros(self.n, bool)
+        mo[inv_] = True
+        self.gb.elegir(mo, 0.0)
+        self.gb.elegir(mv, {"basecam": 0.0, "servo": 1.0}.get(GIMBAL_TIPO, 0.5))
+        self.luna_max[m] = LUNA_MAX[1]
+        self.gps_amp[m] = self.baro_amp[m] = 0.0
+        self.e_gps[m] = 0.0
+        self.e_baro[m] = 0.0
+        if len(iv) and RUIDO_NAV:
+            kv = len(iv)
+            self.gps_amp[iv] = r.uniform(GPS_DERIVA[0], GPS_DERIVA[1], kv) * RUIDO_GPS
+            self.baro_amp[iv] = (r.uniform(BARO_ERROR[0], BARO_ERROR[1], kv) if ALTIMETRO == "baro"
+                                 else np.full(kv, ERROR_LUNA_ALT)) * RUIDO_BARO
+            self.e_gps[iv] = r.normal(0, 1, (kv, 2)) * (self.gps_amp[iv] / 2)[:, None]
+            self.e_baro[iv] = r.normal(0, 1, kv) * self.baro_amp[iv] / 2
+        if len(iv):
+            self.luna_max[iv] = r.uniform(LUNA_MAX[0], LUNA_MAX[1], len(iv))
+        self.piso_vis[m] = False
+        self.piso_obj[m] = False
         # V16 · A1: el dron entra a la zona a la altura del 360° de entrada; la rampa de altura arranca donde está
         v16_ = np.where(m)[0][lv == NIVEL_V16]
         self.dz[v16_] = Z_V16_ENTRADA
-        self.alt_obj[m] = self.dz[m]
+        # (llega a la altura de entrada según SU barómetro: la real es la que corresponda con el error)
+        self.dz[v16_] = np.clip(Z_V16_ENTRADA - self.e_baro[v16_], Z_MIN, Z_MAX)
+        self.dz_est[m] = self.dz[m] + self.e_baro[m]
+        self.alt_obj[m] = self.dz_est[m]
         self.gente8[m] = False
         self.phi[m] = self._potencial()[m]
 
@@ -1271,12 +1355,13 @@ class EntornoDronPersona(object):
             bloq[fil] = sub
         return ~bloq
 
-    def _rayos_pares(self, e, psi):
-        """V15 (rápido): rayos del LiDAR solo para los entornos e (con rumbos psi): distancia y persona tocada."""
-        th = np.radians(self.cam_pitch[e])
+    def _rayos_pares(self, e, psi, pitch=None, alcance=LIDAR_MAX):
+        """V15 (rápido): rayos del LiDAR solo para los entornos e (con rumbos psi): distancia y persona tocada.
+        V16: pitch (°, por rayo) y alcance del sensor; por defecto, el de la cámara y el del TF03."""
+        th = np.radians(self.cam_pitch[e] if pitch is None else pitch)
         ct, st = np.cos(th), np.sin(th)
         cps, sps = np.cos(psi), np.sin(psi)
-        t = np.full(len(e), LIDAR_MAX)
+        t = np.broadcast_to(np.asarray(alcance, float), (len(e),)).copy()
         tg = np.where(st < -1e-3, self.dz[e] / np.maximum(-st, 1e-3), np.inf)
         t = np.minimum(t, tg)
         ch = np.maximum(ct, 1e-3)
@@ -1316,16 +1401,17 @@ class EntornoDronPersona(object):
         h_linea = z + (hs4 - z) * t[..., None]                                  # (n, P, Q, K) altura de la vista en q
         return (delante[..., None] & (h_linea <= self.alto_ef[:, None, :, None])).any(2)
 
-    def _lidar_camara(self, psi=None):
+    def _lidar_camara(self, psi=None, pitch=None, alcance=LIDAR_MAX):
         """Un rayo por el eje óptico (yaw del dron + pitch del gimbal) hasta lo primero que toca: suelo, panel u
         obstáculo (planos verticales de altura ph) o persona (cilindro). Devuelve distancia, punto y tipo (1 suelo,
-        2 obstáculo, 3 persona) e índice de la persona tocada."""
+        2 obstáculo, 3 persona) e índice de la persona tocada. V16: con pitch (°) y alcance sirve para el TF03 fijo al
+        chasis y para el TF-Luna del gimbal."""
         n = self.n
-        th = np.radians(self.cam_pitch)
+        th = np.radians(self.cam_pitch if pitch is None else pitch)
         ct, st = np.cos(th), np.sin(th)
         psi = self.psi if psi is None else psi
         cps, sps = np.cos(psi), np.sin(psi)
-        t = np.full(n, LIDAR_MAX)
+        t = np.broadcast_to(np.asarray(alcance, float), (n,)).copy()
         tipo = np.zeros(n, int)
         jp = np.full(n, -1)
         tg = np.where(st < -1e-3, self.dz / np.maximum(-st, 1e-3), np.inf)
@@ -1432,6 +1518,17 @@ class EntornoDronPersona(object):
         p_frac = np.clip((self.frac_vis - P_FRAC[0]) / (P_FRAC[1] - P_FRAC[0]), 0.0, 1.0)
         # V16: YOLO es menos seguro con el cuerpo agachado o gateando
         p_det = p_det * self._f_postura(P_YOLO_POSTURA)
+        # V16 · A3 · DESENFOQUE POR MOVIMIENTO: la imagen de la persona se corre por la guiñada del dron, el movimiento del
+        # gimbal y el de ella respecto al dron (velocidad angular, °/s)
+        v16 = self.lvl_ep == NIVEL_V16
+        if v16.any():
+            vrx, vry = self.pvx - self.dvx[:, None], self.pvy - self.dvy[:, None]
+            w_b = np.degrees((rx * vry - ry * vrx) / np.maximum(dh, 0.5) ** 2)
+            w_x = w_b + self.yaw_dps[:, None]
+            w_y = ((self.cam_pitch - self.cam_pitch_prev) / DT)[:, None]
+            blur = np.hypot(w_x, w_y) * T_EXP * (640.0 / HFOV)
+            self.blur = np.where(v16[:, None], blur, 0.0)
+            p_det = p_det * np.where(v16[:, None], 1.0 / (1.0 + (blur / B_BLUR) ** 2), 1.0)
         visible = (self.activa & (self.frac_vis >= P_FRAC[0]) & (d_inclinada < 35)
                    & (r.random((n, N_PERS)) < p_det * p_frac))
         elev_m = a_c + r.normal(0, 0.3, (n, N_PERS))
@@ -1444,9 +1541,16 @@ class EntornoDronPersona(object):
         d_ancho = RADIO_PERSONA / np.tan(np.radians(ancho_deg * (1 + r.normal(0, 0.05, (n, N_PERS))) / 2))
         d_bbox = np.where(h_norm >= 0.99, d_ancho, d_alto)
         # LiDAR acoplado a la cámara: solo mide la distancia a la persona si está en el centro de la imagen
-        t_l, tipo_l, jp_l, hx_l, hy_l, hz_l = self._lidar_camara()
-        laser = visible & (jp_l[:, None] == np.arange(N_PERS)[None, :])
-        d_lidar = t_l[:, None] + r.normal(0, 0.02, (n, N_PERS))
+        # V16 · A3: TF03 FIJO AL CHASIS (cabecea con él); el TF-LUNA va en el gimbal y es el que mide a la persona centrada
+        p_tf03 = np.where(v16, self.chasis_pitch + TF03_PITCH, self.cam_pitch)
+        t_l, tipo_l, jp_l, hx_l, hy_l, hz_l = self._lidar_camara(pitch=p_tf03)
+        t_las, jp_las = t_l, jp_l
+        if v16.any():
+            t_lu, tipo_lu, jp_lu, hx_lu, hy_lu, hz_lu = self._lidar_camara(pitch=self.cam_pitch, alcance=self.luna_max)
+            t_las, jp_las = np.where(v16, t_lu, t_l), np.where(v16, jp_lu, jp_l)
+            self.luna_hit = np.stack([hx_lu, hy_lu, hz_lu], -1)
+        laser = visible & (jp_las[:, None] == np.arange(N_PERS)[None, :])
+        d_lidar = t_las[:, None] + r.normal(0, 0.02, (n, N_PERS))
         dist = np.where(laser, d_lidar, np.minimum(d_bbox, 30.0))
         sigue = visible & self.vis_prev
         a = 0.3
@@ -1477,6 +1581,14 @@ class EntornoDronPersona(object):
         # identidad: solo hay objetivo después del "SÍ ES" del operador; el tracker conserva el ID T_TRACKER
         # segundos y, pasado ese tiempo, hay que re-identificarlo por apariencia
         fij = self.modo >= FIJADO                       # ya designado (rastreando o en el protocolo de pérdida)
+        # V16 · A3 · CÁMARA AL PISO: si ve a la persona seguida (debajo del dron), el tracker no la suelta y el Kalman se
+        # corrige con su posición (el reflejo de punto ciego sabe dónde está); no cuenta como "a la vista" de la principal
+        ar = np.arange(n)
+        if v16.any():
+            self.piso_vis, self.piso_x, self.piso_y = self._cam_piso(v16)
+        else:
+            self.piso_vis = np.zeros((n, N_PERS), bool)
+        self.piso_obj = self.piso_vis[ar, self.trk] & fij
         v0_raw = visible[:, 0]
         d0 = dist[:, 0]
         p_id = np.where(d0 < 12, 0.85, np.where(d0 < 20, 0.6, 0.3))
@@ -1490,7 +1602,7 @@ class EntornoDronPersona(object):
         s_m = s_m + r.normal(0, 1, n) * (0.03 + 0.01 * np.minimum(d0, 30.0))
         s_m = np.clip(s_m, 0.0, 1.0)
         self.sim_med = np.where(v0, 0.8 * self.sim_med + 0.2 * s_m, self.sim_med)
-        self.t_sin_ver = np.where(v0 | ~fij, 0.0, self.t_sin_ver + DT)
+        self.t_sin_ver = np.where(v0 | self.piso_obj | ~fij, 0.0, self.t_sin_ver + DT)
         # memoria del objetivo: dónde lo vio confirmado por última vez
         self.ult_rumbo = np.where(v0, envolver(self.psi - np.radians(ang_m[:, 0])), self.ult_rumbo)
         self.ult_dist = np.where(v0, dist[:, 0], self.ult_dist)
@@ -1499,7 +1611,7 @@ class EntornoDronPersona(object):
         # es mucho mejor que la del bbox (que llega cortado por el borde de la imagen cuando la persona está debajo)
         el0 = elev_m[:, 0]
         geo = el0 > 12.0
-        dh_est = np.where(geo, (self.dz - 0.9) / np.tan(np.radians(np.clip(el0, 1.0, 89.0))), dh_est)
+        dh_est = np.where(geo, (self.dz + self.e_baro - 0.9) / np.tan(np.radians(np.clip(el0, 1.0, 89.0))), dh_est)   # V16: con el barómetro
         rumbo_w = self.psi - np.radians(ang_m[:, 0])
         ux_n = np.clip(self.dx + dh_est * np.cos(rumbo_w), -ARENA + 1, ARENA - 1)
         uy_n = np.clip(self.dy + dh_est * np.sin(rumbo_w), -ARENA + 1, ARENA - 1)
@@ -1507,11 +1619,17 @@ class EntornoDronPersona(object):
         sig = np.where(laser[:, 0], 0.1, 0.15 + 0.05 * np.minimum(dist[:, 0], 30.0))
         # mirando muy abajo (la persona casi debajo) el bbox mide mal la distancia: la medición vale mucho menos
         sig = np.where(geo & ~laser[:, 0], 0.1 + 0.03 * dh_est, sig)
-        self._kalman(v0, ux_n, uy_n, sig)
+        # V16: sin la principal, la medición de la cámara al piso
+        solo_piso = self.piso_obj & ~v0
+        ux_n = np.where(solo_piso, self.piso_x[ar, self.trk], ux_n)
+        uy_n = np.where(solo_piso, self.piso_y[ar, self.trk], uy_n)
+        incl_p = np.hypot(np.hypot(self.px[ar, self.trk] - self.dx, self.py[ar, self.trk] - self.dy), self.dz)
+        sig = np.where(solo_piso, SIG_PISO * (1.0 + incl_p / 5.0), sig)
+        self._kalman(v0 | solo_piso, ux_n, uy_n, sig)
         self.tvx = np.where(self.kf_ok, self.kf_x[:, 0, 1], self.tvx)
         self.tvy = np.where(self.kf_ok, self.kf_x[:, 1, 1], self.tvy)
-        self.ult_x = np.where(v0, self.kf_x[:, 0, 0], self.ult_x)
-        self.ult_y = np.where(v0, self.kf_x[:, 1, 0], self.ult_y)
+        self.ult_x = np.where(v0 | self.piso_obj, self.kf_x[:, 0, 0], self.ult_x)
+        self.ult_y = np.where(v0 | self.piso_obj, self.kf_x[:, 1, 0], self.ult_y)
         self.visto_alguna |= v0
         rel_ult = envolver(self.ult_rumbo - self.psi)
         mem = self.visto_alguna.astype(float)
@@ -1523,10 +1641,12 @@ class EntornoDronPersona(object):
         sel = lambda arr: np.take_along_axis(arr, jo[:, None], axis=1)[:, 0]
         vo = sel(cand.astype(float))
         # obstáculo = el rayo pega antes de donde debería tocar el suelo (la Jetson lo sabe por su altura y el pitch)
-        sg = np.sin(np.radians(self.cam_pitch))
-        t_suelo = np.where(sg < -1e-3, self.dz / np.maximum(-sg, 1e-3), np.inf)
+        # V16: la Jetson descarta el suelo con la actitud de la Pixhawk y la altura que ella cree (d < h / sin(abajo) - 0.4)
+        z_j = np.where(v16, self.dz + self.e_baro, self.dz)
+        sg = np.sin(np.radians(p_tf03))
+        t_suelo = np.where(sg < -1e-3, z_j / np.maximum(-sg, 1e-3), np.inf)
         obst = t_l < np.minimum(t_suelo - 0.4, LIDAR_MAX - 0.1)
-        self.lidar = np.where(obst, t_l * np.cos(np.radians(self.cam_pitch)), LIDAR_MAX)     # distancia horizontal al obstáculo
+        self.lidar = np.where(obst, t_l * np.cos(np.radians(p_tf03)), LIDAR_MAX)     # distancia horizontal al obstáculo
         self.lid_t, self.lid_hx, self.lid_hy, self.lid_hz, self.lid_tipo = t_l, hx_l, hy_l, hz_l, tipo_l
         # mapa con el LiDAR: cada impacto en un obstáculo (que no sea una persona en el centro de la imagen) se guarda
         # como un punto del plano. V15: 10 rayos por paso (100 Hz del TF03) repartidos en el giro de ese paso; el último
@@ -1539,20 +1659,26 @@ class EntornoDronPersona(object):
             e_r = np.repeat(eg, nk)
             f_r = np.tile(np.arange(1, RAYOS_POR_PASO) / RAYOS_POR_PASO, len(eg))
             psi_r = envolver(self.lid_psi_prev[e_r] + dpsi[e_r] * f_r)
-            t_r, pers_r = self._rayos_pares(e_r, psi_r)
+            t_r, pers_r = self._rayos_pares(e_r, psi_r, pitch=p_tf03[e_r])
             ok_r = (t_r < np.minimum(t_suelo[e_r] - 0.4, LIDAR_MAX - 0.1)) & ~pers_r
-            h_r = t_r * np.cos(np.radians(self.cam_pitch[e_r]))
+            h_r = t_r * np.cos(np.radians(p_tf03[e_r]))
             for kk in range(nk):                                   # en orden: el filtro de repetidos ve los anteriores
                 sel_ = np.arange(kk, len(e_r), nk)
                 sel_ = sel_[ok_r[sel_]]
                 self._guardar_idx(e_r[sel_], h_r[sel_], psi_r[sel_])
         self._guardar_impactos(obst & (jp_l < 0), self.lidar, self.psi)
+        if v16.any():
+            # V16: el TF-Luna también agrega al mapa lo que toca (un muro a menos de su alcance), si no es suelo ni persona
+            sgc = np.sin(np.radians(self.cam_pitch))
+            t_sc = np.where(sgc < -1e-3, z_j / np.maximum(-sgc, 1e-3), np.inf)
+            ob_lu = v16 & (tipo_lu == 2) & (t_lu < t_sc - 0.4) & (jp_lu < 0)
+            self._guardar_impactos(ob_lu, t_lu * np.cos(np.radians(self.cam_pitch)), self.psi)
         self.lid_psi_prev = self.psi.copy()
         v = v0.astype(float)
         cps_, sps_ = np.cos(self.psi), np.sin(self.psi)
         rxu, ryu = self.ult_x - self.dx, self.ult_y - self.dy
         # V15 · FILTRO DE PARTÍCULAS sin verlo (información negativa con lo que la cámara ve en este cuadro)
-        self._particulas(visible[:, 0], ct[:, 0], st[:, 0], cps[:, 0], sps[:, 0])
+        self._particulas(visible[:, 0] | self.piso_obj, ct[:, 0], st[:, 0], cps[:, 0], sps[:, 0])
         # dónde cree el dron que estaba el objetivo durante el cruce (por si el operador dice "no es él")
         self.cruce_x = np.where(self.t_cruce == 0.0, self.kf_x[:, 0, 0], self.cruce_x)
         self.cruce_y = np.where(self.t_cruce == 0.0, self.kf_x[:, 1, 0], self.cruce_y)
@@ -1569,7 +1695,7 @@ class EntornoDronPersona(object):
             v * np.clip(ang_m[:, 0], -HFOV / 2, HFOV / 2) / (HFOV / 2),
             v * np.clip(vac_d[:, 0], -5, 5) / 5.0,
             v * np.clip(vlat_d[:, 0], -60, 60) / 30.0,
-            self.dz - Z_REF_OBS,
+            self.dz + self.e_baro - Z_REF_OBS,
             np.minimum(self.t_sin_ver, 5.0) / 5.0,
             mem * np.sin(rel_ult), mem * np.cos(rel_ult), mem * np.minimum(self.ult_dist, 30.0) / 20.0,
             vo,
@@ -1577,7 +1703,7 @@ class EntornoDronPersona(object):
             vo * np.clip(sel(ang_m), -HFOV / 2, HFOV / 2) / (HFOV / 2),
             vo * np.clip(sel(vac_d), -5, 5) / 5.0,
             self.lidar / 20.0,
-            self.dx / ARENA, self.dy / ARENA, np.cos(self.psi), np.sin(self.psi),
+            (self.dx + self.e_gps[:, 0]) / ARENA, (self.dy + self.e_gps[:, 1]) / ARENA, np.cos(self.psi), np.sin(self.psi),
             # memoria espacial para buscar: perdido (1 = escondido, la IA busca), última posición conocida en el marco
             # del dron (x adelante, y izquierda), tiempo sin verlo, pitch del gimbal y su último vector de movimiento
             (self.modo == BUSQUEDA_IA).astype(float),
@@ -1598,7 +1724,12 @@ class EntornoDronPersona(object):
             self.v_ia_f / VEL_IA_AVANCE, self.v_ia_l / VEL_IA_LATERAL, np.clip((self.z_ia - self.dz) / 2.0, -1, 1),
             np.clip((self.g_ia - self.gimbal) / 30.0, -1, 1),
             *self._grilla_mapa().T,
+            # V16 · A3: la cámara al piso ve a la persona seguida y dónde (marco del dron: adelante, izquierda)
+            self.piso_obj.astype(float),
+            self.piso_obj * np.clip(((self.piso_x[ar, self.trk] - self.dx) * cps_ + (self.piso_y[ar, self.trk] - self.dy) * sps_) / 5.0, -1.5, 1.5),
+            self.piso_obj * np.clip((-(self.piso_x[ar, self.trk] - self.dx) * sps_ + (self.piso_y[ar, self.trk] - self.dy) * cps_) / 5.0, -1.5, 1.5),
         ], axis=1)
+        self.cam_pitch_prev, self.chasis_prev = self.cam_pitch.copy(), self.chasis_pitch.copy()
         self.info_sensor = dict(visible=visible, laser=laser, ang=ang_m, dist=dist, dh=dh, tapada=tapada, lock=v0.copy(),
                                 elev=elev_m, vac=vac_d, visible_real=vis_real, tapada_real=tap_real)
         return obs
@@ -1628,7 +1759,9 @@ class EntornoDronPersona(object):
         dv = np.hypot(self.pvx - self.pvx[ar, t][:, None], self.pvy - self.pvy[ar, t][:, None])
         p = np.where(solapa, P_CAMBIO * sim_tj ** 2 * np.clip(1.0 - dv / V_DIF_ID, 0.15, 1.0), 0.0)
         jm = np.argmax(p, 1)
-        salta = r.random(n) < p[ar, jm]
+        # V16: el clic del operador reinicia el tracker sobre la persona que él señaló: durante T_CLIC_FIRME s no salta a
+        # otra aunque sigan superpuestas (humano en el lazo: lo que el operador decidió no lo deshace el tracker)
+        salta = (r.random(n) < p[ar, jm]) & (self.t_clic > T_CLIC_FIRME)
         nuevo = np.where(salta, jm, t)
         a_mal = salta & (nuevo != 0)
         self.mal_det = np.where(a_mal & ~self.mal, False, self.mal_det)
@@ -2211,14 +2344,88 @@ class EntornoDronPersona(object):
             vx, vy = vx - exc * ux[:, j], vy - exc * uy[:, j]
         # si ya va hacia el borde más rápido de lo permitido (el autopiloto sigue la consigna con retardo), pide frenar
         # hacia adentro en proporción al exceso
-        for pos, v, vr_ in ((self.dx, vx, self.dvx), (self.dy, vy, self.dvy)):
+        # V16: la geocerca de ArduPilot usa la posición ESTIMADA (con la deriva del GPS) y un margen mayor
+        m_c = np.where(self.lvl_ep == NIVEL_V16, MARGEN_CERCA_V16, MARGEN_CERCA)
+        for pos, v, vr_ in ((self.dx + self.e_gps[:, 0], vx, self.dvx), (self.dy + self.e_gps[:, 1], vy, self.dvy)):
             sg = np.sign(pos)
-            margen = np.maximum(ARENA - MARGEN_CERCA - np.abs(pos), 0.0)
+            margen = np.maximum(ARENA - m_c - np.abs(pos), 0.0)
             at_ = A_CERCA * T_LAG_CERCA
             vm = -at_ + np.sqrt(at_ ** 2 + 2.0 * A_CERCA * margen)
             tope = vm - 1.5 * np.maximum(vr_ * sg - vm, 0.0)
             v -= sg * np.maximum(v * sg - tope, 0.0)
         return vx, vy
+
+    def _cam_piso(self, v16):
+        """V16 · A3 · CÁMARA AL PISO (IMX219 fija al chasis, CAM_PISO_PITCH hacia abajo, se inclina con el cabeceo y el
+        alabeo). Una persona cuenta si al menos 1/4 de su cuerpo (4 alturas) cae en la imagen y ningún muro la tapa (a la
+        altura de la cabeza); YOLO la detecta con P_DET_PISO por la postura y el desenfoque. Mide su posición en el piso
+        con error SIG_PISO (más con la distancia). Devuelve (detectada (n, P), x, y medidos)."""
+        r = self.rng
+        n = self.n
+        rx, ry = self.px - self.dx[:, None], self.py - self.dy[:, None]
+        cps, sps = np.cos(self.psi)[:, None, None], np.sin(self.psi)[:, None, None]
+        hs = np.array([0.3, 0.55, 0.8, 0.97])
+        vz = hs[None, None, :] * self.alto_ef[..., None] - self.dz[:, None, None]          # (n, P, 4) hacia arriba
+        f = (rx * np.cos(self.psi)[:, None] + ry * np.sin(self.psi)[:, None])[..., None]   # adelante
+        l = (rx * np.sin(self.psi)[:, None] - ry * np.cos(self.psi)[:, None])[..., None]   # a la derecha
+        th = np.radians(self.chasis_pitch)[:, None, None]                                  # + nariz arriba
+        ph = np.radians(self.chasis_roll)[:, None, None]                                   # + derecha abajo
+        tm = np.radians(CAM_PISO_PITCH)
+        # ejes del chasis en el marco (adelante, derecha, arriba) del rumbo
+        fb = (np.cos(th), 0.0 * th, np.sin(th))
+        rb = (0.0 * ph, np.cos(ph), -np.sin(ph))
+        ub = (fb[1] * rb[2] - fb[2] * rb[1], fb[2] * rb[0] - fb[0] * rb[2], fb[0] * rb[1] - fb[1] * rb[0])
+        eje = tuple(np.cos(tm) * a + np.sin(tm) * b for a, b in zip(fb, ub))               # eje óptico
+        arr = tuple(-np.sin(tm) * a + np.cos(tm) * b for a, b in zip(fb, ub))              # "arriba" de la imagen
+        prof = f * eje[0] + l * eje[1] + vz * eje[2]
+        x_i = f * rb[0] + l * rb[1] + vz * rb[2]
+        y_i = f * arr[0] + l * arr[1] + vz * arr[2]
+        dentro = ((prof > 0.2) & (np.abs(x_i) < prof * np.tan(np.radians(CAM_PISO_HFOV / 2)))
+                  & (np.abs(y_i) < prof * np.tan(np.radians(CAM_PISO_VFOV / 2))))
+        frac = dentro.mean(-1)
+        tapa = self._vista_bloqueada(self.px, self.py, self.alto_ef * 0.95)
+        dh = np.hypot(rx, ry)
+        incl = np.hypot(dh, self.dz[:, None] - 0.5 * self.alto_ef)
+        # desenfoque: la guiñada gira la imagen, el cabeceo la corre y la persona se mueve respecto al dron
+        w = np.hypot(np.abs(self.yaw_dps)[:, None] * 0.5, ((self.chasis_pitch - self.chasis_prev) / DT)[:, None])
+        w = w + np.degrees(np.hypot(self.pvx - self.dvx[:, None], self.pvy - self.dvy[:, None]) / np.maximum(incl, 0.5))
+        blur = w * T_EXP * (640.0 / CAM_PISO_HFOV)
+        p = P_DET_PISO * self._f_postura(P_YOLO_POSTURA) / (1.0 + (blur / B_BLUR) ** 2)
+        det = v16[:, None] & self.activa & (frac >= 0.25) & ~tapa & (r.random((n, N_PERS)) < p)
+        sig = SIG_PISO * (1.0 + incl / 5.0)
+        mx = self.px + r.normal(0, 1, (n, N_PERS)) * sig
+        my = self.py + r.normal(0, 1, (n, N_PERS)) * sig
+        return det, mx, my
+
+    def _deriva_nav(self):
+        """V16 · A3 · RUIDO DE NAVEGACIÓN. La deriva del GPS/EKF y el error del barómetro siguen un proceso de
+        Ornstein-Uhlenbeck (amplitud de la partida, correlación TAU_GPS y TAU_BARO). El dron cree estar en (x + ex, y + ey):
+        todo lo que recuerda en coordenadas absolutas (mapa del LiDAR, última posición, Kalman, nube, rutas, muros
+        detectados...) quedó en el marco que él creía. Si la deriva cambia en de, ese mundo recordado se corre -de respecto
+        al real (lo relativo a lo que mide ahora sigue bien; lo recordado se desalinea)."""
+        if not (self.gps_amp.any() or self.baro_amp.any()):
+            return
+        r = self.rng
+        a_g, a_b = np.exp(-DT / TAU_GPS), np.exp(-DT / TAU_BARO)
+        e0 = self.e_gps.copy()
+        self.e_gps = a_g * self.e_gps + np.sqrt(1 - a_g ** 2) * (self.gps_amp / 2)[:, None] * r.normal(0, 1, (self.n, 2))
+        self.e_baro = a_b * self.e_baro + np.sqrt(1 - a_b ** 2) * self.baro_amp / 2 * r.normal(0, 1, self.n)
+        ddx, ddy = self.e_gps[:, 0] - e0[:, 0], self.e_gps[:, 1] - e0[:, 1]
+        for ax, ay in ((self.lid_px, self.lid_py), (self.pf_x, self.pf_y), (self.insp_x, self.insp_y),
+                       (self.pm_x, self.pm_y)):
+            ax -= ddx[:, None]
+            ay -= ddy[:, None]
+        for ax, ay in ((self.ult_x, self.ult_y), (self.pf_mx, self.pf_my), (self.pred_x0, self.pred_y0),
+                       (self.inv_x, self.inv_y), (self.wp_x, self.wp_y), (self.zc_x, self.zc_y), (self.mira_x, self.mira_y),
+                       (self.obj_mx, self.obj_my), (self.rx, self.ry), (self.cruce_x, self.cruce_y),
+                       (self.lid_ult_x, self.lid_ult_y)):
+            ax -= ddx
+            ay -= ddy
+        d2 = np.stack([ddx, ddy], -1)
+        self.kf_x[:, :, 0] -= d2
+        for arr in (self.det_a, self.det_b, self.muro_a, self.muro_b):
+            arr -= d2[:, None, :] if arr.ndim == 3 else d2
+        self.ruta -= d2[:, None, :]
 
     def _gente_cerca(self, s):
         """V16 · A1: ¿hay una persona CONOCIDA a menos de R_GENTE (horizontal)? La que ve ahora (con la distancia medida),
@@ -2226,7 +2433,7 @@ class EntornoDronPersona(object):
         nube de partículas o el Kalman, con 1.5 m de margen por la incertidumbre). Lo que el dron no sabe no cuenta."""
         dzr = np.maximum(self.dz - 0.9, 0.0)[:, None]
         dh_m = np.sqrt(np.maximum(s["dist"] ** 2 - dzr ** 2, 0.0))
-        ve = (s["visible"] & self.activa & (dh_m < R_GENTE)).any(1)
+        ve = (s["visible"] & self.activa & (dh_m < R_GENTE)).any(1) | (self.piso_vis & self.activa).any(1)
         dm = np.hypot(self.pm_x - self.dx[:, None], self.pm_y - self.dy[:, None])
         # memoria: alguien visto hace menos de T_GENTE_MEM s que pudiera haber llegado a menos de R_GENTE (no se olvida a
         # quien quedó fuera del cuadro durante un giro de 360°)
@@ -2260,6 +2467,8 @@ class EntornoDronPersona(object):
         n = self.n
         r = self.rng
         rc = {k: np.zeros(n) for k in R_COMP}            # V12: recompensa por componente
+        self._deriva_nav()                               # V16 · A3: deriva del GPS y del barómetro
+        self.dz_est = self.dz + self.e_baro
         o = self.obs_retraso
         s = self.info_sensor
         vis, dist_s, ang_s, elev_s = s["visible"] & self.activa, s["dist"], s["ang"], s["elev"]
@@ -2293,6 +2502,7 @@ class EntornoDronPersona(object):
         suficiente = self.cand_visto >= T_VER_MIN
         lock_on = ver & suficiente & (self.t_modo >= self.t_resp) & (self.cand == 0)          # clic del operador
         self.trk = np.where(lock_on, 0, self.trk)              # V15: el operador designó al ladrón de verdad
+        self.t_clic = np.where(lock_on, 0.0, self.t_clic + DT)
         descarta = ver & suficiente & (self.t_modo >= T_ESPERA_CLIC) & (self.cand != 0)      # nadie lo confirma
         se_fue = ver & ~suficiente & (self.cand_sin_ver > T_TRACKER)
         if descarta.any():
@@ -2346,6 +2556,7 @@ class EntornoDronPersona(object):
         self.kf_ok = np.where(corrige, False, self.kf_ok)
         self.conocido |= (si_es | no_es)[:, None] & self.cruce_con
         self.trk = np.where(si_es | no_es, 0, self.trk)
+        self.t_clic = np.where(si_es | no_es, 0.0, self.t_clic)
         self.mal = np.where(si_es | no_es, False, self.mal)
         self.sim_med = np.where(si_es | no_es, 1.0, self.sim_med)
         self.t_cruce = np.where(si_es | no_es | sigue_igual, 99.0, self.t_cruce)
@@ -2376,7 +2587,9 @@ class EntornoDronPersona(object):
         # pasa a PERSECUCIÓN de inmediato (sin esperar los N_REID cuadros de re-identificación: el tracker lo sigue desde
         # aquí). Solo el ID designado interrumpe: los peatones nunca (humano en el lazo).
         en_busq0 = np.isin(self.modo, (PREDECIR, INVESTIGAR, ASOMO, SIGUIENTE_OBSTACULO, VENTAJA_ALTURA, MURO_CANTO))
-        interrumpe = en_busq0 & vis[:, 0] & INTERRUPCION
+        # V16: tras un "no es él" del operador, la detección de este cuadro todavía es la de la persona equivocada (la
+        # columna 0 de la percepción era a quien seguía): no puede interrumpir la búsqueda y volver a fijarla
+        interrumpe = en_busq0 & vis[:, 0] & INTERRUPCION & ~no_es
         self.modo = np.where(interrumpe, FIJADO, self.modo)
         self.t_modo = np.where(interrumpe, 0.0, self.t_modo)
         self.t_perdida = np.where(interrumpe, 0.0, self.t_perdida)
@@ -2662,14 +2875,17 @@ class EntornoDronPersona(object):
         v_sube = np.where(urg & (z_obj >= Z_SEGURA), VEL_SUBIDA_RAPIDA, V_RAMPA_SUBE)
         paso_z = np.clip(z_obj - self.alt_obj, -V_RAMPA_BAJA * DT, v_sube * DT)
         self.alt_obj = np.where(v16, np.clip(self.alt_obj + paso_z, Z_MIN, Z_MAX), self.dz)
-        vz_16 = np.clip(K_ALT_V16 * (self.alt_obj - self.dz) + paso_z / DT, -V_RAMPA_BAJA - 0.2, VEL_SUBIDA_RAPIDA)
+        # (la Pixhawk sostiene la altura que ella cree: la del barómetro, con su error)
+        vz_16 = np.clip(K_ALT_V16 * (self.alt_obj - self.dz_est) + paso_z / DT, -V_RAMPA_BAJA - 0.2, VEL_SUBIDA_RAPIDA)
         vz_auto = np.where(v16, vz_16, vz_auto)
         vz_auto = np.where((vz_auto < 0) & alguien_cerca, 0.0, vz_auto)       # no baja con alguien cerca
-        vz_auto = np.where((vz_auto < 0) & self.gente8 & (self.dz < Z_SEGURA + 0.3), 0.0, vz_auto)   # V16
+        vz_auto = np.where((vz_auto < 0) & self.gente8 & (self.dz_est < Z_SEGURA + 0.3), 0.0, vz_auto)   # V16
         # si no puede bajar, la rampa tampoco baja (no se acumula un error que después sería un escalón)
-        self.alt_obj = np.where(v16 & (vz_auto == 0.0) & (self.alt_obj < self.dz), self.dz, self.alt_obj)
+        self.alt_obj = np.where(v16 & (vz_auto == 0.0) & (self.alt_obj < self.dz_est), self.dz_est, self.alt_obj)
         vz_c = np.where(eva & (self.clase == 3), np.where(self.reflejo, VEL_ESQUIVE_Z, VEL_ASCENSO),
                         np.where(self.estado == VIGILANDO, vz_auto, 0.0))
+        # V16: después de un esquive (enfriamiento) o esquivando de lado, si quedó bajo la altura segura sigue subiendo
+        vz_c = np.where(v16 & (self.dz_est < Z_SEGURA) & (vz_auto > 0), np.maximum(vz_c, vz_auto), vz_c)
         self.vz_cmd = vz_c                                                    # V16: registro (pruebas y visor)
         cps, sps = np.cos(self.psi), np.sin(self.psi)
         vx_c = vx_b * cps + vy_b * sps
@@ -2750,8 +2966,8 @@ class EntornoDronPersona(object):
         vcx, vcy = vcx * k_c, vcy * k_c
         # contra el borde de la geocerca no retrocede hacia afuera: se desliza por el borde. V15: con la distancia de
         # frenado (a 4.5 m/s y jerk limitado hacen falta varios metros), no con la posición actual
-        xs = self.dx + self.dvx * np.abs(self.dvx) / (2 * A_FRENO_DRON)
-        ys = self.dy + self.dvy * np.abs(self.dvy) / (2 * A_FRENO_DRON)
+        xs = self.dx + self.e_gps[:, 0] + self.dvx * np.abs(self.dvx) / (2 * A_FRENO_DRON)     # V16: posición estimada
+        ys = self.dy + self.e_gps[:, 1] + self.dvy * np.abs(self.dvy) / (2 * A_FRENO_DRON)
         vcx = np.where((np.abs(xs) > ARENA - 1.5) & (vcx * self.dx > 0), 0.0, vcx)
         vcy = np.where((np.abs(ys) > ARENA - 1.5) & (vcy * self.dy > 0), 0.0, vcy)
         vx_c = np.where(self.ciego, vcx, vx_c)
@@ -2766,6 +2982,7 @@ class EntornoDronPersona(object):
         self.dx += 0.5 * (dvx0 + self.dvx) * DT
         self.dy += 0.5 * (dvy0 + self.dvy) * DT
         self.dz = np.clip(self.dz + self.dvz * DT, Z_MIN, Z_MAX)
+        self.dz_est = self.dz + self.e_baro
 
         # ================= guiñada: seguimiento HORIZONTAL (independiente de la evasión) =================
         # banda muerta: mientras el objetivo esté en el 20% central del FOV horizontal, el yaw queda en 0; si sale
@@ -3679,11 +3896,16 @@ class EntornoDronPersona(object):
                       "mano": [round(float(v), 2) for v in self.mano[i]]},
             "alt_obj": round(float(self.alt_obj[i]), 2), "g8": bool(self.gente8[i]),
             "cam_piso": self._foto_cam_piso(i),
+            "servo": bool(self.gb.servo[i]), "luna": [round(float(v), 2) for v in self.luna_hit[i]],
+            "dz_est": round(float(self.dz[i] + self.e_baro[i]), 2),
+            "e_gps": [round(float(self.e_gps[i, 0]), 2), round(float(self.e_gps[i, 1]), 2)],
         }
 
     def _foto_cam_piso(self, i):
-        """V16: detecciones de la cámara al piso para el visor (se llenan en la fase A3)."""
-        return []
+        """V16: detecciones de la cámara al piso para el visor: id, posición medida en el piso y si es el objetivo."""
+        return [{"id": int(self.ids[i, j]), "p": [round(float(self.piso_x[i, j]), 2), round(float(self.piso_y[i, j]), 2)],
+                 "obj": bool(self.modo[i] >= FIJADO and j == self.trk[i])}
+                for j in range(N_PERS) if self.piso_vis[i, j] and self.activa[i, j]]
 
     def paneles(self, i):
         """Los paneles para el visor (V13: los superpuestos del currículo "Un Solo Muro" se mandan una sola vez)."""

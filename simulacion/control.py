@@ -20,6 +20,8 @@ Seis grados de libertad: X, Y, Z (lazos de velocidad), roll y pitch (lazo de act
 
 GimbalBaseCam: consigna de ángulo filtrada en la Jetson (EMA) ──▶ PID de ángulo del gimbal ──▶ motor brushless con la
 velocidad limitada a 30°/s y el recorrido a [-45°, +15°]; su IMU compensa el cabeceo del chasis con un retardo.
+GimbalMixto (V16): por partida, la BaseCam o un servo MG90D estabilizado por la Pixhawk (retardo, 600°/s, zona muerta,
+topes mecánicos en -45°/+15°).
 
 Las ganancias tienen el nombre de su parámetro equivalente en ArduPilot; están ajustadas para el dron de la tesis
 (respuesta de velocidad sin sobrepaso, actitud en ~0.2 s), no copiadas de los valores por defecto.
@@ -184,6 +186,85 @@ class GimbalBaseCam(object):
             self.q = np.where((self.ang <= self.MIN) | (self.ang >= self.MAX), 0.0, self.q)
         self.err += d_chasis - self.err * dt / self.TAU_ESTAB
         return np.clip(self.ang + self.err, self.MIN, self.MAX)
+
+
+class GimbalMixto(object):
+    """V16 · fase A3 · TIPO DE GIMBAL por partida (aleatorización del dominio), con la misma interfaz que GimbalBaseCam:
+      · BaseCam (hoy): exactamente GimbalBaseCam (EMA en la Jetson, PID de ángulo, motor de 30°/s, IMU propia).
+      · Servo MG90D en la carcasa del pitch: la Jetson manda el ángulo (con la misma EMA) y la Pixhawk lo estabiliza como
+        montura por servo con su IMU, con RETARDO de 50-100 ms; el servo gira hasta ~600°/s, tiene una ZONA MUERTA de ~1°
+        (no corrige errores más chicos) y TOPES MECÁNICOS en -45° y +15° (la regla dura 1 hecha física).
+    servo[i] = True: la partida i usa el servo."""
+    MIN, MAX = GimbalBaseCam.MIN, GimbalBaseCam.MAX
+    SERVO_VEL = 600.0              # °/s
+    SERVO_TAU = 0.02               # s: respuesta del servo
+    SERVO_BANDA = 1.0              # °: zona muerta
+    RETARDO = (0.05, 0.10)         # s: retardo de la estabilización de la Pixhawk (por partida)
+
+    def __init__(self, n, angulo=-10.0, rng=None):
+        self.bc = GimbalBaseCam(n, angulo)
+        self.rng = rng if rng is not None else np.random.default_rng(0)
+        self.servo = np.zeros(n, bool)
+        self.retardo = np.full(n, self.RETARDO[0])
+        self.c_prev = np.full(n, angulo)              # consigna filtrada del paso anterior (para el retardo)
+
+    # el estado vive en la BaseCam (mismos arreglos para los dos tipos: ang, sp, q, i, err)
+    ang = property(lambda self: self.bc.ang, lambda self, v: setattr(self.bc, "ang", v))
+    sp = property(lambda self: self.bc.sp, lambda self, v: setattr(self.bc, "sp", v))
+    q = property(lambda self: self.bc.q, lambda self, v: setattr(self.bc, "q", v))
+    i = property(lambda self: self.bc.i, lambda self, v: setattr(self.bc, "i", v))
+    err = property(lambda self: self.bc.err, lambda self, v: setattr(self.bc, "err", v))
+
+    def elegir(self, m, p_servo):
+        """Tipo de gimbal de las partidas m: servo con probabilidad p_servo (0 = BaseCam, 1 = servo)."""
+        k = int(np.sum(m))
+        if k == 0:
+            return
+        if p_servo <= 0.0:                       # sin sorteos: no altera el azar de las partidas que no lo usan
+            self.servo[m] = False
+            return
+        self.servo[m] = (self.rng.random(k) < p_servo) if p_servo < 1.0 else True
+        self.retardo[m] = self.rng.uniform(self.RETARDO[0], self.RETARDO[1], k)
+
+    def reset(self, m, angulo=-10.0):
+        self.bc.reset(m, angulo)
+        self.c_prev[m] = angulo
+
+    def fijar(self, angulo):
+        self.bc.fijar(angulo)
+        self.c_prev[:] = angulo
+
+    def paso(self, consigna, d_chasis, dt):
+        sv = self.servo
+        if not sv.any():
+            return self.bc.paso(consigna, d_chasis, dt)
+        bc = self.bc
+        # la BaseCam de las partidas que la usan (mismas cuentas que GimbalBaseCam.paso, solo en ~sv)
+        guardado = [a.copy() for a in (bc.ang, bc.sp, bc.q, bc.i, bc.err)]
+        out_bc = bc.paso(consigna, d_chasis, dt)
+        ang_bc, sp_bc, q_bc, i_bc, err_bc = bc.ang.copy(), bc.sp.copy(), bc.q.copy(), bc.i.copy(), bc.err.copy()
+        bc.ang, bc.sp, bc.q, bc.i, bc.err = guardado
+        # servo: la misma EMA de la Jetson; la consigna nueva llega a la Pixhawk/servo con el retardo
+        sp = bc.sp + bc.ALPHA_CONSIGNA * (np.clip(consigna, self.MIN, self.MAX) - bc.sp)
+        h = dt / N_SUB
+        ang, q = bc.ang.copy(), bc.q.copy()
+        for k in range(N_SUB):
+            t = (k + 1) * h - self.retardo
+            obj = np.where(t >= 0, sp, self.c_prev)                 # la consigna nueva llega con el retardo
+            e = obj - ang
+            q_t = np.where(np.abs(e) > self.SERVO_BANDA, np.clip(e / self.SERVO_TAU, -self.SERVO_VEL, self.SERVO_VEL), 0.0)
+            q += (q_t - q) * min(1.0, h / self.SERVO_TAU)
+            ang = np.clip(ang + q * h, self.MIN, self.MAX)
+            q = np.where((ang <= self.MIN) | (ang >= self.MAX), 0.0, q)
+        # la Pixhawk compensa el cabeceo del chasis con su retardo (más el del servo)
+        err = bc.err + d_chasis - bc.err * dt / (self.retardo + self.SERVO_TAU)
+        bc.ang = np.where(sv, ang, ang_bc)
+        bc.sp = np.where(sv, sp, sp_bc)
+        bc.q = np.where(sv, q, q_bc)
+        bc.i = np.where(sv, 0.0, i_bc)
+        bc.err = np.where(sv, err, err_bc)
+        self.c_prev = bc.sp.copy()
+        return np.where(sv, np.clip(bc.ang + bc.err, self.MIN, self.MAX), out_bc)
 
 
 if __name__ == "__main__":
