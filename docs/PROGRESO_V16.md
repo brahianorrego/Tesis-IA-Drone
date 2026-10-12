@@ -215,3 +215,67 @@ de la V15 que está en Git (192 entradas) hasta que se entrene la V16. Total: 11
 `modelos/dron_politica.json` que está en Git sigue siendo el de la V15 (192) hasta que se entrene la V16.
 
 **Qué sigue**: fase A4 (recompensa: custodia principal, rendición como bono, suavidad y abordaje con conciencia de coberturas).
+
+---
+
+## Fase A4 · Recompensa y abordaje (Sesión A, 2026-10-12)
+
+**Qué se hizo** (`simulacion/entorno.py`; solo en la misión V16, la V15 no cambia). Dos componentes nuevos en
+`info["r_comp"]`: `cobertura` y `abordaje` (la suma de los componentes sigue siendo la recompensa).
+- **Custodia como recompensa principal**: por cada paso con el ladrón a la vista, 0.03, más 0.02 si está a 3.5-5 m (como la
+  V15). **Rendición como bono que nunca vale menos que seguir mirando**: 5 + 0.5 por cada segundo que falte (0.5/s es lo que
+  pagaría la custodia completa). Así a la red nunca le conviene "no dejar que se rinda".
+- **Suavidad**: además de la multa de la V12 (cambio y esfuerzo), una multa a la **sacudida** (segunda diferencia) de los
+  comandos, **solo en los canales que comanda la red** (`K_JERK_V16 = 0.10`).
+- **Abordaje con conciencia de coberturas** (idea del supervisor): un potencial (`K_COB = 0.5`) con la **fracción del área a
+  la que el ladrón llega en 2.5 s** (24 puntos, sin atravesar muros) **que el dron ve** desde donde está. Al ser un potencial
+  no cambia lo que es óptimo; solo guía el aprendizaje.
+- **Del lado contrario a su ruta de escape**: otro potencial (`K_ESC = 0.2`), el coseno entre "dron → ladrón" y "ladrón →
+  su cubierta más cercana".
+- **Nunca sobrevolarlo** (−0.05 por paso con el ladrón en la zona ciega debajo del dron) y **ángulo vertical dentro del
+  gimbal** (−0.02 por paso si centrarlo pediría bajar la cámara más de −45°).
+- Cada término se apaga con una constante (`--set K_COB=0`, etc.).
+- **Límite importante de la interfaz**: con el ladrón a la vista, las 10 acciones de la red solo deciden avanzar o no (el giro
+  y el gimbal los hace el seguimiento automático y esquivar de lado solo vale ante una amenaza). Para que aprenda **desde
+  qué lado** abordarlo hace falta una acción de rodear. Quedó como opción apagada, `ORBITA_V16`: EVADIR_IZQ/DER sin amenaza
+  y con el ladrón a la vista lo rodean a 1.5 m/s. Está apagada porque la política V15 elige "esquivar a la izquierda" sin
+  amenaza el 18 % del tiempo (hoy no hace nada): encenderla cambiaría mucho su comportamiento al transferir.
+
+**Cómo se evaluó cada término** (`herramientas/analizar_recompensa_v16.py`):
+1. ¿Premia lo correcto? Cuatro estilos de pilotaje fijos, 96 partidas de 150 s:
+
+   | Estilo | Vista (s) | Multa de sacudida | Control total |
+   |---|---:|---:|---:|
+   | V15 sin reentrenar | 50.7 | −0.7 | −1.4 |
+   | Avanzar siempre | 42.3 | −11.0 | −24.7 |
+   | Quieto | 47.7 | 0 | 0 |
+   | Al azar | 48.1 | −11.8 | −22.2 |
+
+   La sacudida castiga a quien se mueve a saltos y no a quien vuela parejo.
+2. ¿Los potenciales predicen la custodia? Con el ladrón a la vista, tasa de perderlo en los 3 s siguientes:
+   - **Cobertura** < 0.91: **64 %**; entre 0.91 y 1: 32 %; cobertura total: **14 %**.
+   - **Lado de escape** (coseno ≥ 0.89, del lado contrario a su ruta): **18 %**; con coseno menor: 34-36 %.
+
+   Los dos miden algo que de verdad importa para no perderlo.
+3. Corridas cortas de entrenamiento, una con todo y una sin cada término (12 min, 1.4 M pasos cada una, desde la política
+   V15 de la Jetson), evaluadas con las mismas 128 partidas de 5 min:
+
+   | Modelo | Custodia ≥ 60 s | ≥ 90 s | Rendición | Vista media (s) |
+   |---|---:|---:|---:|---:|
+   | V15 sin reentrenar | 93.0 % | 68.8 % | 10.2 % | 102.6 |
+   | Todo | 91.4 % | 70.3 % | 3.9 % | 102.8 |
+   | Sin sacudida | 92.2 % | 67.2 % | 7.8 % | 104.6 |
+   | Sin coberturas | 93.8 % | 68.0 % | 7.8 % | 105.3 |
+   | Sin abordaje | 92.2 % | 68.8 % | 10.2 % | 102.3 |
+
+   Con 128 partidas el ruido es de ±2-3 puntos: **1.4 M pasos no alcanzan para separar los términos** (la V15 necesitó
+   decenas de millones para moverse). Sirven para comprobar que el entrenamiento con cada uno corre y no rompe nada. La
+   comparación de verdad se hace en el portátil (comandos en la fase A5).
+
+**Decisión**: se dejan los cuatro términos encendidos por la evidencia de los puntos 1 y 2; la comparación larga confirmará
+o descartará cada uno.
+
+**Pruebas**: 5 nuevas (bono de rendición, sacudida solo con la red al mando, cobertura en campo abierto y con muros, lado de
+escape y multa de sobrevuelo, sin términos V16 en la V15). Total: 116 pruebas, todas pasan.
+
+**Qué sigue**: fase A5 (escenarios fijos de 2 paneles, corrida corta y comando del entrenamiento largo).

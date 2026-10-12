@@ -532,6 +532,19 @@ RUIDO_GPS, RUIDO_BARO = True, True   # cada uno por separado (para comparar)
 # piso como telémetro de altura; ArduPilot lo usa por debajo de su alcance, con un error de ~ERROR_LUNA_ALT)
 ALTIMETRO = "baro"
 ERROR_LUNA_ALT = 0.05          # m
+# FASE A4 · RECOMPENSA Y ABORDAJE (solo en la V16). Custodia = la recompensa principal (R_VISTA + R_RANGO por paso con el
+# objetivo a la vista, como la V15); la rendición es un BONO que nunca vale menos que seguir mirando: R_EXITO + lo que
+# pagaría la custodia completa por el tiempo que falta. Cada término se puede apagar (0) para compararlo.
+R_EXITO_RESTANTE_V16 = 0.5      # por segundo que falte = (R_VISTA + R_RANGO) / DT, lo que paga la custodia completa
+K_JERK_V16 = 0.10              # SUAVIDAD: multa a la sacudida (segunda diferencia) de los canales que comanda la red
+K_COB = 0.5                    # COBERTURAS (potencial): fracción del área a la que el ladrón llega en T_COB s que el dron ve
+T_COB = 2.5                    # s
+N_COB_ANG, F_COB_RADIO = 12, (0.4, 0.8)   # muestras del área alcanzable: 12 rumbos x 2 radios (fracciones del alcance)
+K_ESC = 0.2                    # ABORDAJE (potencial): estar del lado contrario a su ruta de escape (hacia su cubierta)
+R_SOBREVUELO = -0.05           # por paso, con el objetivo dentro de la zona ciega debajo del dron (nunca sobrevolarlo)
+R_ANGULO_GMB = -0.02           # por paso, si centrarlo pediría bajar la cámara más de -45° (fuera del rango del gimbal)
+ORBITA_V16 = False             # True: EVADIR_IZQ/DER sin amenaza y con el objetivo a la vista lo RODEAN (órbita lateral)
+VEL_ORBITA = 1.5               # m/s
 T_CLIC_FIRME = 1.0             # s que el tracker queda amarrado a la persona del clic del operador
 N_OBS_V16 = 3                  # entradas nuevas de la red: cámara al piso (ve al objetivo, adelante, izquierda)
 
@@ -607,7 +620,7 @@ CAB_MAX = float(np.degrees(np.arctan(ACC_MAX_DRON / G)))     # 22.2°: el cabece
 GAMMA_GUIA = 0.99
 K_GUIA_ANG, K_GUIA_DIST = 0.3, 0.03
 # V12 · recompensa por componente (info["r_comp"], columnas en este orden; su suma es la recompensa del dron)
-R_COMP = ["vista", "guia", "descubre", "pierde", "maniobra", "exito", "fallas", "control"]
+R_COMP = ["vista", "guia", "descubre", "pierde", "maniobra", "exito", "fallas", "control", "cobertura", "abordaje"]
 EJES_U = ["cabeceo", "guinada", "gimbal"]
 
 # en BUSQUEDA_IA las acciones son consignas que persisten: AVANZAR / EVADIR_IZQ / EVADIR_DER / MANTENER fijan la
@@ -727,6 +740,10 @@ class EntornoDronPersona(object):
         self.aso_gira = zb()
         self.lat_esq, self.reflejo, self.guarda = z(), zb(), zb()
         self.u_prev, self.mando_prev = z(3), zb()
+        self.u_prev2 = z(3)                              # V16 · A4: comandos de hace dos pasos (sacudida)
+        self.phi_cob, self.phi_esc = z(), z()            # V16 · A4: potenciales de coberturas y de abordaje
+        self.cob_frac = z()                              # V16 · A4: fracción del área alcanzable que el dron ve
+        self.l_cub = z(2)                                # cubierta más cercana del ladrón (su ruta de escape)
         self.acc_x, self.acc_y = z(), z()                # aceleración horizontal real (limitada en jerk)
         self.salto_t, self.salto_cd, self.salto_alc, self.salto_h = z(), z(), z(), z()   # salto del ladrón
         self.v_ia_f, self.v_ia_l, self.z_ia, self.g_ia = z(), z(), z(), z()     # consignas de la búsqueda por IA
@@ -928,6 +945,7 @@ class EntornoDronPersona(object):
         self.acc_x[m] = self.acc_y[m] = 0.0
         self.salto_t[m] = self.salto_cd[m] = self.salto_h[m] = 0.0
         self.u_prev[m], self.mando_prev[m] = 0.0, False
+        self.u_prev2[m] = 0.0
         self.v_ia_f[m] = self.v_ia_l[m] = 0.0
         self.arm_desc[m] = self.descubre[m] = False
         self.cam_pitch[m] = -10.0
@@ -1181,6 +1199,37 @@ class EntornoDronPersona(object):
         self.alt_obj[m] = self.dz_est[m]
         self.gente8[m] = False
         self.phi[m] = self._potencial()[m]
+        pc, pe = self._potencial_v16()
+        self.phi_cob[m], self.phi_esc[m] = pc[m], pe[m]
+
+    def _potencial_v16(self):
+        """V16 · A4. (1) COBERTURAS: fracción de los puntos a los que el ladrón llega en T_COB s (sin atravesar muros, dentro
+        de la arena) que el dron ve sin un muro en medio (a 1 m de altura, a menos de 20 m): desde donde está, ¿le queda al
+        ladrón dónde esconderse? (2) ABORDAJE: el dron del lado contrario a su ruta de escape (hacia su cubierta más
+        cercana): coseno entre dron -> ladrón y ladrón -> cubierta. Usa la verdad del simulador SOLO para calificar (como la
+        guía de la V12). Solo con el objetivo designado en la misión V16."""
+        n = self.n
+        act = (self.lvl_ep == NIVEL_V16) & (self.modo >= FIJADO)
+        if not act.any() or (K_COB == 0 and K_ESC == 0):
+            return np.zeros(n), np.zeros(n)
+        P = np.stack([self.px[:, 0], self.py[:, 0]], -1)
+        R_ = V_ALCANCE_OBJ * T_COB
+        ang = np.linspace(-np.pi, np.pi, N_COB_ANG, endpoint=False)
+        off = np.concatenate([f * R_ * np.stack([np.cos(ang), np.sin(ang)], -1) for f in F_COB_RADIO])     # (K, 2)
+        Q = P[:, None, :] + off[None]                                                               # (n, K, 2)
+        alc = (np.abs(Q) < ARENA - 0.5).all(-1)
+        for j in range(self.pa.shape[1]):
+            alc &= ~cruce_segmentos(np.broadcast_to(P[:, None, :], Q.shape), Q,
+                                    self.pa[:, j][:, None, :], self.pb[:, j][:, None, :])[0]
+        ve = ~self._vista_bloqueada(Q[..., 0], Q[..., 1], np.ones(Q.shape[:2]))
+        ve &= np.hypot(Q[..., 0] - self.dx[:, None], Q[..., 1] - self.dy[:, None]) < 20.0
+        frac = (alc & ve).sum(1) / np.maximum(alc.sum(1), 1)
+        self.cob_frac = np.where(act, frac, 0.0)
+        dl = P - np.stack([self.dx, self.dy], -1)
+        es = self.l_cub - P
+        nl, ne = np.maximum(np.hypot(*dl.T), 1e-6), np.hypot(*es.T)
+        cos_e = np.where(ne > 0.5, (dl * es).sum(1) / (nl * np.maximum(ne, 1e-6)), 0.0)
+        return np.where(act, K_COB * frac, 0.0), np.where(act, K_ESC * np.maximum(cos_e, 0.0), 0.0)
 
     def _preparar_civil_v16(self, i, j):
         """V16 · civil realista: atraviesa la zona caminando tranquilo, de un borde al opuesto; nace en algún punto de ese
@@ -2822,6 +2871,11 @@ class EntornoDronPersona(object):
         vx_b = np.where(eva, 0.0, np.where(avanza_ia, VEL_AVANCE, np.where(avanza_det, np.minimum(VEL_INVESTIGA, 0.8 * d_v + 0.3), 0.0)))
         vy_b = np.where(eva & (self.clase == 1), -VEL_LATERAL, np.where(eva & (self.clase == 2), VEL_LATERAL,
                                                                         np.where(self.reflejo, self.lat_esq, 0.0)))
+        # V16 · A4 (opcional, ORBITA_V16): con el objetivo a la vista y sin amenaza, EVADIR_IZQ / EVADIR_DER lo rodean de
+        # lado (la guiñada lo mantiene centrado), para que la red elija desde dónde abordarlo
+        if ORBITA_V16:
+            orb = (self.lvl_ep == NIVEL_V16) & decide & ve & ~self.amenaza & ~eva & ((acc_dron == 1) | (acc_dron == 2))
+            vy_b = np.where(orb, np.where(acc_dron == 1, -VEL_ORBITA, VEL_ORBITA), vy_b)
         # búsqueda por IA: sus consignas; el LiDAR (rayo de la cámara) y el perímetro solo frenan el avance
         frena_ia = ~libre_v | cerca_peaton | self.perimetro
         vx_b = np.where(bia & ~eva, np.where(frena_ia, np.minimum(self.v_ia_f, 0.0), self.v_ia_f), vx_b)
@@ -3115,7 +3169,11 @@ class EntornoDronPersona(object):
         u_ia = np.where(m_ia, u, 0.0)
         pen_delta = np.where(mando & self.mando_prev, K_DELTA * np.abs(u_ia - self.u_prev).sum(1), 0.0)
         pen_esfuerzo = np.where(mando, K_ESFUERZO * np.abs(u_ia).sum(1), 0.0)
-        rc["control"] -= pen_delta + pen_esfuerzo
+        # V16 · A4 · SACUDIDA (jerk): segunda diferencia de lo que comanda la red, con ella al mando 3 pasos seguidos
+        v16r = self.lvl_ep == NIVEL_V16
+        pen_jerk = np.where(v16r & mando & self.mando_prev, K_JERK_V16 * np.abs(u_ia - 2 * self.u_prev + self.u_prev2).sum(1), 0.0)
+        rc["control"] -= pen_delta + pen_esfuerzo + pen_jerk
+        self.u_prev2 = np.where((mando & self.mando_prev)[:, None], self.u_prev, u_ia)
         # jitter FÍSICO por eje (todo lo que se movió, lo comande quien lo comande), solo para el registro
         du = np.where((mando & self.mando_prev)[:, None], np.abs(u - self.u_prev_fis), 0.0)
         self.u_prev, self.u_prev_fis, self.mando_prev = u_ia, u, mando
@@ -3172,7 +3230,8 @@ class EntornoDronPersona(object):
         tiempo = self.t >= PASOS_EPISODIO
         rc["fallas"] += np.where(choque, R_COLISION, 0.0) + np.where(fuera, R_GEOCERCA, 0.0) + np.where(choca_panel, R_CHOQUE_PANEL, 0.0)
         rc["fallas"] += np.where(perdido | no_encontrado, R_PERDIDO, 0.0)
-        rc["exito"] += np.where(exito, R_EXITO + R_EXITO_RESTANTE * np.maximum(PASOS_EPISODIO - self.t, 0) * DT, 0.0)
+        r_rest = np.where(self.lvl_ep == NIVEL_V16, R_EXITO_RESTANTE_V16, R_EXITO_RESTANTE)       # V16: bono de rendición
+        rc["exito"] += np.where(exito, R_EXITO + r_rest * np.maximum(PASOS_EPISODIO - self.t, 0) * DT, 0.0)
         tope = tiempo & ~falla & ~exito
         rc["fallas"] += np.where(tope, R_TOPE, 0.0)                       # C2: perder por tiempo cuesta
         rew_p = np.where(lo_alcanza_ladron, 10.0, 0.0) + np.where(perdido | no_encontrado, 5.0, 0.0) + np.where(perdida, 1.0, 0.0)
@@ -3180,6 +3239,18 @@ class EntornoDronPersona(object):
         phi_nuevo = self._potencial()
         rc["guia"] += np.where(done, 0.0, GAMMA_GUIA * phi_nuevo - self.phi)
         self.phi = phi_nuevo
+        # V16 · A4: coberturas y abordaje (potenciales: no cambian la política óptima, guían el aprendizaje) y las multas
+        # de sobrevolarlo o de dejarlo fuera del rango del gimbal
+        pc, pe = self._potencial_v16()
+        rc["cobertura"] += np.where(done, 0.0, GAMMA_GUIA * pc - self.phi_cob)
+        rc["abordaje"] += np.where(done, 0.0, GAMMA_GUIA * pe - self.phi_esc)
+        self.phi_cob, self.phi_esc = pc, pe
+        dh_l = np.hypot(self.px[:, 0] - self.dx, self.py[:, 0] - self.dy)
+        sobre = (self.lvl_ep == NIVEL_V16) & (self.modo >= FIJADO) & (dh_l < np.maximum(self.dz - 0.9, 0.0)
+                                                                         / np.tan(np.radians(-GIMBAL_MIN + VFOV / 2)))
+        fuera_g = ((self.lvl_ep == NIVEL_V16) & (self.modo >= FIJADO) & ~sobre
+                   & (np.degrees(np.arctan2(self.dz - 0.9, np.maximum(dh_l, 1e-3))) > -GIMBAL_MIN))
+        rc["abordaje"] += np.where(sobre, R_SOBREVUELO, 0.0) + np.where(fuera_g, R_ANGULO_GMB, 0.0)
 
         self.obs_retraso = self._sensores()
         visto = self.info_sensor["lock"] & (self.trk == 0)          # V15: solo con la persona correcta
@@ -3208,6 +3279,7 @@ class EntornoDronPersona(object):
                     exito=exito, inicia=inicia, pierde=perdida, recupera=recupera, reflejo=reflejo, dist=d_all[:, 0], visto=visto.copy(),
                     fijado=designado.copy(), peatones=self.activa[:, 1:].sum(1),
                     jitter=pen_delta, esfuerzo=pen_esfuerzo, al_mando=mando, descubre=self.descubre.copy(),
+                    jerk=pen_jerk, cob=self.cob_frac.copy(),
                     busqueda_ia=bia & mando, salto=self.salto_h > 0,
                     # V12: registro completo
                     t_ep=self.t * DT, r_comp=np.stack([rc[k] for k in R_COMP], 1), du=du, gmb_min=self.gmb_min_ep.copy(),
@@ -3514,6 +3586,7 @@ class EntornoDronPersona(object):
         # PUNTO CIEGO: la cubierta (detrás del panel, del lado opuesto al dron) a la que llega antes caminando
         _, largo_h = self._ruta(np.repeat(P[:, None], N_PANELES, 1), H)
         cerca = np.argmin(largo_h, 1)
+        self.l_cub = de(H, cerca)                 # V16 · A4: su cubierta más cercana (para la recompensa de abordaje)
         # nota al dron (lo oye a menos de 12 m) y, tras reaccionar, corre a la cubierta más cercana
         dd = np.hypot(self.dx - P[:, 0], self.dy - P[:, 1])
         oye = (m == L_DEAMBULAR) & (dd < 12.0) & (self.l_alerta_t > 1.5)

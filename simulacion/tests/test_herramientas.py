@@ -26,7 +26,7 @@ class TestEvaluarPolitica(unittest.TestCase):
             V.preparar(env, esc, np.random.default_rng(0))
             self.assertTrue((env.modo == E.FIJADO).all(), nombre)
             self.assertGreaterEqual(env.info_sensor["lock"].mean(), 0.7, nombre)
-            self.assertFalse(env.activa[:, 1:].any(), nombre)
+            self.assertEqual(int(env.activa[0, 1:].sum()), esc.get("civiles", 0), nombre)    # V16: civiles curiosos
             self.assertTrue((np.abs(env.px[:, 0]) < E.ARENA).all(), nombre)
 
     def test_correr_escenario(self):

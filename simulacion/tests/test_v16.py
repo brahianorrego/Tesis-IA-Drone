@@ -353,5 +353,68 @@ class TestA3Sensores(unittest.TestCase):
         self.assertFalse(env.gps_amp.any() or env.baro_amp.any())
 
 
+
+class TestA4Recompensa(unittest.TestCase):
+
+    def test_rendicion_nunca_vale_menos_que_seguir_mirando(self):
+        self.assertAlmostEqual(E.R_EXITO_RESTANTE_V16, (E.R_VISTA + E.R_RANGO) / E.DT)
+        self.assertIn("cobertura", E.R_COMP)
+        self.assertIn("abordaje", E.R_COMP)
+        self.assertFalse(E.ORBITA_V16)                    # la órbita lateral es opcional (cambia el sentido de una acción)
+
+    def test_sacudida_solo_a_lo_que_comanda_la_red(self):
+        for accion, hay in ((0, False), (None, True)):
+            rng = np.random.default_rng(0)
+            env = E.EntornoDronPersona(32, semilla=2, nivel=E.NIVEL_V16)
+            tot = 0.0
+            for _ in range(600):
+                acc = np.full(32, accion) if accion is not None else rng.integers(0, len(E.CLASES), 32)
+                r, _, _, info = env.step(acc, np.full(32, QUIETO))
+                self.assertTrue(np.allclose(r, info["r_comp"].sum(1)))
+                tot += float(info["jerk"].sum())
+            self.assertEqual(tot > 0, hay)
+
+    def test_cobertura(self):
+        # en campo abierto, todo lo que el ladrón alcanza en 2.5 s se ve: cobertura 1
+        env = una_persona(n=4, dist=8.0, z=E.Z_SEGURA)
+        env.modo[:] = E.FIJADO
+        np.testing.assert_allclose(env._potencial_v16()[0], E.K_COB)
+        # con los 2 paneles, a veces el ladrón tiene dónde esconderse (cobertura < 1), siempre entre 0 y 1
+        env = E.EntornoDronPersona(48, semilla=4, nivel=E.NIVEL_V16)
+        cob = []
+        for _ in range(600):
+            _, _, _, info = env.step(np.zeros(48, int), np.full(48, QUIETO))
+            cob.append(info["cob"][env.modo >= E.FIJADO])
+        cob = np.concatenate(cob)
+        self.assertTrue(np.all((cob >= 0) & (cob <= 1)))
+        self.assertGreater(np.mean(cob < 0.9), 0.02)
+
+    def test_abordaje_lado_de_escape_y_sobrevuelo(self):
+        # el ladrón en (8, 0) huye hacia una cubierta en (12, 0): el dron en (0, 0) está del lado contrario (coseno 1)
+        env = una_persona(n=4, dist=8.0, z=E.Z_SEGURA)
+        env.modo[:] = E.FIJADO
+        env.l_cub[:] = (12.0, 0.0)
+        np.testing.assert_allclose(env._potencial_v16()[1], E.K_ESC)
+        # si el dron está encima del ladrón, se cobra la multa de sobrevolarlo (sin el potencial, para aislarla)
+        k_esc = E.K_ESC
+        E.K_ESC = 0.0
+        try:
+            env = una_persona(n=4, dist=0.3, z=E.Z_SEGURA)
+            env.modo[:] = E.FIJADO
+            env.visto_alguna[:] = True
+            _, _, _, info = env.step(np.zeros(4, int), np.full(4, QUIETO), auto_reset=False)
+            self.assertTrue(np.all(info["r_comp"][:, E.R_COMP.index("abordaje")] <= E.R_SOBREVUELO + 1e-9))
+        finally:
+            E.K_ESC = k_esc
+
+    def test_sin_terminos_v16_en_la_v15(self):
+        env = E.EntornoDronPersona(16, semilla=3, nivel=4)
+        for _ in range(100):
+            _, _, _, info = env.step(np.random.default_rng(1).integers(0, 10, 16), np.full(16, QUIETO))
+            self.assertTrue(np.all(info["r_comp"][:, E.R_COMP.index("cobertura")] == 0))
+            self.assertTrue(np.all(info["r_comp"][:, E.R_COMP.index("abordaje")] == 0))
+            self.assertTrue(np.all(info["jerk"] == 0))
+
+
 if __name__ == "__main__":
     unittest.main()
