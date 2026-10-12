@@ -1,0 +1,19 @@
+flowchart TB
+    BAT["Batería LiPo 4S<br/>14.8 V · 6200 mAh"]
+    ENT["Entorno exterior<br/>luz natural · viento<br/>personas"]
+    RC["Piloto · radiocontrol Futaba<br/>CH5 modo · CH8 parada"]
+    POT["<b>1 · Potencia</b><br/>Power Module<br/>placa de distribución<br/>buck 12 V para la Jetson"]
+    PER["<b>2 · Percepción</b><br/>cámara USB 640×480<br/>LiDAR TF03 · 100 Hz<br/>BaseCam, inclinación −5°"]
+    DEC["<b>3 · Procesamiento y decisión</b><br/>Jetson Orin Nano<br/>YOLO26n y clasificador MLP<br/>reglas de seguridad<br/>registro CSV"]
+    CTL["<b>4 · Control de vuelo</b><br/>Pixhawk · ArduPilot 4.7<br/>GUIDED: detener y subir<br/>estabilización y failsafe"]
+    OUT1["Respuesta física<br/>detención y ascenso<br/>a 3.30 m"]
+    OUT2["Respuesta de datos<br/>registro de la Jetson<br/>y DataFlash"]
+    BAT --> POT
+    ENT --> PER
+    POT --> DEC
+    PER --> DEC
+    POT --> CTL
+    DEC -->|"MAVLink"| CTL
+    RC --> CTL
+    CTL --> OUT1
+    DEC --> OUT2

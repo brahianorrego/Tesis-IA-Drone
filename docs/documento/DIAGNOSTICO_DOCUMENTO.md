@@ -113,3 +113,57 @@ plantilla no lo dice.
 - En la tabla de contenido solo va "Anexos", no "Anexo A", "Anexo B"…
 - "Lista de tablas" y "Lista de figuras" no van en la tabla de contenido.
 - Al final, borrar todos los comentarios (Revisar > Eliminar > Eliminar todos los comentarios del documento).
+
+## 4. Versión 2 (2026-10-12)
+
+### Páginas
+
+Medido con LibreOffice sobre la vista previa limpia (en Word puede variar ±3 páginas):
+
+| Parte | Páginas |
+|---|---:|
+| Preliminares a referencias (cuerpo del documento) | 1–73 |
+| Contenido hasta el capítulo 5 | 1–69 |
+| Anexos A a G (no cuentan en el límite de 100) | 74–110 |
+
+Quedan unas 25 páginas libres para los resultados de banco y de campo.
+
+### Anexos (con hipervínculo desde el texto)
+
+| Anexo | Contenido |
+|---|---|
+| A | Antecedentes complementarios (León y Castro) |
+| B | Diseño conceptual completo: Tablas 2–4 originales, escala de calificación, sensibilidad, reevaluación, concepto global, QFD |
+| C | Inventario de componentes |
+| D | Parámetros de ArduPilot y del software |
+| E | Organización del código, primera versión del detector y listados (LiDAR, intervención en banco, clasificador, envolvente de reglas) |
+| F | Simulación del protocolo y del clasificador (datos, matriz de confusión, curvas, mundos, condiciones degradadas, estadística) |
+| G | Protocolo de campo: lista de verificación, planilla, disposición, interrupción y consentimiento |
+
+### Figuras revisadas una por una
+
+- Se quitaron las figuras de blogs o sin fuente académica y las que repetían información (antiguas 2, 6–9, 21, 22, 28).
+- Se redibujaron con letra Times New Roman y tamaño legible (≈ 9 pt al tamaño de la página): caja negra, caja
+  transparente, diagrama funcional, conexiones, arquitectura, estados y secuencia de validación. Las de la versión
+  anterior decían Raspberry Pi, tenían textos ilegibles o no coincidían con el montaje real.
+- La figura de metodología se dejó igual, solo con dos textos corregidos (Raspberry Pi → computadora de a bordo;
+  indoor → exterior).
+- La Figura 12 (detector en computador) muestra una persona y la ventana dice "Detección de Rostros": hay que
+  reemplazarla por una captura del detector de personas y tener la autorización escrita de quien aparece.
+
+### Redacción
+
+El texto se reescribió a mano para que suene natural (frases de largo variado, sin muletillas ni listas de tres por
+costumbre, sin adjetivos de relleno), siguiendo las pautas de "Signs of AI writing" de Wikipedia. El complemento
+"Humanizer" no estaba activo en la sesión; se puede activar en claude.ai para una segunda pasada.
+
+### Lo que falta (marcado `[FALTA]` en rosa en el Word)
+
+- Portada: coautoría de Tania, título del asesor, grupo y línea de investigación, dedicatoria y agradecimientos.
+- Referencias: iniciales, año y **enlace del repositorio** de las tesis de la USB (Córdoba y Ruiz; Castro y Ortega) y
+  de los trabajos de Bohórquez, León y Avilés; año de la edición de OACI; datos de Meisel; fecha de la Resolución RAC 100.
+- Datos del dron: masa de despegue, modos finales del interruptor, LOIT_BRK_ACCEL y GUID_TIMEOUT leídos en la
+  Pixhawk, fuente del margen de 1.5 m, número de registro y certificado del piloto.
+- Pruebas: resultados de banco (pasos 1 a 5), validación del clasificador con datos reales, ensayos de campo
+  (Tabla 17), observaciones cualitativas, comparación campo–simulación, capturas de la Figura 16.
+- Conclusiones de cada objetivo con los datos de campo, y cerrar resumen y abstract (máximo 250 palabras).

@@ -1,0 +1,12 @@
+flowchart LR
+    G["<b>Sistema experimental de detección<br/>y evasión en exteriores</b>"]
+    G --> F1["<b>F1</b> · Percibir el frente<br/>del cuadricóptero"]
+    G --> F2["<b>F2</b> · Procesar y decidir<br/>a bordo"]
+    G --> F3["<b>F3</b> · Responder con seguridad"]
+    F1 --> F11["F1.1 Captar video frontal<br/>con luz natural variable"]
+    F1 --> F12["F1.2 Medir la distancia<br/>frontal de forma directa"]
+    F2 --> F21["F2.1 Alimentar la computadora<br/>con una línea regulada propia"]
+    F2 --> F22["F2.2 Detectar personas y estimar<br/>el riesgo en tiempo real"]
+    F3 --> F31["F3.1 Enviar la orden<br/>a la controladora (MAVLink)"]
+    F3 --> F32["F3.2 Detener el avance<br/>y ascender"]
+    F3 --> F33["F3.3 Devolver el mando al piloto<br/>y activar el failsafe"]

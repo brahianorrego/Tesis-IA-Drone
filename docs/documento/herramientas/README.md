@@ -16,3 +16,22 @@ python aceptar.py intervenido.docx limpia.docx
 
 Requiere `python-docx` y `Pillow`. No usar el paso de "unir runs" del editor de Word de Claude antes de `intervenir.py`:
 cambia la numeración automática de los párrafos.
+
+## Versión 2 (carpeta `v2/`)
+
+Segunda ronda (2026-10-12): texto reescrito en lenguaje más natural, anexos A a G con hipervínculos, diagramas nuevos
+y formato de la plantilla USB (rótulos, notas, tablas con solo líneas horizontales, figuras pegadas a su rótulo).
+
+| Script | Qué hace |
+|---|---|
+| `motor.py` | Funciones base: resaltar, insertar párrafos, rótulos con numeración automática, tablas, figuras, hipervínculos a anexos |
+| `c1_inicio.py` … `c5_anexos.py` | Los cambios de cada parte: portada a justificación, marcos, arquitectura, integración y resultados, referencias y anexos |
+| `construir.py` | Aplica todo y numera tablas y figuras |
+| `pulir.py` | Ajustes finales de formato comunes a las dos versiones |
+| `aceptar2.py` | Vista previa limpia: quita lo rojo y los `[REVISAR]`, deja solo los `[FALTA]` |
+| `pdf_uno.py` | Convierte a PDF con LibreOffice para revisar (LibreOffice no dibuja las ecuaciones; Word sí) |
+
+```
+python construir.py original.docx intervenido.docx ../diagramas <copia del repositorio en la rama v16-simulacion>
+python aceptar2.py intervenido.docx limpia.docx
+```

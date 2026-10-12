@@ -1,20 +1,11 @@
 flowchart TB
-    subgraph P["Percepción"]
-        CAM["Cámara USB<br/>640×480 · 30 cuadros/s<br/>HFOV 38.9°"] --> YOLO["IA 1 · YOLO26n<br/>preentrenado (COCO)<br/>TensorRT FP16 · 9–11 ms"]
-        LID["LiDAR TF03<br/>1 rayo · 100 Hz"]
-        EKF["Pixhawk · EKF<br/>velocidad y altura"]
-    end
-    subgraph D["Decisión · Jetson Orin Nano"]
-        ENT["15 entradas<br/>caja + LiDAR + velocidad<br/>+ seguimiento alfa-beta"] --> MLP["IA 2 · MLP 32-16<br/>P(riesgo en 3 s)"]
-        MLP -->|"P ≥ 0.7 en 2 cuadros"| ENV
-        ENV(["Envolvente de reglas<br/>LiDAR &lt; 3 m frena siempre<br/>árbitro autoriza el ascenso<br/>salvaguarda geométrica"])
-    end
-    subgraph C["Control · Pixhawk (ArduPilot 4.7)"]
-        GUI["GUIDED<br/>v horizontal = 0<br/>subir a 3.30 m"] --> PID["Controladores PSC/ATC<br/>estabilización"]
-    end
+    CAM["Cámara USB<br/>640×480 · 30 cuadros/s"] --> YOLO["<b>IA 1 · YOLO26n</b><br/>preentrenado (COCO)<br/>TensorRT FP16 · 9–11 ms"]
+    LID["LiDAR TF03<br/>1 rayo · 100 Hz"]
+    EKF["Pixhawk · EKF<br/>velocidad y altura"]
     YOLO --> ENT
     LID --> ENT
     EKF --> ENT
-    LID -.->|"&lt; 3 m avanzando"| ENV
-    ENV -->|"MAVLink 2 · TELEM2 · 115200"| GUI
-    RC["Piloto · radiocontrol<br/>CH5 modo · CH8 parada"] ==>|"siempre manda"| PID
+    ENT["<b>Jetson Orin Nano</b><br/>15 entradas: caja, LiDAR,<br/>velocidad, seguimiento"] --> MLP["<b>IA 2 · MLP 32-16</b><br/>P(riesgo en 3 s)"]
+    MLP -->|"P ≥ 0.7 en<br/>2 cuadros"| ENV(["<b>Envolvente de reglas</b><br/>LiDAR &lt; 3 m frena siempre<br/>árbitro autoriza el ascenso"])
+    ENV -->|"MAVLink 2 · TELEM2"| GUI["<b>Pixhawk · GUIDED</b><br/>v horizontal = 0<br/>subir a 3.30 m"]
+    RC["Piloto · radiocontrol<br/>CH5 modo · CH8 parada"] ==>|"siempre manda"| GUI
