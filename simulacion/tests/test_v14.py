@@ -129,7 +129,7 @@ class TestArbitroDeProgresion(unittest.TestCase):
         cb.model.num_timesteps = 5500
         cb._on_rollout_end()
         self.assertEqual(cb.nivel, 1)
-        E.EntornoDronPersona.nivel_inicial = E.N_NIVELES - 1
+        E.EntornoDronPersona.nivel_inicial = E.NIVEL_V16      # V16: el valor por defecto
 
     def test_paciencia(self):
         from entrenar_master import CurriculumCallback
@@ -141,7 +141,7 @@ class TestArbitroDeProgresion(unittest.TestCase):
         cb._on_rollout_end()
         self.assertEqual(cb.nivel, 1)
         self.assertEqual(cb.historia[-1]["motivo"], "paciencia")
-        E.EntornoDronPersona.nivel_inicial = E.N_NIVELES - 1
+        E.EntornoDronPersona.nivel_inicial = E.NIVEL_V16      # V16: el valor por defecto
 
     def test_competencia(self):
         from entrenar_master import CurriculumCallback
@@ -154,7 +154,7 @@ class TestArbitroDeProgresion(unittest.TestCase):
         self.assertAlmostEqual(c["dron"], 0.75)
         self.assertAlmostEqual(c["ladron"], 0.25)
         self.assertAlmostEqual(c["otros"], 0.2)
-        E.EntornoDronPersona.nivel_inicial = E.N_NIVELES - 1
+        E.EntornoDronPersona.nivel_inicial = E.NIVEL_V16      # V16: el valor por defecto
 
 
 if __name__ == "__main__":
