@@ -32,8 +32,6 @@
   #autoria b { color: var(--texto); font-weight: 600; }
   #barra .der { margin-left: auto; display: flex; gap: 8px; align-items: center; min-width: 0; }
   #selector { max-width: 420px; }
-  #rotulo-previa { display: none; padding: 3px 9px; border: 1px solid var(--aviso); color: var(--aviso); border-radius: 3px; font-weight: 600; letter-spacing: .5px; font-size: 12px; }
-  body.previa #rotulo-previa { display: inline-block; }
 
   /* ---------- vistas (el lienzo WebGL dibuja detrás de estos marcos) */
   .vista { position: fixed; z-index: 1; border: 1px solid var(--borde); background: transparent; overflow: hidden; }
@@ -49,6 +47,11 @@
   #mapa { width: 100%; height: 100%; display: block; }
   .botones-vista { position: absolute; right: 6px; top: 4px; z-index: 3; display: flex; gap: 3px; }
   .botones-vista button { font-size: 11px; padding: 2px 7px; background: rgba(15, 17, 20, .72); }
+
+  .sello { display: none; position: absolute; left: 50%; top: 16px; transform: translateX(-50%); z-index: 3; padding: 8px 16px; text-align: center;
+           background: rgba(14, 16, 19, .78); border: 1px solid var(--aviso); color: var(--aviso); border-radius: 4px; font-weight: 700; letter-spacing: 1px; pointer-events: none; }
+  .sello small { display: block; font-weight: 400; letter-spacing: 0; color: var(--suave); margin-top: 3px; font-size: 11.5px; }
+  body.previa .sello { display: block; }
 
   /* ---------- pie: telemetría y reproductor */
   #pie { left: 0; right: 0; bottom: 0; height: var(--pie); background: var(--panel); border-top: 1px solid var(--borde);
@@ -103,7 +106,6 @@
 <header id="barra" class="ui">
   <div class="marca">DRON-IA <small>Estación de tierra · proyecto de grado</small></div>
   <div id="autoria">Desarrollado por <b>Brahian Andrés Orrego Osorio</b></div>
-  <span id="rotulo-previa">VISTA PREVIA · NO ENTRENADO</span>
   <div class="der">
     <select id="escenario" title="Escenario">
       <option value="mision">Misión · 2 paneles</option>
@@ -115,7 +117,7 @@
   </div>
 </header>
 
-<div id="v-grande" class="vista"><div class="tit" id="t-grande"></div><canvas class="sobre" id="s-grande"></canvas></div>
+<div id="v-grande" class="vista"><div class="tit" id="t-grande"></div><canvas class="sobre" id="s-grande"></canvas><div class="sello">VISTA PREVIA · NO ENTRENADO<small>Escenario futuro para planear. La IA no se ha entrenado aquí. Cámara libre: arrastre, rueda y teclas W A S D (Q/E bajar y subir).</small></div></div>
 <div id="v-1" class="vista chica" title="Clic para verla en grande">
   <div class="tit" id="t-1"></div><canvas class="sobre" id="s-1"></canvas>
   <div class="botones-vista" id="modos-ext">

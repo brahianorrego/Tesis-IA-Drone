@@ -129,3 +129,36 @@ de YOLO como en `jetson/visor_web.py` y el clic del operador.
 - 96 pruebas pasan.
 
 **Qué sigue:** B4, la vista previa de escenarios futuros (hangar y campo con árboles).
+
+### 2026-10-12 · Fase B4 · Vista previa de escenarios futuros
+
+**Qué se hizo**
+- `visor/previa.js` y el selector **Escenario** de la barra superior:
+  - **Hangar** (40 × 30 m, 9.5 m de alto): piso de concreto con franjas de pasillo, columnas de perfil I cada 8 m, vigas
+    reticuladas, techo de lámina con claraboyas (entra el sol), portón abierto de 16 m, tres estanterías industriales con
+    cajas, cajas sueltas y estibas para esconderse, y una oficina con puerta y ventana.
+  - **Campo con árboles**: 46 árboles dentro de la arena con un claro en el centro, arbustos, piedras y un tronco caído.
+- Rotulado **"VISTA PREVIA · NO ENTRENADO"** sobre la vista, con la explicación. La vista externa pasa a grande con la
+  **cámara libre**: arrastrar para girar, rueda para acercar y teclas **W A S D** (Q/E bajar y subir) para recorrerlo.
+- Cada escenario trae una escena de ejemplo (dron y personas con recorridos fijos: en el hangar el sospechoso agachado
+  detrás de las cajas, un operario entre las estanterías, alguien recostado en una columna y otro grabando; en el campo
+  el sospechoso gateando entre arbustos y civiles caminando o mirando el dron). Pasa por las mismas cámaras, cajas de
+  YOLO e interfaz; la visibilidad se calcula con rayos contra el escenario (los árboles y las cajas tapan).
+- Arreglos de paso: cajas falsas en la cámara al piso por puntos muy fuera de la imagen; copas de los árboles sin
+  facetas.
+
+**Números**
+- 96 pruebas pasan.
+
+## Resumen de la sesión B (fases B1-B4 cerradas)
+
+- Abrir: `simulacion\ABRIR_VISOR.bat` → `http://127.0.0.1:8765/`. Galería de animaciones:
+  `http://127.0.0.1:8765/visor/probador.html`. Visor técnico anterior: `index_v20.html`.
+- **Pendiente de Brahian**: medir los cuadros por segundo en el portátil (Ingeniería → "Cuadros por segundo"; la calidad
+  baja sola si no alcanza 26). En la nube no hay tarjeta gráfica y la medida no sirve.
+- **Pendiente con la sesión A**: cuando publique su contrato de `foto()` en `v16-simulacion`, integrarlo con
+  `git merge origin/v16-simulacion` y ajustar `visor/datos.js` si los campos cambian. Hasta hoy (2026-10-12) la rama
+  `v16-simulacion` no existe en GitHub.
+- Límites conocidos: el cuerpo de las personas es procedural (no se pudieron descargar modelos GLTF desde la nube); las
+  caras son simples, pero a la distancia de la cámara del dron (3-15 m, 640 × 480) se leen como personas. Si más
+  adelante se consigue un personaje GLTF CC0 con esqueleto, se puede cambiar la malla manteniendo la animación.

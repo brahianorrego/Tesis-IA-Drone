@@ -9,6 +9,7 @@ import { Partida, listarRepeticiones, cargarJSON } from "./datos.js";
 import { Personas } from "./personas.js";
 import { Interfaz } from "./interfaz.js";
 import { SensorCamara, cajaDe, dibujarDetecciones, confianza } from "./camaras.js";
+import { Previa } from "./previa.js";
 import { $, mundo, lerp, limitar, angNorm, pad2, CAM, CAM_PISO } from "./util.js";
 
 // ------------------------------------------------------------------------------------------------ calidad y render
@@ -36,6 +37,7 @@ const dron = new Dron();
 M.escena.add(dron.raiz);
 export const personas = new Personas(M.escena);
 const ui = new Interfaz();
+const previa = new Previa(M);
 
 const camExt = new THREE.PerspectiveCamera(42, 16 / 9, 0.05, 900);
 camExt.layers.enable(CAPA_AYUDAS);
@@ -179,7 +181,43 @@ async function llenarSelector() {
   else if (valores.includes("replays_prueba/demo_v16_mision.json") && !valores.some(v => v.startsWith("salida/replay_v16"))) sel.value = "replays_prueba/demo_v16_mision.json";
   return sel.value;
 }
-$("selector").addEventListener("change", e => cargarPartida(e.target.value));
+$("selector").addEventListener("change", e => { $("escenario").value = "mision"; ponerEscenario("mision"); });
+// vista previa de escenarios futuros (no entrenados): hangar y campo con árboles
+async function ponerEscenario(nombre) {
+  document.body.classList.toggle("previa", nombre !== "mision");
+  $("selector").disabled = nombre !== "mision";
+  personas.limpiar();
+  if (nombre === "mision") {
+    previa.desactivar();
+    await cargarPartida($("selector").value);
+    return;
+  }
+  P = previa.activar(nombre);
+  t = 0; esperaClic = null; confirmados = new Set(); tiemposSalto.length = 0;
+  M.ponerParedes([]);
+  ui.ponerPartida(P);
+  if (vistas.grande !== "externa") intercambiar();
+  document.querySelector('[data-cam="libre"]').click();
+  if (nombre === "hangar") { camExt.position.copy(mundo(-5, -13, 4.5)); controles.target.copy(mundo(4, -1, 1.2)); }
+  else { camExt.position.copy(mundo(-19, -25, 8)); controles.target.copy(mundo(-2, 0, 1)); }
+  controles.update();
+  document.title = "DRON-IA · " + P.d.titulo;
+}
+$("escenario").addEventListener("change", e => ponerEscenario(e.target.value));
+// recorrer con el teclado en la cámara libre (W A S D, Q/E)
+const teclas = new Set();
+addEventListener("keydown", ev => { if (ev.target.tagName !== "SELECT") teclas.add(ev.code); });
+addEventListener("keyup", ev => teclas.delete(ev.code));
+function caminarCamara(dt) {
+  if (modoCam !== "libre" || !teclas.size) return;
+  const adel = new THREE.Vector3().subVectors(controles.target, camExt.position).setY(0).normalize(), der = new THREE.Vector3(-adel.z, 0, adel.x);
+  const m = new THREE.Vector3(), v = 6 * dt;
+  if (teclas.has("KeyW")) m.add(adel); if (teclas.has("KeyS")) m.sub(adel);
+  if (teclas.has("KeyD")) m.add(der); if (teclas.has("KeyA")) m.sub(der);
+  if (teclas.has("KeyE")) m.y += 1; if (teclas.has("KeyQ")) m.y -= 1;
+  m.multiplyScalar(v);
+  camExt.position.add(m); controles.target.add(m);
+}
 
 function alternarPausa() { pausa = !pausa; $("b-pausa").textContent = pausa ? "▶" : "❚❚"; $("b-pausa").classList.toggle("activo", pausa); }
 $("b-pausa").addEventListener("click", alternarPausa);
@@ -213,7 +251,7 @@ addEventListener("keydown", ev => {
   if (ev.target.tagName === "SELECT") return;
   if (ev.code === "Space") { ev.preventDefault(); alternarPausa(); }
   if (ev.code === "KeyI") $("b-ing").click();
-  if (ev.code === "KeyV") intercambiar();
+  if (ev.code === "KeyV" && modoCam !== "libre") intercambiar();
 });
 function ponerCalidad(q) {
   calidad = q;
@@ -241,7 +279,7 @@ function moverCamaraExterna(e, dt) {
   const lad = e.personas.find(p => p.rol === "ladron");
   const pl = lad ? mundo(lad.x, lad.y, 1.0) : pd.clone().setY(0);
   const k = 1 - Math.exp(-dt * 2.2);
-  if (modoCam === "libre") { controles.update(); return; }
+  if (modoCam === "libre") { caminarCamara(dt); controles.update(); return; }
   if (modoCam === "arriba") {
     deseo.copy(pd).add(new THREE.Vector3(0, 38, 9));
     camExt.position.lerp(deseo, k); mira.lerp(pd.clone().setY(0), k); camExt.lookAt(mira);
@@ -319,6 +357,7 @@ function bucle(ahora) {
     if (kc !== undefined) { t = (kc + 0.3) * P.dt; esperaClic = kc; $("confirmar").classList.add("ver"); }
     else t = tn;
   }
+  if (P.previa_ && t >= P.total) t = 0;          // la escena de la vista previa se repite
   if (t >= P.total) {
     t = P.total;
     if (!cargandoSig && !pausa) {
@@ -329,6 +368,7 @@ function bucle(ahora) {
   const e = estado = P.muestra(t);
   const dtSim = pausa || esperaClic !== null ? 0 : dtReal * factor;
   // avisos de eventos que acaban de pasar
+  if (P.previa_) e.personas.forEach(p => { if (p.vis === undefined) p.vis = false; });
   if (bucle.kPrev !== undefined && e.k > bucle.kPrev) P.eventos.filter(v => v.k > bucle.kPrev && v.k <= e.k && v.marca).forEach(v => ui.aviso(v.txt, v.tipo));
   bucle.kPrev = e.k;
   // ---- mundo
@@ -369,11 +409,19 @@ export async function arrancar() {
 }
 // gancho para la prueba automática (herramientas/probar_visor.cjs)
 window.__v16 = {
+  escenario(n) { $("escenario").value = n; return ponerEscenario(n); },
   irA(tt) { t = tt; esperaClic = null; confirmados = new Set(P ? P.clics : []); if (!pausa) alternarPausa(); },
   fps: () => fps,
   vista(tipo) { if (vistas.grande !== tipo) intercambiar(); },
   modo(m) { const b = document.querySelector(`[data-cam="${m}"]`); if (b) b.click(); },
   jugarDesde(tt) { t = tt; esperaClic = null; confirmados = new Set(); if (pausa) alternarPausa(); },
-  cajas: () => cajasActuales, esperando: () => esperaClic, tiempo: () => t,
+  cajas: () => cajasActuales,
+  depurarPiso() {
+    const e = estado, out = [];
+    e.personas.forEach(p => { const f = personas.figura(p.clave); if (!f) return; const pos = f.H.cadera.getWorldPosition(new THREE.Vector3());
+      const q = sensorPiso.proyectar(pos); const n = pos.clone().project(dron.camaraPiso);
+      out.push({ id: p.id, mundo: pos.toArray().map(v => +v.toFixed(2)), q, ndc: n.toArray().map(v => +v.toFixed(2)), caja: cajaDe(sensorPiso, f) }); });
+    return { dron: dron.raiz.position.toArray(), cam: dron.camaraPiso.getWorldPosition(new THREE.Vector3()).toArray(), dir: dron.camaraPiso.getWorldDirection(new THREE.Vector3()).toArray(), out };
+  }, esperando: () => esperaClic, tiempo: () => t,
 };
 if (!window.__V16_SIN_ARRANQUE) arrancar();

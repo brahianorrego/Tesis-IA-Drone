@@ -225,7 +225,8 @@ export class Mundo {
         // normal "de nube": desde el centro de toda la copa (luz suave como en un árbol real)
         const m = new THREE.Vector3(v.x * d + cx - fx, (v.y * d * 0.85 + cy - yC) * 1.2, v.z * d + cz - fz).normalize().lerp(n, 0.35).normalize();
         nor[3 * i] = m.x; nor[3 * i + 1] = m.y; nor[3 * i + 2] = m.z;
-        const sombra = 0.55 + 0.45 * Math.max(0, Math.min(1, (m.y + 1) / 1.6)), ruido = 0.85 + 0.3 * ((Math.sin(i * 12.9898) * 43758.5) % 1 + 1) % 1;
+        const sombra = 0.55 + 0.45 * Math.max(0, Math.min(1, (m.y + 1) / 1.6)), h = Math.sin(Math.round(v.x * 40) * 12.9898 + Math.round(v.y * 40) * 78.233 + Math.round(v.z * 40) * 37.719) * 43758.5,
+              ruido = 0.85 + 0.3 * (h - Math.floor(h));     // por posición: los vértices repetidos tienen el mismo color (sin facetas)
         col[3 * i] = base[0] * sombra * ruido; col[3 * i + 1] = base[1] * sombra * ruido; col[3 * i + 2] = base[2] * sombra * ruido;
       }
       g.setAttribute("normal", new THREE.BufferAttribute(nor, 3));

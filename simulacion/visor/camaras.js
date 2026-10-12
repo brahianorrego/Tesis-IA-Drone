@@ -138,7 +138,7 @@ export class SensorCamara {
   // de un punto del mundo a la imagen de salida (0-1, y hacia abajo), con la misma distorsión del lente
   proyectar(p, v = new THREE.Vector3()) {
     v.copy(p).project(this.camara);
-    if (v.z > 1) return null;
+    if (v.z > 1 || Math.abs(v.x) > 1.4 || Math.abs(v.y) > 1.4) return null;     // muy fuera de la imagen: sin lente que valga
     const asp = this.op.ancho / this.op.alto, k1 = this.op.k1, k2 = this.op.k2;
     const sx = v.x * 0.5 * asp, sy = v.y * 0.5;            // fuente, centrada, en unidades de alto
     let ox = sx, oy = sy;
@@ -166,6 +166,10 @@ export function cajaDe(sensor, figura) {
     x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y);
   });
   if (!n) return null;
+  // el centro del cuerpo tiene que caer dentro de la imagen (si no, son puntos de alguien fuera de cuadro)
+  figura.H.cadera.getWorldPosition(_v);
+  const cc = sensor.proyectar(_v);
+  if (!cc || cc.x < -0.02 || cc.x > 1.02 || cc.y < -0.1 || cc.y > 1.1) return null;
   const mx = (x1 - x0) * 0.12 + 0.004, my = (y1 - y0) * 0.04 + 0.004;
   x0 -= mx; x1 += mx; y0 -= my; y1 += my;
   if (x1 < 0 || y1 < 0 || x0 > 1 || y0 > 1) return null;
