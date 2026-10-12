@@ -112,7 +112,8 @@ El hardware está configurado y probado en banco; la IA se entrena en simulació
 
 ## Git
 
-- Rama de trabajo: `v11-hibrido` (los cambios de la V12 están sin commit; conviene pasarlos a una rama `v12-jerarquico`). Etiqueta `v10-master-759M` (código de la V10, 759 M pasos).
+- Rama actual: `v15-curriculo` (V12 a V15, mínimo indispensable, código de la Jetson y plan V16; `v11-hibrido` apunta a lo mismo). Etiqueta `v10-master-759M` (código de la V10, 759 M pasos).
+- V16 en la nube: ramas `v16-simulacion` y `v16-visor` (`docs/PLAN_V16_REALISMO.md`); avance en `docs/PROGRESO_V16.md`.
 - PR #2 (`docs/proyecto-completo-v6`) abierto, sin fusionar: lo hace Brahian en GitHub.
 
 ## Pendientes (por prioridad)

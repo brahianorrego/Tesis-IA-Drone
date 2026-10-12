@@ -114,7 +114,10 @@ cambios) → Brahian aprueba → agente `implementador` (cambio, pruebas, bitác
 ## Git
 
 - Rama principal `main`. Se trabaja en ramas y se sube con Pull Request.
-- Etiqueta `v10-master-759M` congela el estado de la V10 (759 M pasos); rama `v11-hibrido` para el trabajo nuevo.
+- Etiqueta `v10-master-759M` congela el estado de la V10 (759 M pasos).
+- Ramas: `v15-curriculo` = estado actual (V12 a V15, mínimo indispensable, código de la Jetson y plan V16; `v11-hibrido`
+  apunta a lo mismo y se conserva por historia). La V16 se desarrolla en la nube en `v16-simulacion` y `v16-visor`
+  (ver `docs/PLAN_V16_REALISMO.md`).
 - Los modelos `.zip`/`.pt`, `salida*/`, logs, `.venv` y secretos están en `.gitignore`.
 - Commits en español y con coautoría de Claude al final del mensaje.
 - Para cerrar una sesión usar la skill `/cierre-sesion`.

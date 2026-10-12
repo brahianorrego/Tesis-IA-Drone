@@ -1,33 +1,48 @@
-# Simulación: dron vs ladrón (aprendizaje por refuerzo multiagente)
+# Simulación: dron vs ladrón (aprendizaje por refuerzo)
 
-Entrena la IA de decisión del dron por refuerzo en un mundo virtual, sin datos etiquetados a mano.
-El juego es el **dron contra el ladrón** (autojuego, como *Emergent Tool Use From Multi-Agent
-Autocurricula*, Baker et al., ICLR 2020). El dron tiene que encontrar al sospechoso, esperar a que el
-operador lo confirme y mantenerlo a la vista 30 s. El ladrón se esconde detrás de los paneles y a veces
-ataca. Los peatones son obstáculos.
+Entrena la IA de decisión del dron por refuerzo en un mundo virtual, sin datos etiquetados a mano. El juego es el
+**dron contra el ladrón**: el dron busca, el operador confirma con un clic quién es el sospechoso y el dron lo
+mantiene a la vista mientras el ladrón se esconde detrás de los muros, se cansa y a veces ataca. Los civiles son
+obstáculos y distractores.
 
-El dron virtual percibe el mundo igual que el real: cámara de 38.9°, YOLO con ruido y pérdidas, LiDAR
-frontal, 100 ms de retraso, gimbal de pitch, y la posición, el rumbo y la altura que da la Pixhawk.
-La lógica de la versión 6 (arquitectura híbrida) está descrita en el [README principal](../README.md#arquitectura-híbrida---versión-6).
+El dron virtual percibe el mundo como el real:
+- cámara de 38.9° con YOLO (ruido, pérdidas, detección parcial y 100 ms de retraso);
+- LiDAR TF03 (30 m) con mapa de puntos;
+- gimbal de pitch con límite duro −45°..+15°;
+- la posición, el rumbo y la altura que da la Pixhawk;
+- los controladores reales modelados en `control.py`.
+
+Aquí también está el **mínimo indispensable** del comité (`minimo_tesis/`), separado y congelado.
 
 ## Uso (Windows)
 
 | Qué | Cómo |
 |---|---|
 | Ver la simulación y las curvas de aprendizaje | doble clic en `ABRIR_VISOR.bat` → http://127.0.0.1:8765/ |
-| Retomar el entrenamiento | doble clic en `CONTINUAR_ENTRENAMIENTO.bat` |
-| Entrenamiento nuevo | `.venv\Scripts\python.exe -u entrenar.py --pasos 600e6` (`--desde <modelo.pt>` para partir de pesos previos) |
-| Experimento comparativo (IA vs reglas) | `.venv\Scripts\python.exe evaluar.py` → `salida/evaluacion.json` |
+| Retomar el entrenamiento actual | doble clic en `CONTINUAR_ENTRENAMIENTO.bat` (`entrenar_master.py` sin argumentos) |
+| Pruebas | `.venv\Scripts\python.exe -m unittest discover -s tests` |
+| Resumen de un entrenamiento | `.venv\Scripts\python.exe herramientas\resumir_metricas.py` → `informes\` |
+| Evaluación en escenarios fijos | `.venv\Scripts\python.exe herramientas\evaluar_politica.py --modelo <checkpoint.zip>` → `informes\` |
+| Protocolo del comité (mínimo) | ver `minimo_tesis/README.md` |
 
-El entorno virtual `.venv` (torch CPU + numpy) no se sube al repositorio. Para crearlo:
-`py -m venv .venv` y luego `.venv\Scripts\pip install torch numpy`.
+El entorno virtual `.venv` no se sube al repositorio. Para crearlo: `py -m venv .venv` y
+`.venv\Scripts\pip install torch numpy gymnasium stable-baselines3 scikit-learn`.
 
 ## Archivos
 
-- `entorno.py`: el mundo vectorizado en NumPy, los sensores, la máquina de estados, el árbitro y las recompensas.
-- `entrenar.py`: PPO para los dos agentes. Guarda métricas y repeticiones (`salida/`, no se sube) y modelos (`modelos/`).
-- `mision.py`: misión completa para el visor (fase 1 con el piloto y bloqueo frontal, fase 2 con la IA).
-- `evaluar.py`: compara la IA contra reglas escritas a mano en los mismos escenarios.
-- `index.html`: visor 3D tipo estación de tierra (three.js), con la cámara FPV, la telemetría y las gráficas en vivo.
-- `modelos/dron_politica.json`: pesos de la red del dron, para cargarla en la Jetson.
-- `*_v2` … `*_v5`, `index_v4` … `index_v7`, `modelos_v1` … `modelos_v5`: versiones anteriores de cada experimento.
+| Archivo o carpeta | Qué es |
+|---|---|
+| `entorno.py` | Mundo vectorizado en NumPy: sensores, mapa LiDAR, máquina de estados, árbitro, ladrón, civiles, rendición y recompensas (V15) |
+| `control.py` | Cascada PSC/ATC de ArduPilot y PID del gimbal BaseCam |
+| `entrenar_master.py` | Entrenamiento actual: PPO de Stable-Baselines3 con currículo de niveles y métricas para el visor |
+| `entrenar.py` | PPO propio de las versiones 1 a 9; el master reutiliza sus utilidades |
+| `mision.py` | Misión completa para el visor (fase 1 piloto con bloqueo frontal, fase 2 IA) |
+| `evaluar.py` | Comparación IA vs reglas de las primeras versiones (desactualizado) |
+| `index.html` | Visor 3D tipo estación de tierra (three.js) |
+| `minimo_tesis/` | Mínimo indispensable: sistema, sensores, protocolo del comité, decisor IA (scikit-learn) y repeticiones |
+| `herramientas/` | `resumir_metricas.py` (informe corto) y `evaluar_politica.py` (escenarios fijos) |
+| `informes/` | Evaluaciones, resúmenes y diagnósticos de cada versión |
+| `tests/` | Pruebas: reglas duras, entorno, niveles, V13-V15 y mínimo |
+| `modelos/dron_politica.json` | Pesos de la política para la Jetson (sí se versiona) |
+| `modelos_*/`, `salida*/`, `*.log` | Modelos, salidas del visor y registros (no se suben) |
+| `*_vN.*`, `index_vN.html` | Versiones anteriores de cada archivo (no se editan) |

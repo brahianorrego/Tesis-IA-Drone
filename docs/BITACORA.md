@@ -3,6 +3,10 @@
 Registro cronológico, lo más reciente arriba. Lo agrega la skill `/cierre-sesion` al terminar cada sesión.
 Fechas de 2026.
 
+## 12 de octubre
+- Plan V16 (`docs/PLAN_V16_REALISMO.md`) con las decisiones de Brahian: solo 2 paneles, posturas humanas y salto para agarrar el dron, civiles realistas, alturas de 2-3 m sin personas cerca (3.30 m con alguien cerca), cámara IMX219 al piso, TF03 fijo al frente y TF-Luna en el gimbal, visor realista. Se desarrolla en dos sesiones en la nube.
+- Repositorio ordenado: README principal y de la simulación al día, `CONTINUAR_ENTRENAMIENTO.bat` apunta a `entrenar_master.py`, rama `v15-curriculo` con el estado actual.
+
 ## 11 de octubre
 - **Fase G · decisor IA del mínimo indispensable** (`simulacion/minimo_tesis/decisor_ia.py`): MLP de scikit-learn con las
   entradas que tiene la Jetson, etiquetas automáticas con la verdad del simulador y separación por semillas; exportado a
