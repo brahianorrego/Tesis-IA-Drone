@@ -45,7 +45,11 @@ def medir(pol, n=256, seg=300.0, semilla=0, nivel=E.NIVEL_V16):
     n_jit = 0
     extra = collections.defaultdict(float)
     vivo = np.ones(n, bool)
+    posturas = np.zeros(4)
+    saltos = 0
+    civ = collections.Counter()
     for _ in range(pasos):
+        f0 = env.salto_f.copy()
         acc, _ = pol.predict(env.obs_dron().astype(np.float32), deterministic=True)
         u0 = env.u_prev_fis.copy()
         _, _, done, info = env.step(np.asarray(acc).astype(int), np.full(n, E.N_ACC_PERSONA - 1), auto_reset=False)
@@ -55,6 +59,10 @@ def medir(pol, n=256, seg=300.0, semilla=0, nivel=E.NIVEL_V16):
         t_bajo += int((vivo & (env.dz < E.Z_SEGURA - 0.05)).sum())
         t_real8 += int(r8.sum())
         t_real8_bajo += int((r8 & (env.dz < E.Z_SEGURA - 0.05)).sum())
+        posturas += np.bincount(env.pos[vivo, 0], minlength=4)[:4]
+        saltos += int((vivo & (env.salto_f == 1) & (f0 == 0)).sum())
+        ac = env.activa[:, 1:] & vivo[:, None]
+        civ.update(env.c_est[:, 1:][ac].tolist())
         am = info["al_mando"] & vivo
         jit += np.abs(env.u_prev_fis - u0)[am].sum(0)
         n_jit += int(am.sum())
@@ -81,6 +89,10 @@ def medir(pol, n=256, seg=300.0, semilla=0, nivel=E.NIVEL_V16):
            "frac_persona_real_8m": round(t_real8 / max(t_tot, 1), 3),
            "bajo_330_con_persona_real_8m": round(t_real8_bajo / max(t_real8, 1), 4),
            "jitter_por_paso": [round(float(x), 4) for x in jit / max(n_jit, 1)]}
+    out["posturas_ladron"] = {E.NOMBRE_POSTURA[k]: round(float(v / max(posturas.sum(), 1)), 3) for k, v in enumerate(posturas)}
+    out["saltos_por_partida"] = round(saltos / max(N, 1), 2)
+    tc = sum(civ.values())
+    out["civiles"] = {E.NOMBRE_CIVIL[k]: round(v / max(tc, 1), 3) for k, v in sorted(civ.items())}
     for k, v in extra.items():
         out[k + "_por_s"] = round(v / max(t_tot, 1) / E.DT, 4)
     return out

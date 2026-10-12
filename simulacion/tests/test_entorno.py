@@ -30,7 +30,7 @@ class TestEntorno(unittest.TestCase):
         rng = np.random.default_rng(3)
         env = E.EntornoDronPersona(16, semilla=3)
         terminadas = 0
-        for _ in range(1500):       # V15: a la altura segura (3.30 m) casi no lo alcanzan: la primera termina hacia 134 s
+        for _ in range(E.PASOS_EPISODIO + 10):   # V16: con 2 paneles y 3.30 m pueden durar los 5 min completos (el tope)
             acc = rng.integers(0, len(E.CLASES), env.n)
             ap = rng.integers(0, E.N_ACC_PERSONA, env.n)
             r, rp, done, info = env.step(acc, ap)
