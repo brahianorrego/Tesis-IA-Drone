@@ -126,7 +126,7 @@ def aplicar(M, reescribir, mover, DIAG):
         'viabilidad, viabilidad moderada, riesgo medio o riesgo crítico) según su masa, su consumo eléctrico, el ruido y '
         'su exposición al clima. Después se descartaron las que reunían más factores negativos o eran vulnerables al '
         'viento y a la luz solar directa. La lista de alternativas, los juicios y el resultado del filtrado están en el '
-        'Anexo B (Tablas B1, B2 y B3).'])
+        'Anexo B ({T:tB1}, {T:tB2} y {T:tB3}).'])
     for i in (392, 393):
         M.marcar(P[i])
     mover([394, ('T', 3)], 'B', 'B1')
@@ -169,8 +169,8 @@ def aplicar(M, reescribir, mover, DIAG):
         '(RF-08/RF-11) recibieron 9, porque una falla en cualquiera de ellos termina en colisión. La percepción visual '
         '(RF-01/RF-02) y el procesamiento a bordo (RF-04) recibieron 10: sin ellos el sistema no existe.',
         'La escala de 1 a 10 se eligió por su resolución. Con 1 a 5, alternativas cercanas de una misma subfunción '
-        'quedarían empatadas; con 10 niveles se distinguen. Cada nivel tiene una descripción concreta (Anexo B, Tabla '
-        'B4), y la selección no cambia si las calificaciones se pasan a una escala de 1 a 5 (Tabla B5) (Pugh, 1991; '
+        'quedarían empatadas; con 10 niveles se distinguen. Cada nivel tiene una descripción concreta (Anexo B, {T:tB4}'
+        '), y la selección no cambia si las calificaciones se pasan a una escala de 1 a 5 ({T:tB5}) (Pugh, 1991; '
         'Ulrich & Eppinger, 2016).'])
     reescribir([424], [
         'La {T:f1} califica los sensores visuales y de distancia según su capacidad y su robustez al aire libre: el 1 '
@@ -243,7 +243,7 @@ def aplicar(M, reescribir, mover, DIAG):
             celda(M, t10, fi, cj, 'NA' if v is None else str(v))
         celda(M, t10, 5, cj, '')
         celda(M, t10, 6, cj, str(sum((v or 0) * w for v, w in zip(vals, pes))))
-    nota10 = M.nota(t10._tbl, 'Nota. Calificaciones asignadas con la escala anclada de la Tabla B4 (Anexo B). Se comparan '
+    nota10 = M.nota(t10._tbl, 'Nota. Calificaciones asignadas con la escala anclada de la {T:tB4} (Anexo B). Se comparan '
                               'entre sí la Pixhawk y la Navio2 (controladora), MAVLink y la intervención por PWM '
                               '(protocolo) y el dron Aerosant frente a un dron comercial cerrado (plataforma). NA: no '
                               'aplica. [FALTA: validar estas calificaciones con el asesor]')
@@ -257,9 +257,9 @@ def aplicar(M, reescribir, mover, DIAG):
                         'arranque que corrompieron el sistema operativo y un cuello de botella en la inferencia; la '
                         'Jetson Orin Nano, una generación posterior a la Jetson Nano evaluada, procesa cada cuadro en 9 a '
                         '11 ms con TensorRT y no se reinició con su convertidor de 12 V. Con esas calificaciones medidas '
-                        'la selección se invierte (Anexo B, Tabla B6). La matriz cumplió su función con la información '
+                        'la selección se invierte (Anexo B, {T:tB6}). La matriz cumplió su función con la información '
                         'disponible; lo que falló fue la calificación supuesta de la Raspberry Pi, que solo se pudo '
-                        'corregir midiendo.', AMARILLO)
+                        'corregir midiendo. La {T:concepto} resume el concepto global que salió de la matriz.', AMARILLO)
     # concepto global y comparación con lo implementado
     filasN1 = [
         ['Subsistema', 'Concepto del diseño', 'Implementado', 'Motivo del cambio'],
@@ -281,7 +281,7 @@ def aplicar(M, reescribir, mover, DIAG):
         ['Posicionamiento', '—', 'GPS de la Pixhawk', 'El modo GUIDED exige posición GPS en exteriores'],
     ]
     t11 = T[12]
-    p_n1 = M.parrafo(t11._tbl, 'El concepto global que salió del diseño ({T:concepto}) cambió en la integración. La '
+    p_n1 = M.parrafo(t11._tbl, 'Ese concepto global cambió en la integración. La '
                      '{T:implementado} compara cada subsistema diseñado con el que finalmente se instaló y explica por '
                      'qué.', AMARILLO)
     cap = M.rotulo(p_n1, 'Tabla', 'implementado', 'Concepto global diseñado frente al implementado')
@@ -304,7 +304,7 @@ def aplicar(M, reescribir, mover, DIAG):
         'operativos: detección visual confiable de personas y obstáculos, medición directa de la distancia frontal, '
         'procesamiento a bordo sin enlaces de video, activación oportuna de la maniobra vertical, alimentación aislada '
         'de los motores, recuperación inmediata del control manual y registro automático de datos. Su importancia '
-        'relativa, de 1 a 10, está en el Anexo B (Tabla B7).',
+        'relativa, de 1 a 10, está en el Anexo B ({T:tB7}).',
         'Esos requerimientos se tradujeron en ocho especificaciones de ingeniería: frecuencia de muestreo del LiDAR (Hz), '
         'cuadros por segundo de la inferencia, latencia del lazo sensor–decisión–actuador (ms), masa añadida (g), '
         'corriente del sistema embebido (A), rizado de la línea de alimentación (mV), distancia umbral de activación (m) '

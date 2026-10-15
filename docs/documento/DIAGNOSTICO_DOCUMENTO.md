@@ -174,3 +174,18 @@ moda, adornos de importancia y listados con negrita. Las 25 correcciones de esta
 - Pruebas: resultados de banco (pasos 1 a 5), validación del clasificador con datos reales, ensayos de campo
   (Tabla 17), observaciones cualitativas, comparación campo–simulación, capturas de la Figura 16.
 - Conclusiones de cada objetivo con los datos de campo, y cerrar resumen y abstract (máximo 250 palabras).
+
+## 5. Versión 4 (2026-10-15): cambios pedidos por el tutor
+
+| Pedido del tutor | Qué se hizo |
+|---|---|
+| Marcos y antecedentes en máximo 10 páginas | 1.5 a 1.8 ocupan unas 6 páginas (medido con LibreOffice, sin ecuaciones; en Word serán algo más) |
+| Detalle a anexos, con nota al final de cada marco | Anexo 1 (antecedentes), Anexo 2 (marcos teórico y conceptual) y Anexo 3 (marco normativo); cada marco termina con "Para mayor información, consulte el Anexo N" |
+| Antecedentes en un párrafo | Un párrafo por nivel: internacionales, nacionales y locales |
+| Justificar que el tema está poco estudiado | Apartado 1.5.4, apoyado en la Tabla 18 del Anexo 1; falta documentar la búsqueda (bases, palabras clave, años) |
+| Terminar los objetivos 1 y 2 | Fotos de masa (2371 g), GPS y montaje en exteriores en los anexos 4 y 6; resultados de banco y campo siguen como [FALTA] |
+
+Además: anexos numerados por orden de mención (Anexo 1 a 9, como pide la plantilla), tablas y figuras de los anexos con numeración consecutiva, todas citadas antes de aparecer y con campo de referencia cruzada (Ctrl + clic), y figura de metodología redibujada con la letra del documento.
+`herramientas/v2/verificar_refs.py` comprueba esas citas.
+
+Equivalencia con los anexos que había propuesto el equipo: su Anexo 1 (reensamble) es el Anexo 6; sus anexos 2, 3 y 4 (detector, evasión, arquitectura del software) están en el Anexo 8.

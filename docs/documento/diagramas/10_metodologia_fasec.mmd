@@ -1,0 +1,4 @@
+flowchart TB
+    ES["Escenario y<br/>protocolo"] --> EN["Ensayos<br/>repetibles"] --> AN["Análisis de<br/>métricas"] --> V{"¿Cumple los<br/>criterios?"}
+    V -- Sí --> EV["Evaluar<br/>desempeño"] --> FIN(["Fin"])
+    V -- No --> AJ["Ajustar y<br/>repetir"] -.-> EN

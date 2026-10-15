@@ -1,0 +1,4 @@
+flowchart TB
+    I(["Inicio"]) --> E["Enfoque mixto<br/>y experimental"] --> B["Buscar<br/>modelos"] --> C["Filtrar por<br/>criterios"] --> A["Comparar<br/>opciones"] --> D{"¿Es<br/>compatible?"}
+    D -- Sí --> S["Elegir modelo<br/>y LiDAR"]
+    D -- No --> J["Ajustar<br/>criterios"] -.-> B

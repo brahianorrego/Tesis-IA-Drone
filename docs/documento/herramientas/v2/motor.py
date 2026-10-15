@@ -91,7 +91,9 @@ class Motor:
             ru.font.size = Pt(size)
         return h
 
-    PARTES = re.compile(r'(\[REVISAR:[^\]]*\]|\[FALTA:[^\]]*\]|Anexo [A-G]\b|\*[^*]+\*)')
+    # Los anexos se numeran por orden de primera mención (plantilla USB: Anexo 1, Anexo 2...). La clave interna es una letra.
+    ANEXO_NUM = {'A': 1, 'H': 2, 'I': 3, 'G': 4, 'B': 5, 'C': 6, 'D': 7, 'E': 8, 'F': 9}
+    PARTES = re.compile(r'(\[REVISAR:[^\]]*\]|\[FALTA:[^\]]*\]|Anexo [A-I]\b|\*[^*]+\*)')
 
     def texto(self, p, texto, color, bold=False, italic=False, size=None, font=None, after=None, enlaces=True,
               rpr=None):
@@ -104,8 +106,9 @@ class Motor:
                 last = self.run(p, parte, TURQ, bold=True, size=size, after=last, rpr=rpr)
             elif parte.startswith('[FALTA:'):
                 last = self.run(p, parte, ROSA, bold=True, size=size, after=last, rpr=rpr)
-            elif enlaces and re.fullmatch(r'Anexo [A-G]', parte):
-                last = self.hipervinculo(p, parte, 'Anexo_' + parte[-1], color, size=size, after=last)
+            elif enlaces and re.fullmatch(r'Anexo [A-I]', parte):
+                last = self.hipervinculo(p, f'Anexo {self.ANEXO_NUM[parte[-1]]}', 'Anexo_' + parte[-1], color,
+                                         size=size, after=last)
             elif parte.startswith('*') and parte.endswith('*') and len(parte) > 2:
                 last = self.run(p, parte[1:-1], color, bold=bold, italic=True, size=size, font=font, after=last,
                                 rpr=rpr)
@@ -289,7 +292,11 @@ class Motor:
         return Paragraph(p, self.d._body)
 
     def rotulo_anexo(self, ancla, etiqueta, titulo, color=AMARILLO):
-        """Rótulo de tabla o figura de anexo (Tabla B1, Figura F1): texto, sin campo SEQ."""
+        """Rótulo de tabla o figura de anexo: 'Tabla B1' o 'Figura F1' (la clave es lo que sigue a la etiqueta) usa el
+        mismo campo SEQ que el cuerpo; 'Listado E1' queda como texto."""
+        m = re.match(r'(Tabla|Figura) (\w+)$', etiqueta)
+        if m:
+            return self.rotulo(ancla, m.group(1), m.group(1)[0].lower() + m.group(2), titulo, color)
         p = self.parrafo(ancla, '', color, estilo='Normal')
         p.paragraph_format.space_before = Pt(8)
         p.paragraph_format.keep_with_next = True
@@ -400,6 +407,7 @@ class Motor:
         """Numera los rótulos que quedan (no rojos) y reemplaza {T:clave} / {F:clave} en todo el documento."""
         cont = {'Tabla': 0, 'Figura': 0}
         mapa = {}
+        self.cap_info = {}
         for p in self.body.iter(qn('w:p')):
             instr = ''.join(i.text or '' for i in p.iter(qn('w:instrText')))
             simples = [f for f in p.iter(qn('w:fldSimple')) if 'SEQ' in (f.get(qn('w:instr')) or '')]
@@ -436,18 +444,89 @@ class Motor:
             self._formato_rotulo(p)
             if p in self.claves:
                 mapa[self.claves[p][1]] = f'{tipo} {n}'
+                self.cap_info[self.claves[p][1]] = (p, tipo, n)
+        # marcadores en los rótulos y referencias cruzadas reales (Referencias > Referencia cruzada > solo rótulo y número)
+        for clave, (p_el, tipo, n) in self.cap_info.items():
+            self._marcar_rotulo(p_el, f'_Ref_{clave}')
         pat = re.compile(r'\{([TF]):(\w+)\}')
         faltan = set()
-        for t in self.body.iter(qn('w:t')):
-            if t.text and '{' in t.text:
-                def sub(m):
-                    k = m.group(2)
-                    if k not in mapa:
-                        faltan.add(k)
-                        return m.group(0)
-                    return mapa[k]
-                t.text = pat.sub(sub, t.text)
+        for r in list(self.body.iter(qn('w:r'))):
+            t = r.find(qn('w:t'))
+            if t is None or not t.text or '{' not in t.text or not pat.search(t.text):
+                continue
+            partes = pat.split(t.text)          # texto, tipo, clave, texto, ...
+            rpr = r.find(qn('w:rPr'))
+            padre = r.getparent()
+            pos = padre.index(r)
+            nuevos = []
+            for k in range(0, len(partes), 3):
+                if partes[k]:
+                    nuevos.append(self._run_texto(partes[k], rpr))
+                if k + 2 < len(partes):
+                    clave = partes[k + 2]
+                    if clave in mapa:
+                        nuevos.extend(self._campo_ref(f'_Ref_{clave}', mapa[clave], rpr))
+                    else:
+                        faltan.add(clave)
+                        nuevos.append(self._run_texto('{%s:%s}' % (partes[k + 1], clave), rpr))
+            padre.remove(r)
+            for j, e in enumerate(nuevos):
+                padre.insert(pos + j, e)
         return mapa, faltan
+
+    def _run_texto(self, texto, rpr):
+        r = OxmlElement('w:r')
+        if rpr is not None:
+            r.append(copy.deepcopy(rpr))
+        r.append(self._t(texto))
+        return r
+
+    def _campo_ref(self, marcador, resultado, rpr):
+        """Campo REF (referencia cruzada) con el resultado ya calculado: Word lo actualiza al abrir."""
+        def fc(tipo):
+            r = OxmlElement('w:r')
+            if rpr is not None:
+                r.append(copy.deepcopy(rpr))
+            f = OxmlElement('w:fldChar')
+            f.set(qn('w:fldCharType'), tipo)
+            r.append(f)
+            return r
+        ins = OxmlElement('w:r')
+        if rpr is not None:
+            ins.append(copy.deepcopy(rpr))
+        it = OxmlElement('w:instrText')
+        it.set(XML_SPACE, 'preserve')
+        it.text = f' REF {marcador} \\h '
+        ins.append(it)
+        return [fc('begin'), ins, fc('separate'), self._run_texto(resultado, rpr), fc('end')]
+
+    def _marcar_rotulo(self, p, nombre):
+        """Marcador que cubre 'Tabla N' / 'Figura N' (etiqueta y número) en el rótulo."""
+        hijos = list(p)
+        ini = next((e for e in hijos if e.tag in (qn('w:r'), qn('w:fldSimple'))), None)
+        fin = None
+        for e in hijos:
+            if e.tag == qn('w:fldSimple'):
+                fin = e
+                break
+            if e.tag == qn('w:r'):
+                f = e.find(qn('w:fldChar'))
+                if f is not None and f.get(qn('w:fldCharType')) == 'end':
+                    fin = e
+                    break
+        if ini is None or fin is None:
+            return
+        for b in list(p.iter(qn('w:bookmarkStart'))):
+            if b.get(qn('w:name')) == nombre:
+                return
+        self.bm_id += 1
+        a = OxmlElement('w:bookmarkStart')
+        a.set(qn('w:id'), str(self.bm_id))
+        a.set(qn('w:name'), nombre)
+        z = OxmlElement('w:bookmarkEnd')
+        z.set(qn('w:id'), str(self.bm_id))
+        ini.addprevious(a)
+        fin.addnext(z)
 
     def _formato_rotulo(self, p):
         """Plantilla USB: 'Figura N' en negrita y el título en cursiva en la línea siguiente."""

@@ -1,0 +1,4 @@
+flowchart TB
+    P["Percepción<br/>en la Jetson"] --> DE["Módulo de<br/>decisión"] --> PX["Enlace con<br/>la Pixhawk"] --> PF{"¿Funciona?"}
+    PF -- Sí --> OK["Sistema<br/>integrado"]
+    PF -- No --> CO["Corregir y<br/>ajustar"] -.-> P

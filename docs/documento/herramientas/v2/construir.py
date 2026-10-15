@@ -42,11 +42,11 @@ c2_marcos.aplicar(M, reescribir, mover, DIAG)
 c3_arquitectura.aplicar(M, reescribir, mover, DIAG)
 c4_integracion.aplicar(M, reescribir, mover, DIAG)
 c5_anexos.aplicar(M, movidos, REPO)
-mapa, faltan = M.numerar()
 import c6_humanizar
 from h_ediciones import E
 fallos = c6_humanizar.aplicar(M, E)
 print('Ediciones de redacción sin aplicar:', fallos or 'ninguna')
+mapa, faltan = M.numerar()
 from pulir import pulir
 pulir(M.d, quitar_vacios=False)
 print('Rótulos:', mapa)

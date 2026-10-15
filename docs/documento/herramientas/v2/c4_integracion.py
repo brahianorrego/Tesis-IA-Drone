@@ -29,8 +29,8 @@ def aplicar(M, reescribir, mover, DIAG):
         'computadora de a bordo, una NVIDIA Jetson Orin Nano, y el conjunto de cámara y LiDAR, montado sobre un '
         'estabilizador BaseCam en la parte frontal para que ambos sensores apunten en la misma dirección. Las hélices se '
         'montaron según el sentido de giro que ArduCopter asigna a cada motor en configuración X: motores 1 y 2 en '
-        'sentido antihorario y 3 y 4 en sentido horario. [FALTA: masa de despegue medida, necesaria para la relación '
-        'empuje–peso]'])
+        'sentido antihorario y 3 y 4 en sentido horario. La masa medida fue de 2371 g ({F:fC1}, Anexo C). [FALTA: aclarar qué incluye esa '
+        'medición y calcular la relación empuje–peso]'])
     reescribir([487], ['La {F:dron} muestra la aeronave ensamblada. El inventario de componentes está en el Anexo C.'])
     M.marcar(P[490])
 
@@ -215,8 +215,8 @@ def aplicar(M, reescribir, mover, DIAG):
         'integrada detecta personas con su propia alimentación, el LiDAR entrega 100 lecturas por segundo y el enlace '
         'MAVLink responde. Antes de volar quedan cinco comprobaciones: que la BaseCam, alimentada, lea el pulso de AUX1; '
         'el cambio a GUIDED y la retoma del piloto en banco, midiendo la latencia entre el riesgo y la orden (criterio: '
-        'menos de 150 ms); la grabación de datos reales con el dron sin hélices sobre un carrito, para comparar los '
-        'sensores con su modelo de simulación; el clasificador en modo sombra, que decide y registra pero no manda; y la '
+        'menos de 150 ms); la grabación de datos reales con el dron sin hélices sobre un vehículo ({F:fG1}, Anexo G), para comparar '
+        'los sensores con su modelo de simulación; el clasificador en modo sombra, que decide y registra pero no manda; y la '
         'fijación GPS 3D que exige GUIDED. [FALTA: resultado de estas cinco comprobaciones]'])
     reescribir([557], [
         'Las pruebas siguientes van de menor a mayor riesgo: ejecución en banco sin la Pixhawk, que muestra qué '
