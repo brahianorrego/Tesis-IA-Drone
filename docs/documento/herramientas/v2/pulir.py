@@ -32,20 +32,23 @@ def _vacio(p):
             and p.find('.//' + qn('w:sectPr')) is None and p.find('.//' + qn('w:br')) is None)
 
 
+AZUL_BORDE = '44546A'
+AZUL_ENCABEZADO = 'DCE6F1'
+
+
 def bordes_apa(tbl):
-    """Solo líneas horizontales: arriba, entre filas y abajo (plantilla USB)."""
+    """Estilo único de tablas: cuadrícula completa, encabezado con el mismo color de los diagramas, tabla centrada."""
     tblpr = tbl.find(qn('w:tblPr'))
     viejo = tblpr.find(qn('w:tblBorders'))
     if viejo is not None:
         tblpr.remove(viejo)
     b = OxmlElement('w:tblBorders')
-    for lado, val, sz in (('top', 'single', '8'), ('left', 'nil', '0'), ('bottom', 'single', '8'),
-                          ('right', 'nil', '0'), ('insideH', 'single', '4'), ('insideV', 'nil', '0')):
+    for lado in ('top', 'left', 'bottom', 'right', 'insideH', 'insideV'):
         e = OxmlElement(f'w:{lado}')
-        e.set(qn('w:val'), val)
-        e.set(qn('w:sz'), sz)
+        e.set(qn('w:val'), 'single')
+        e.set(qn('w:sz'), '4')
         e.set(qn('w:space'), '0')
-        e.set(qn('w:color'), 'auto')
+        e.set(qn('w:color'), AZUL_BORDE)
         b.append(e)
     sig = None
     for nombre in ('w:shd', 'w:tblLayout', 'w:tblCellMar', 'w:tblLook', 'w:tblCaption', 'w:tblDescription'):
@@ -53,9 +56,139 @@ def bordes_apa(tbl):
         if sig is not None:
             break
     (sig.addprevious(b) if sig is not None else tblpr.append(b))
+    # centrada
+    jc = tblpr.find(qn('w:jc'))
+    if jc is None:
+        jc = OxmlElement('w:jc')
+        # jc va después de tblW/tblLayout? el esquema la acepta antes de tblBorders
+        b.addprevious(jc)
+    jc.set(qn('w:val'), 'center')
     for tcpr in tbl.iter(qn('w:tcPr')):
         for e in tcpr.findall(qn('w:tcBorders')):
             tcpr.remove(e)
+    filas = tbl.findall(qn('w:tr'))
+    if not filas:
+        return
+    ncol = len(filas[0].findall(qn('w:tc')))
+    tam = '20' if ncol <= 4 else '18'          # 10 pt o 9 pt (la plantilla pide 9 a 12)
+    for r in tbl.iter(qn('w:r')):
+        rpr = r.find(qn('w:rPr'))
+        if rpr is None:
+            rpr = OxmlElement('w:rPr')
+            r.insert(0, rpr)
+        for nombre in ('w:sz', 'w:szCs'):
+            e = rpr.find(qn(nombre))
+            if e is None:
+                e = OxmlElement(nombre)
+                rpr.append(e)
+            e.set(qn('w:val'), tam)
+    # encabezado: negrita y color; se repite en cada página
+    for tc in filas[0].findall(qn('w:tc')):
+        tcpr = tc.find(qn('w:tcPr'))
+        if tcpr is None:
+            tcpr = OxmlElement('w:tcPr')
+            tc.insert(0, tcpr)
+        for e in tcpr.findall(qn('w:shd')):
+            tcpr.remove(e)
+        shd = OxmlElement('w:shd')
+        shd.set(qn('w:val'), 'clear')
+        shd.set(qn('w:color'), 'auto')
+        shd.set(qn('w:fill'), AZUL_ENCABEZADO)
+        # shd va después de tcW / gridSpan / vMerge / tcBorders y antes de noWrap / tcMar / vAlign
+        pos = None
+        for nombre in ('w:noWrap', 'w:tcMar', 'w:textDirection', 'w:tcFitText', 'w:vAlign', 'w:hideMark'):
+            pos = tcpr.find(qn(nombre))
+            if pos is not None:
+                break
+        (pos.addprevious(shd) if pos is not None else tcpr.append(shd))
+        for r in tc.iter(qn('w:r')):
+            rpr = r.find(qn('w:rPr'))
+            if rpr.find(qn('w:b')) is None:
+                rpr.insert(0, OxmlElement('w:b'))
+    trpr = filas[0].find(qn('w:trPr'))
+    if trpr is None:
+        trpr = OxmlElement('w:trPr')
+        filas[0].insert(0, trpr)
+    if trpr.find(qn('w:tblHeader')) is None:
+        trpr.append(OxmlElement('w:tblHeader'))
+
+
+def _roja(p):
+    """Párrafo cuyo contenido (texto o dibujos) está todo marcado en rojo (se va en la versión limpia)."""
+    runs = [r for r in p.iter(qn('w:r')) if _texto(r).strip() or r.find('.//' + qn('w:drawing')) is not None]
+    if not runs:
+        return False
+    for r in runs:
+        rpr = r.find(qn('w:rPr'))
+        h = rpr.find(qn('w:highlight')) if rpr is not None else None
+        if h is None or h.get(qn('w:val')) != 'red':
+            return False
+    return True
+
+
+def _siguiente_no_vacio(e):
+    s = e.getnext()
+    while s is not None and s.tag == qn('w:p') and (_vacio(s) or _roja(s)):
+        s = s.getnext()
+    return s
+
+
+def notas_elaboracion_propia(d):
+    """Toda figura y tabla lleva una nota de fuente: si no la tiene, se agrega 'Nota. Elaboración propia.'"""
+    import copy
+    body = d.element.body
+    modelo = next((p for p in body.iter(qn('w:p')) if _texto(p).startswith('Nota.') and p.find(qn('w:pPr')) is not None), None)
+    n = 0
+    for p in list(body.iter(qn('w:p'))):
+        t = _texto(p).strip()
+        if not (t.startswith('Figura ') or t.startswith('Tabla ')) or len(t) > 250:
+            continue
+        instr = ''.join(x.text or '' for x in p.iter(qn('w:instrText'))) + ''.join(
+            (f.get(qn('w:instr')) or '') for f in p.iter(qn('w:fldSimple')))
+        if 'SEQ' not in instr:
+            continue
+        runs = [r for r in p.iter(qn('w:r')) if _texto(r).strip()]
+        if runs and all((r.find(qn('w:rPr')) is not None and r.find(qn('w:rPr')).find(qn('w:highlight')) is not None
+                         and r.find(qn('w:rPr')).find(qn('w:highlight')).get(qn('w:val')) == 'red') for r in runs):
+            continue
+        es_fig = t.startswith('Figura ')
+        s = _siguiente_no_vacio(p)
+        if s is None:
+            continue
+        if es_fig:
+            if s.tag != qn('w:p') or s.find('.//' + qn('w:drawing')) is None:
+                continue
+            ancla = s
+        else:
+            if s.tag != qn('w:tbl'):
+                continue
+            ancla = s
+        despues = _siguiente_no_vacio(ancla)
+        if despues is not None and despues.tag == qn('w:p') and _texto(despues).strip().startswith('Nota'):
+            continue
+        q = OxmlElement('w:p')
+        if modelo is not None:
+            q.append(copy.deepcopy(modelo.find(qn('w:pPr'))))
+        for texto, cursiva in (('Nota.', True), (' Elaboración propia.', False)):
+            r = OxmlElement('w:r')
+            rpr = OxmlElement('w:rPr')
+            if cursiva:
+                rpr.append(OxmlElement('w:i'))
+            h = OxmlElement('w:highlight')
+            h.set(qn('w:val'), 'yellow')
+            sz = OxmlElement('w:sz')
+            sz.set(qn('w:val'), '20')
+            rpr.append(sz)
+            rpr.append(h)
+            r.append(rpr)
+            tt = OxmlElement('w:t')
+            tt.text = texto
+            tt.set('{http://www.w3.org/XML/1998/namespace}space', 'preserve')
+            r.append(tt)
+            q.append(r)
+        ancla.addnext(q)
+        n += 1
+    return n
 
 
 def pulir(d, quitar_vacios):

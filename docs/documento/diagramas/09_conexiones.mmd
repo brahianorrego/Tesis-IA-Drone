@@ -1,11 +1,11 @@
 flowchart TB
-    BAT["Batería LiPo 4S<br/>14.8 V · 6200 mAh"] ==> PM["Power Module<br/>y placa de distribución"]
+    BAT["Batería LiPo 4S<br/>14.8 V · 6200 mAh"] ==> PM["Power Module y<br/>placa de distribución"]
     PM ==> ESC["4 variadores 40 A<br/>4 motores 2212-920 KV"]
-    PM ==> BUCK["Buck 12 V"] ==> JET["<b>Jetson Orin Nano</b>"]
+    PM ==> BUCK["Buck 12 V"] ==> JET["<b>Jetson<br/>Orin Nano</b>"]
     PM ==> PIX["<b>Pixhawk 2.4.8</b><br/>ArduCopter 4.7"]
-    RX["Receptor Corona<br/>encoder PPM · GPS"] -->|"PPM · GPS"| PIX
-    PIX -->|"MAIN OUT 1–4<br/>PWM"| ESC
-    PIX <-->|"TELEM2 · 115200<br/>MAVLink 2"| JET
-    PIX -->|"AUX1 · PWM"| GIM["Estabilizador<br/>BaseCam"]
+    RX["Receptor Corona<br/>y GPS"] -->|"PPM · GPS"| PIX
+    PIX -->|"MAIN OUT<br/>PWM"| ESC
+    PIX <-->|"TELEM2<br/>MAVLink 2"| JET
+    PIX -->|"AUX1<br/>PWM"| GIM["Estabilizador<br/>BaseCam"]
     GIM -->|"USB"| JET
-    SEN["LiDAR TF03 (UART-USB)<br/>cámara USB"] -->|"USB"| JET
+    SEN["LiDAR TF03<br/>y cámara"] -->|"USB"| JET

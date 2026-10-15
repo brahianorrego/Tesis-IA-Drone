@@ -1,0 +1,17 @@
+flowchart LR
+    subgraph ENT["Entradas"]
+        direction TB
+        CAM["Cámara CSI<br/>Raspberry Pi Camera 3"]
+        LID["LiDAR TF-Luna"]
+        RC["Piloto<br/>radiocontrol"]
+    end
+    UBEC["Regulador UBEC<br/>5 V / 3 A aislado"]
+    PI["<b>Raspberry Pi 4</b><br/>YOLO nano<br/>Python y OpenCV"]
+    MAV["MAVLink<br/>por UART"]
+    PIX["<b>Pixhawk 2.4.8</b><br/>ArduCopter<br/>y failsafe"]
+    MOT["Variadores<br/>y motores"]
+    CAM --> PI
+    LID --> PI
+    UBEC --> PI
+    PI --> MAV --> PIX --> MOT
+    RC --> PIX

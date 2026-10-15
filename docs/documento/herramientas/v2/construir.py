@@ -14,6 +14,7 @@ from motor import AMARILLO, TURQ, VERDE, Motor
 
 ENT, SAL, DIAG, REPO = sys.argv[1:5]
 M = Motor(ENT)
+M.repo = REPO
 P = M.P
 movidos = {}
 
@@ -47,7 +48,8 @@ from h_ediciones import E
 fallos = c6_humanizar.aplicar(M, E)
 print('Ediciones de redacción sin aplicar:', fallos or 'ninguna')
 mapa, faltan = M.numerar()
-from pulir import pulir
+from pulir import pulir, notas_elaboracion_propia
+print('Notas "Elaboración propia" agregadas:', notas_elaboracion_propia(M.d))
 pulir(M.d, quitar_vacios=False)
 print('Rótulos:', mapa)
 print('Claves sin resolver:', faltan or 'ninguna')

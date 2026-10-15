@@ -1,0 +1,6 @@
+flowchart TB
+    Q{"¿Cercanía alta?"}
+    Q -- No --> R0["Contador en 0<br/>y siguiente fotograma"]
+    Q -- Sí --> N["Sumar uno al<br/>contador de riesgo"] --> M{"¿Contador ≥ cuadros<br/>requeridos?"}
+    M -- No --> L["Siguiente<br/>fotograma"]
+    M -- Sí --> A["Emitir la alerta de<br/>detener y ascender"] --> G["Registrar el evento en<br/>registro_eventos.csv"] --> L2["Siguiente<br/>fotograma"]

@@ -1,0 +1,4 @@
+flowchart TB
+    I(["Inicio"]) --> C["Cargar el modelo<br/>YOLO26n"] --> L["Leer un fotograma"] --> P{"¿Hay personas?"}
+    P -- No --> R0["Contador en 0<br/>y siguiente fotograma"]
+    P -- Sí --> S["Elegir la persona<br/>de mayor área"] --> Z["Clasificar la zona:<br/>izquierda, centro<br/>o derecha"] --> K["Estimar la cercanía<br/>por el área de la caja"]

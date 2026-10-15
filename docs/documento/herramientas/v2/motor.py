@@ -92,7 +92,7 @@ class Motor:
         return h
 
     # Los anexos se numeran por orden de primera mención (plantilla USB: Anexo 1, Anexo 2...). La clave interna es una letra.
-    ANEXO_NUM = {'A': 1, 'H': 2, 'I': 3, 'G': 4, 'B': 5, 'C': 6, 'D': 7, 'E': 8, 'F': 9}
+    ANEXO_NUM = {'H': 1, 'I': 2, 'G': 3, 'B': 4, 'C': 5, 'D': 6, 'E': 7, 'F': 8}
     PARTES = re.compile(r'(\[REVISAR:[^\]]*\]|\[FALTA:[^\]]*\]|Anexo [A-I]\b|\*[^*]+\*)')
 
     def texto(self, p, texto, color, bold=False, italic=False, size=None, font=None, after=None, enlaces=True,
@@ -128,6 +128,26 @@ class Motor:
             r.append(self._t(' [figura eliminada o reemplazada]'))
             x.append(r)
             Run(r, None).font.highlight_color = ROJO
+
+    def marcar_ecuacion(self, p):
+        """Párrafo que solo tiene una ecuación: se marca con una etiqueta roja para que la versión limpia lo quite."""
+        x = p._p if isinstance(p, Paragraph) else p
+        r = OxmlElement('w:r')
+        r.append(self._t(' [ecuación eliminada]'))
+        x.append(r)
+        Run(r, None).font.highlight_color = ROJO
+
+    def renumerar_ecuaciones(self, cambios):
+        """Cambia el número escrito dentro de una ecuación: [(índice de párrafo, '(8)', '(4)'), ...]."""
+        M_NS = '{http://schemas.openxmlformats.org/officeDocument/2006/math}'
+        for i, viejo, nuevo in cambios:
+            hallado = False
+            for t in self.P[i]._p.iter(M_NS + 't'):
+                if t.text and viejo in t.text:
+                    t.text = t.text.replace(viejo, nuevo)
+                    hallado = True
+            if not hallado:
+                raise KeyError(f'ecuación {viejo} no está en el párrafo {i}')
 
     # ------------------------------------------------------------ párrafos nuevos
     def _nuevo_p(self, ancla_el, ppr=None, antes=False):
@@ -353,7 +373,7 @@ class Motor:
             trPr = fila._tr.get_or_add_trPr()
             cs = OxmlElement('w:cantSplit')
             trPr.append(cs)
-            if k < len(t.rows) - 1 and len(t.rows) <= 18:
+            if k < len(t.rows) - 1 and (len(t.rows) <= 8 or k < 2):
                 for c in fila.cells:
                     for par in c.paragraphs:
                         par.paragraph_format.keep_with_next = True

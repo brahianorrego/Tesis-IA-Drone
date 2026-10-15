@@ -6,67 +6,140 @@ from motor import AMARILLO, ROJO, TURQ, ROSA, VERDE
 
 def aplicar(M, reescribir, mover, DIAG):
     P = M.P
-    # ---------------- 1.5 estado del arte (tutor: un párrafo por nivel; figuras y detalle van al Anexo A)
-    M.extra = getattr(M, 'extra', {})
-    M.extra['notas_fig'] = {k: P[n].text for k, n in (('falanga', 213), ('vera', 222), ('merei', 226), ('gallo', 230))}
-    M.extra['img_fig'] = {k: copy.deepcopy(P[n]._p) for k, n in (('falanga', 212), ('vera', 221), ('merei', 225),
-                                                                  ('gallo', 229))}
+    # ---------------- 1.5 estado del arte: los diez antecedentes, con figuras y una tabla comparativa
+    import io
+    import os
+    from PIL import Image, ImageDraw, ImageFont
+    from docx.oxml.ns import qn
+    FOTOS = os.environ.get('FOTOS', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fotos'))
+    os.makedirs(FOTOS, exist_ok=True)
+
+    def blob(par):
+        rid = par._p.xpath('.//a:blip')[0].get(qn('r:embed'))
+        return M.d.part.related_parts[rid].blob
+
+    def componer(partes, nombre, alto=640):
+        """Une varias imágenes en una fila con rótulos (a), (b)... y devuelve la ruta."""
+        ims = []
+        for par, _ in partes:
+            im = Image.open(io.BytesIO(blob(par))).convert('RGB')
+            ims.append(im.resize((int(im.width * alto / im.height), alto)))
+        sep = 24
+        W = sum(i.width for i in ims) + sep * (len(ims) - 1)
+        out = Image.new('RGB', (W, alto), 'white')
+        d = ImageDraw.Draw(out)
+        fuente = ImageFont.truetype('/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf', 44)
+        x = 0
+        for k, im in enumerate(ims):
+            out.paste(im, (x, 0))
+            if len(ims) > 1:
+                d.rectangle([x, 0, x + 70, 62], fill='white')
+                d.text((x + 8, 4), '(%s)' % 'abcdef'[k], font=fuente, fill='black')
+            x += im.width + sep
+        ruta = os.path.join(FOTOS, nombre)
+        out.save(ruta)
+        return ruta
+
+    def nota_de(indices):
+        t = [P[i].text.strip() for i in indices]
+        t = [x[5:].strip() if x.startswith('Nota.') else x for x in t]
+        if len(t) == 1:
+            return 'Nota. ' + t[0]
+        return 'Nota. ' + ' '.join('(%s) %s' % ('abcdef'[k], x) for k, x in enumerate(t))
+
+    figs = [('ant1', 'Trabajos internacionales sobre vuelo con visión por computador', 'ant_fig1.png',
+             [(P[212], 'a'), (P[216], 'b')], [213, 217]),
+            ('ant2', 'Clasificación de los trabajos y de los métodos de detección y evasión de obstáculos en UAV',
+             'ant_fig2.png', [(P[221], 'a'), (P[225], 'b')], [222, 226]),
+            ('ant3', 'Trabajos nacionales sobre visión por computador y evasión en vehículos aéreos',
+             'ant_fig3.png', [(P[229], 'a'), (P[233], 'b'), (P[241], 'c')], [230, 234, 242]),
+            ('ant4', 'Trabajos locales y departamentales sobre vehículos aéreos y visión artificial',
+             'ant_fig4.png', [(P[237], 'a'), (P[245], 'b')], [238, 246])]
     for i in range(210, 249):
         M.marcar(P[i])
     H3 = P[281]
     q = P[248]
+
+    def figura_ant(q, k):
+        clave, titulo, archivo, partes, notas = next(f for f in figs if f[0] == k)
+        ruta = componer(partes, archivo)
+        cap = M.rotulo(q, 'Figura', clave, titulo)
+        fig = M.figura(cap, ruta, ancho_cm=15.5, alto_max=9.5)
+        return M.nota(fig, nota_de(notas))
+
     q = M.parrafo(q, '1.5.1 Antecedentes internacionales', AMARILLO, ppr_de=H3)
     q = M.parrafo(q, 'Falanga et al. (2017) hicieron pasar un cuadricóptero por aberturas estrechas con sensado y '
                      'procesamiento a bordo y sin GNSS, y mostraron que la latencia del procesamiento limita la seguridad '
                      'de una maniobra exigente. Valenti et al. (2018) propusieron una arquitectura modular, con módulos '
                      'separados de percepción, localización y evasión, para navegar con visión en entornos congestionados '
-                     'y sin GPS. Dos revisiones ubican el problema: Vera-Yanez et al. (2023) revisaron 85 publicaciones '
-                     'sobre detección visual de obstáculos y encontraron que la mayoría se valida en simulación y muy pocas '
-                     'en vehículos reales, y Merei et al. (2025) concluyen que la evasión sigue siendo uno de los '
-                     'problemas centrales de los UAV.', AMARILLO)
+                     'y sin GPS; ambos trabajos se ilustran en la {F:ant1}. Dos revisiones ubican el problema: '
+                     'Vera-Yanez et al. (2023) revisaron 85 publicaciones sobre detección visual de obstáculos y '
+                     'encontraron que la mayoría se valida en simulación y muy pocas en vehículos reales, y Merei et al. '
+                     '(2025) concluyen que la evasión sigue siendo uno de los problemas centrales de los UAV; la {F:ant2} '
+                     'resume la clasificación de cada una.', AMARILLO)
+    q = figura_ant(q, 'ant1')
+    q = figura_ant(q, 'ant2')
     q = M.parrafo(q, '1.5.2 Antecedentes nacionales', AMARILLO, ppr_de=H3)
     q = M.parrafo(q, 'En Colombia, Gallo Sanabria et al. (2020) desarrollaron un seguimiento de trayectoria para un UAV '
                      'con visión artificial, y Bohórquez Caro (2021) construyó un sistema embebido de visión que detecta '
-                     'y sigue un objetivo móvil desde un UAV con ROS. Avilés Correa y Garzón Bernal [FALTA: año, tomado '
-                     'del repositorio de la Fundación Universitaria Los Libertadores] implementaron un sistema de '
-                     'detección y evasión de obstáculos de bajo costo para drones de ala fija, con cámara, LiDAR y sensor '
-                     'infrarrojo. Es el antecedente más cercano, aunque su plataforma es de ala fija.', AMARILLO)
+                     'y sigue un objetivo móvil desde un UAV con ROS. En Bogotá, Avilés Correa y Garzón Bernal [FALTA: '
+                     'año, tomado del repositorio de la Fundación Universitaria Los Libertadores] implementaron un '
+                     'sistema de detección y evasión de obstáculos de bajo costo para drones de ala fija, con cámara, '
+                     'LiDAR y sensor infrarrojo: es el antecedente más cercano, aunque su plataforma es de ala fija. La '
+                     '{F:ant3} muestra el esquema del primer trabajo y las portadas de los otros dos.', AMARILLO)
+    q = figura_ant(q, 'ant3')
     q = M.parrafo(q, '1.5.3 Antecedentes locales', AMARILLO, ppr_de=H3)
-    q = M.parrafo(q, 'En la Universidad de San Buenaventura, Córdoba Velásquez y Ruiz Rincón (2023) usaron YOLOv5 y '
-                     'Python para detectar personas en tiempo real en un dispositivo auditivo que guía en interiores a '
-                     'personas con discapacidad visual, y Castro Gutiérrez y Ortega Hernández (2017) desarrollaron una '
-                     'interfaz cerebro-computador para controlar la elevación y el avance de un cuadricóptero. El primero '
-                     'no es una aplicación aérea y el segundo no usa visión por computador.', AMARILLO)
+    q = M.parrafo(q, 'En Madrid (Cundinamarca), León Mondragón y Rojas Díaz [FALTA: año] usaron aeronaves no tripuladas y '
+                     'fotogrametría digital para identificar zonas de riesgo, sin tratar la evasión de obstáculos. En la '
+                     'Universidad de San Buenaventura, Córdoba Velásquez y Ruiz Rincón (2023) usaron YOLOv5 y Python para '
+                     'detectar personas en tiempo real en un dispositivo auditivo que guía en interiores a personas con '
+                     'discapacidad visual, y Castro Gutiérrez y Ortega Hernández (2017) desarrollaron una interfaz '
+                     'cerebro-computador para controlar la elevación y el avance de un cuadricóptero. El primero no es una '
+                     'aplicación aérea y el segundo no usa visión por computador. La {F:ant4} muestra las portadas de los '
+                     'dos primeros.', AMARILLO)
+    q = figura_ant(q, 'ant4')
     q = M.parrafo(q, '1.5.4 Un tema poco estudiado', AMARILLO, ppr_de=H3)
     q = M.parrafo(q, 'Los antecedentes resuelven partes del problema por separado: detectar personas con YOLO, seguir un '
                      'objetivo desde un UAV, evadir obstáculos con varios sensores en un ala fija o controlar un '
                      'cuadricóptero sin visión. Entre los trabajos revisados, ninguno junta en un cuadricóptero la '
                      'detección de personas con un modelo preentrenado, un LiDAR de proximidad, una decisión aprendida '
-                     'acotada por reglas de seguridad y una validación repetible en exteriores ({T:tA1}). Las revisiones '
-                     'apuntan en el mismo sentido: pocas propuestas se prueban en vehículos reales (Vera-Yanez et al., '
-                     '2023) y la evasión sigue sin resolverse del todo (Merei et al., 2025). El tema está poco estudiado '
-                     'en el nivel que aborda este trabajo, la integración y la validación en una aeronave real, y ahí se '
-                     'ubica su aporte. [REVISAR: documentar en el Anexo A la búsqueda hecha (bases de datos, palabras '
-                     'clave y años) para respaldar que el tema está poco estudiado]', AMARILLO)
-    q = M.parrafo(q, 'Para mayor información, consulte el Anexo A.', AMARILLO)
+                     'acotada por reglas de seguridad y una validación repetible en exteriores; la {T:tA1} compara los '
+                     'diez. Las revisiones apuntan en el mismo sentido: pocas propuestas se prueban en vehículos reales '
+                     '(Vera-Yanez et al., 2023) y la evasión sigue sin resolverse del todo (Merei et al., 2025). El tema '
+                     'está poco estudiado en el nivel que aborda este trabajo, la integración y la validación en una '
+                     'aeronave real, y ahí se ubica su aporte. [REVISAR: documentar la búsqueda hecha (bases de datos, '
+                     'palabras clave y años) para respaldar que el tema está poco estudiado]', AMARILLO)
+    filas_ant = [['Ámbito', 'Trabajo', 'Qué hace', 'Relación con este trabajo'],
+                 ['Internacional', 'Falanga et al. (2017)', 'Vuelo de un cuadricóptero por aberturas estrechas, con sensado y cómputo a bordo y sin GNSS', 'La latencia del procesamiento condiciona la seguridad'],
+                 ['Internacional', 'Valenti et al. (2018)', 'Arquitectura modular de percepción, localización y evasión sin GPS', 'Misma organización en módulos con interfaces definidas'],
+                 ['Internacional', 'Vera-Yanez et al. (2023)', 'Revisión de 85 trabajos de detección visual de obstáculos', 'La mayoría se valida en simulación: justifica probar en una aeronave real'],
+                 ['Internacional', 'Merei et al. (2025)', 'Revisión de métodos de detección y evasión en UAV', 'La evasión sigue abierta; pide equilibrar detección, complejidad y viabilidad a bordo'],
+                 ['Nacional', 'Gallo Sanabria et al. (2020)', 'Seguimiento de trayectoria de un UAV con visión artificial', 'Cámara que genera acciones de control; sigue una ruta, no evita obstáculos'],
+                 ['Nacional', 'Bohórquez Caro (2021)', 'Detección y seguimiento de un objetivo móvil desde un UAV con visión embebida y ROS', 'Integra visión embebida y arquitectura de vuelo; no trata la evasión'],
+                 ['Nacional', 'Avilés Correa y Garzón Bernal', 'Detección y evasión de obstáculos de bajo costo con cámara, LiDAR e infrarrojo', 'El más cercano; plataforma de ala fija'],
+                 ['Departamental', 'León Mondragón y Rojas Díaz', 'UAS y fotogrametría para identificar zonas de riesgo en Madrid (Cundinamarca)', 'Uso de UAS en un escenario real; no trata la evasión'],
+                 ['Local', 'Córdoba Velásquez y Ruiz Rincón (2023)', 'Detección de personas con YOLOv5 en un dispositivo auditivo para interiores', 'Detecta personas en tiempo real; no es una aeronave'],
+                 ['Local', 'Castro Gutiérrez y Ortega Hernández (2017)', 'Control de elevación y avance de un cuadricóptero con una interfaz cerebro-computador', 'Experiencia institucional con el cuadricóptero; sin visión por computador']]
+    cap = M.rotulo(q, 'Tabla', 'tA1', 'Comparación de los diez antecedentes con este trabajo')
+    t_ant = M.tabla(cap, filas_ant, [2.3, 3.6, 5.2, 4.4])
+    q = M.nota(t_ant, 'Nota. Elaboración propia a partir de las fuentes citadas en 1.5.1 a 1.5.3. [REVISAR: confirmar cada '
+                      'fila leyendo la fuente completa antes de entregar]')
 
-    # ---------------- 1.6 marco teórico (las ecuaciones se conservan; el desarrollo largo va al Anexo H)
+    # ---------------- 1.6 marco teórico (mínimo; las ecuaciones esenciales se conservan, el detalle va al Anexo H)
     reescribir([251], [
         'YOLO (*You Only Look Once*) detecta objetos en tiempo real con una sola evaluación de la red, que entrega cajas '
         'delimitadoras y probabilidades de clase (Redmon et al., 2016). Este trabajo usa un modelo preentrenado con COCO, '
         'que incluye la clase *person* (Lin et al., 2014); la versión YOLO26n corre en la Jetson con TensorRT '
-        '(Ultralytics, s. f.).'])
+        '(Ultralytics, s. f.). El alto, el ancho, el área y el ángulo de la caja que entrega el detector son entradas del '
+        'clasificador de riesgo de 1.6.5.'])
     M.marcar(P[252])
     reescribir([253], ['Formalmente, una detección es una caja delimitadora asociada a una confianza:'])
-    reescribir([257], [
-        'De la caja se obtienen el centroide y el área, que describen la posición de la persona en la imagen y su '
-        'cercanía aproximada.'])
-    reescribir([262], [
-        'El centroide ubica a la persona dentro del cuadro y el área sirve como medida aproximada de cercanía: cuanto '
-        'más cerca está la persona, más grande es la caja (Chaumette & Hutchinson, 2006). El alto, el ancho, el área y el '
-        'ángulo de la caja son entradas del clasificador de riesgo de 1.6.6.'])
-    reescribir([265], ['Esta condición descarta las detecciones que caen fuera de la zona de interés del escenario de '
-                       'prueba.'])
+    for i in range(256, 266):
+        M.marcar(P[i])
+    M.marcar_ecuacion(P[259])
+    M.marcar_ecuacion(P[261])
+    M.marcar_ecuacion(P[264])
+    M.reemplazar(P[266], '1.6.3', '1.6.2')
     reescribir([267], [
         'El LiDAR mide la distancia frontal por tiempo de vuelo (*Time of Flight*, ToF): emite un pulso de luz infrarroja '
         'y calcula la distancia a partir del tiempo que tarda en volver (Brand, 2021):'])
@@ -78,7 +151,8 @@ def aplicar(M, reescribir, mover, DIAG):
     M.reemplazar(P[272], 'Esta formulación es coherente con el alcance del proyecto, ya que no pretende realizar '
                          'planeación tridimensional ni mapeo completo del entorno, sino detectar una condición frontal de '
                          'peligro y activar una maniobra básica de seguridad.', 'El valor de d_safe y su origen se '
-                         'explican en 2.1.8.')
+                         'explican en 2.1.10.')
+    M.reemplazar(P[273], '1.6.4', '1.6.3')
     reescribir([274], [
         'La lógica del sistema es discreta: vigila la detección y la proximidad y no incluye ninguna ley de navegación '
         'autónoma. Se puede ver como un sistema de eventos discretos: ciertas condiciones de entrada producen '
@@ -90,6 +164,7 @@ def aplicar(M, reescribir, mover, DIAG):
     reescribir([280], [
         'La expresión no modela un controlador de vuelo; solo formaliza el criterio de decisión. Durante la maniobra, la '
         'estabilización la siguen haciendo los controladores de ArduPilot.'])
+    M.reemplazar(P[281], '1.6.5', '1.6.4')
     reescribir([282], [
         'Una detección correcta no sirve si la orden llega tarde. El tiempo total del ciclo se descompone en captura, '
         'inferencia, decisión, comunicación y ejecución:'])
@@ -99,25 +174,29 @@ def aplicar(M, reescribir, mover, DIAG):
         'una computadora externa al autopiloto: en ArduPilot, la computadora de a bordo envía consignas en el modo GUIDED '
         'por MAVLink y, si dejan de llegar durante el tiempo fijado por GUID_TIMEOUT, la controladora detiene el '
         'vehículo por su cuenta (ArduPilot, s. f.-a).'])
-    q = M.parrafo(q, '1.6.6 Clasificador de riesgo con un perceptrón multicapa', AMARILLO, ppr_de=P[281])
+    q = M.parrafo(q, '1.6.5 Clasificador de riesgo con un perceptrón multicapa', AMARILLO, ppr_de=P[281])
     for t in [
         'Un perceptrón multicapa (MLP) es una red neuronal de capas totalmente conectadas que aprende una función a '
         'partir de ejemplos etiquetados, ajustando sus pesos por retropropagación del error (Rumelhart et al., 1986). '
         'Aquí se usa como clasificador: recibe un vector x con quince medidas de los sensores y entrega la probabilidad '
         'de que haya riesgo en los próximos segundos:',
-        'p = σ( W₃ · ReLU( W₂ · ReLU( W₁ · x + b₁ ) + b₂ ) + b₃ )                (13)',
+        'p = σ( W₃ · ReLU( W₂ · ReLU( W₁ · x + b₁ ) + b₂ ) + b₃ )                (9)',
         'donde W₁, W₂ y W₃ son las matrices de pesos de las capas (32 y 16 neuronas ocultas), b₁, b₂ y b₃ los sesgos, '
         'ReLU(z) = máx(0, z) la función de activación y σ la función logística. La decisión discreta usa un umbral τ y '
         'una persistencia de k cuadros:',
-        'intervenir(t) = 1  si  p(t − j) ≥ τ  para j = 0, …, k − 1;  0 en otro caso                (14)',
+        'intervenir(t) = 1  si  p(t − j) ≥ τ  para j = 0, …, k − 1;  0 en otro caso                (10)',
         'Con esta formulación, la condición de riesgo deja de ser un único umbral de distancia: el clasificador combina '
         'la distancia, el tamaño de la caja, la velocidad de acercamiento y la persistencia de la detección, y las '
-        'reglas de la ecuación (10) se mantienen como una envolvente que la red no puede saltar. La implementación usa '
+        'reglas de la ecuación (6) se mantienen como una envolvente que la red no puede saltar. La implementación usa '
         'la biblioteca scikit-learn (Pedregosa et al., 2011).',
         'Para mayor información, consulte el Anexo H.']:
         q = M.parrafo(q, t, AMARILLO)
+    M.renumerar_ecuaciones([(268, '(8)', '(4)'), (271, '(9)', '(5)'), (276, '(10)', '(6)'), (279, '(11)', '(7)'),
+                            (283, '(12)', '(8)')])
+    M.parrafo(q, '[REVISAR: se quitó la subsección de variables geométricas (centroide, área y región de observación, '
+                 'ecuaciones 4 a 7), que pasó al Anexo H, y se renumeraron las ecuaciones siguientes]', TURQ)
 
-    # ---------------- 1.7 marco conceptual (definiciones breves; el detalle va al Anexo H)
+    # ---------------- 1.7 marco conceptual (tres definiciones breves; el detalle va al Anexo H)
     reescribir([288], [
         'Un vehículo aéreo no tripulado es una aeronave sin piloto a bordo, guiada por un operador o por un sistema '
         'automático. En este trabajo la plataforma es un cuadricóptero experimental operado al aire libre en un entorno '
@@ -126,21 +205,21 @@ def aplicar(M, reescribir, mover, DIAG):
         'Por operación en exteriores se entiende el ensayo en una zona delimitada, señalizada e inspeccionada antes de '
         'volar, con obstáculos tipo panel, una trayectoria de avance frontal y márgenes de seguridad fijados de antemano. '
         'En cada jornada se registran el viento y la iluminación.'])
-    for i in (290, 291, 292, 295, 296, 297, 302, 303, 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 314, 315, 316,
-              317, 321, 322, 323):
+    for i in (290, 291, 292, 295, 296, 297, 298, 302, 303, 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 314, 315,
+              316, 317, 318, 319, 321, 322, 323):
         M.marcar(P[i])
+    M.reemplazar(P[293], '(Pixhawk)', 'y comunicación MAVLink')
     reescribir([294], [
         'La Pixhawk se encarga del control de bajo nivel: estabilización, armado, modos de vuelo y rutinas de fallo '
         'seguro, con el firmware ArduCopter. No detecta personas ni decide la maniobra: recibe las órdenes del módulo de '
-        'decisión y mantiene la aeronave estable mientras las ejecuta.'])
-    reescribir([299], [
-        'MAVLink es el protocolo de mensajes con el que la Jetson Orin Nano y la Pixhawk intercambian el estado de la '
-        'aeronave (modo, armado, altura y velocidad) y las órdenes de la maniobra de seguridad.'])
+        'decisión y mantiene la aeronave estable mientras las ejecuta. Con la computadora de a bordo se comunica por '
+        'MAVLink, un protocolo de mensajes por el que viajan el estado de la aeronave (modo, armado, altura y velocidad) '
+        'y las órdenes de la maniobra de seguridad.'])
+    M.marcar(P[299])
+    M.reemplazar(P[300], '1.7.4 Percepción visual', '1.7.3 Percepción visual y evasión básica')
     reescribir([301], [
         'La percepción visual convierte las imágenes de la cámara en información para decidir. Aquí se limita a detectar '
         'personas y a estimar su posición y su cercanía aproximada dentro de la imagen.'])
-    reescribir([318], ['1.7.5 Evasión básica de obstáculos'])
-    M.marcar(P[319])
     q = reescribir([320], [
         'La evasión básica es una respuesta automática de seguridad ante una condición de riesgo en la trayectoria de '
         'avance: detener el avance y ascender verticalmente hasta una altura segura fijada de antemano. Es una acción '
@@ -148,28 +227,32 @@ def aplicar(M, reescribir, mover, DIAG):
         'secuencia de estados de la maniobra.'])
     q = M.parrafo(q, 'Para mayor información, consulte el Anexo H.', AMARILLO)
 
-    # ---------------- 1.8 marco normativo (un párrafo por tema; el detalle va al Anexo I)
+    # ---------------- 1.8 marco normativo (tres subsecciones; el detalle va al Anexo I)
+    M.reemplazar(P[325], '1.8.1 Referente internacional general para aeronaves sin piloto',
+                 '1.8.1 Marco internacional y colombiano')
     reescribir([326], [
         'El Convenio sobre Aviación Civil Internacional establece en su artículo 8 que una aeronave capaz de volar sin '
         'piloto no puede hacerlo sobre el territorio de un Estado contratante sin autorización especial, y que su vuelo '
         'debe controlarse para no poner en peligro a otras aeronaves (Organización de Aviación Civil Internacional '
         '[OACI], [FALTA: año de la edición consultada]).'])
+    for i in (327, 329, 330, 331):
+        M.marcar(P[i])
     reescribir([328], [
         'En Colombia, la operación de aeronaves no tripuladas se rige por el RAC 100 (Unidad Administrativa Especial de '
         'Aeronáutica Civil, 2023). Los ensayos son académicos y no comerciales, así que se toma como guía de seguridad: '
         'vuelo dentro de la línea de vista del piloto (VLOS), zona delimitada y señalizada, consulta previa del Visor '
-        'Geográfico UAS y ningún sobrevuelo de grupos de personas.'])
-    M.marcar(P[329])
-    M.marcar(P[331])
-    reescribir([332], [
-        'Las circulares informativas 100-MAUT-5.0-22-010-CI (registro de sistemas UAS) y 100-MAUT-5.0-22-009-CI '
-        '(certificado de idoneidad del piloto) aplican porque los ensayos son al aire libre. [FALTA: número de registro '
-        'del cuadricóptero y certificado de idoneidad del piloto, o la indicación de que están en trámite]'])
+        'Geográfico UAS y ningún sobrevuelo de grupos de personas. Las circulares 100-MAUT-5.0-22-010-CI (registro de '
+        'sistemas UAS) y 100-MAUT-5.0-22-009-CI (certificado de idoneidad del piloto) aplican porque los ensayos son al '
+        'aire libre. [FALTA: número de registro del cuadricóptero y certificado de idoneidad del piloto, o la '
+        'indicación de que están en trámite]'])
+    M.marcar(P[332])
+    M.reemplazar(P[333], '1.8.4 Seguridad y salud en el trabajo durante los ensayos', '1.8.2 Seguridad y salud en el trabajo')
     reescribir([334], [
         'El Decreto 1072 de 2015 exige identificar peligros, valorar riesgos y definir controles en el trabajo '
         '(Ministerio del Trabajo, 2015). Por eso cada ensayo se planea con zona delimitada, inspección previa de la '
-        'aeronave, piloto de seguridad y criterios para interrumpirlo; la lista de verificación está en el Anexo G.'])
+        'aeronave, piloto de seguridad y criterios para interrumpirlo; la lista de verificación está en el apartado 2.3.5.'])
     M.marcar(P[335])
+    M.reemplazar(P[336], '1.8.5 Protección de datos personales e imagen', '1.8.3 Protección de datos personales e imagen')
     reescribir([337], [
         'Como el sistema detecta personas en video y los ensayos se graban, aplica la Ley Estatutaria 1581 de 2012 '
         '(Congreso de la República de Colombia, 2012): todo video con una persona identificable se maneja con finalidad '
@@ -255,7 +338,7 @@ def aplicar(M, reescribir, mover, DIAG):
     reescribir([358], [
         'Los instrumentos son matrices de búsqueda y filtrado, una bitácora técnica de implementación, una planilla de '
         'registro de ensayos y una lista de verificación previa a cada prueba, con registro audiovisual de apoyo; los '
-        'formatos están en el Anexo G. La información se organiza mediante análisis comparativo, análisis descriptivo e '
+        'formatos de registro y consentimiento están en el Anexo G. La información se organiza mediante análisis comparativo, análisis descriptivo e '
         'interpretación técnica, para relacionar lo observado con los objetivos de la investigación.'])
     reescribir([360], [
         'La secuencia del trabajo se resume en un diagrama de flujo metodológico ({F:metod}) que muestra las tres '

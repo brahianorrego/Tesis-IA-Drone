@@ -29,11 +29,19 @@ def aplicar(M, reescribir, mover, DIAG):
     P, T = M.P, M.T
     claves = {372: None, 373: ('Tabla', 'req'), 377: ('Figura', 'caja_negra'), 380: ('Figura', 'caja_transp'),
               386: ('Figura', 'funcional'), 409: ('Tabla', 'comb'), 417: ('Tabla', 'pasa'), 423: ('Tabla', 'pesos'),
-              426: ('Tabla', 'f1'), 433: ('Tabla', 'f2'), 440: ('Tabla', 'f3'), 441: ('Tabla', 'concepto')}
+              426: ('Tabla', 'f1'), 433: ('Tabla', 'f2'), 440: ('Tabla', 'f3'), 441: ('Tabla', 'concepto'),
+              394: ('Tabla', 'gen'), 398: ('Tabla', 'juicios'), 406: ('Tabla', 'filtrado'),
+              442: ('Figura', 'conceptofig'), 457: ('Tabla', 'qfd')}
     for i, k in claves.items():
         if k:
             M.claves[P[i]._p] = k
 
+    for tb in M.T:
+        filas = tb._tbl.findall(qn('w:tr'))
+        if len(filas) == 6 and not ''.join(x.text or '' for x in filas[0].iter(qn('w:t'))).strip() and \
+                'Concepto Global' in ''.join(x.text or '' for x in filas[1].iter(qn('w:t'))):
+            tb._tbl.remove(filas[0])     # la tabla de combinación de conceptos traía una fila vacía arriba
+            break
     reescribir([368], [
         'El desarrollo de ingeniería se organiza en tres bloques, uno por objetivo específico. El primero define la '
         'arquitectura operacional y selecciona los componentes (2.1). El segundo integra el sistema en el cuadricóptero '
@@ -42,11 +50,12 @@ def aplicar(M, reescribir, mover, DIAG):
     reescribir([370], [
         'Para el primer objetivo se siguió una ruta de diseño conceptual. Se definieron los requerimientos funcionales '
         '(2.1.1) y se analizaron las funciones del sistema con diagramas de caja negra, caja transparente y funcional '
-        '(2.1.2). Después se generaron y filtraron alternativas para cada función (2.1.3), se combinaron en conceptos '
-        'globales y se compararon con una matriz pasa/no pasa (2.1.4 y 2.1.5), y los componentes se seleccionaron con '
-        'una matriz de decisión ponderada (2.1.6). El apartado 2.1.7 traduce los requerimientos en especificaciones con '
-        'un despliegue de la función de calidad, y 2.1.8 justifica el umbral de seguridad del LiDAR. Las tablas '
-        'intermedias del diseño están en el Anexo B.'])
+        '(2.1.2). Después se generaron alternativas para cada función (2.1.3), se juzgó su viabilidad (2.1.4) y se '
+        'filtraron (2.1.5); las que quedaron se combinaron en conceptos globales (2.1.6) y se compararon con una matriz '
+        'pasa/no pasa (2.1.7). Los componentes se seleccionaron con una matriz de decisión ponderada (2.1.8), los '
+        'requerimientos se tradujeron en especificaciones con un despliegue de la función de calidad (2.1.9) y el '
+        'umbral de seguridad del LiDAR se justificó en 2.1.10. El Anexo B reúne la prueba de sensibilidad de la escala '
+        'de calificación y la revisión de la selección con datos medidos.'])
 
     # ---------------- 2.1.1 requerimientos
     reescribir([372], [
@@ -114,32 +123,32 @@ def aplicar(M, reescribir, mover, DIAG):
                       'los componentes reales. La original de caja transparente decía Raspberry Pi, cámara CSI y UBEC de '
                       '5 V y repetía un bloque; la funcional repetía dos subfunciones de F1 dentro de F2]', TURQ)
 
-    # ---------------- 2.1.3 generación y filtrado (tablas al Anexo B)
-    reescribir([390], ['2.1.3 Generación y filtrado de conceptos'])
-    reescribir([391], [
-        'Para cada subfunción se listaron las alternativas tecnológicas razonables. La plataforma aérea (el '
-        'cuadricóptero del semillero Aerosant), la unidad de procesamiento y la controladora Pixhawk se tomaron como '
-        'condiciones iniciales por disponibilidad institucional; la cámara, el sensor de distancia y el modelo de '
-        'inteligencia artificial se sometieron a comparación. La unidad de procesamiento prevista al inicio, una '
-        'Raspberry Pi 4, se reemplazó después por una NVIDIA Jetson Orin Nano por las razones expuestas en 2.2.5.',
-        'Las alternativas se evaluaron en dos pasos. Primero se emitió un juicio de viabilidad para cada una (alta '
-        'viabilidad, viabilidad moderada, riesgo medio o riesgo crítico) según su masa, su consumo eléctrico, el ruido y '
-        'su exposición al clima. Después se descartaron las que reunían más factores negativos o eran vulnerables al '
-        'viento y a la luz solar directa. La lista de alternativas, los juicios y el resultado del filtrado están en el '
-        'Anexo B ({T:tB1}, {T:tB2} y {T:tB3}).'])
-    for i in (392, 393):
-        M.marcar(P[i])
-    mover([394, ('T', 3)], 'B', 'B1')
-    mover([395, 396, 397, 398, ('T', 4), 399], 'B', 'B2')
-    mover([400, 401, 402, 403, 404, 405, 406, ('T', 5)], 'B', 'B3')
+    # ---------------- 2.1.3 a 2.1.5: se conservan las tablas del diseño
+    reescribir([391, 392, 393], [
+        'Para cada subfunción se listaron las alternativas tecnológicas razonables, agrupadas en tres bloques: '
+        'percepción y telemetría en exteriores, procesamiento y decisión a bordo, y control y seguridad de vuelo '
+        '({T:gen}). La plataforma aérea (el cuadricóptero del semillero Aerosant), la unidad de procesamiento y la '
+        'controladora Pixhawk se tomaron como condiciones iniciales por disponibilidad institucional; la cámara, el '
+        'sensor de distancia y el modelo de inteligencia artificial se sometieron a comparación. La unidad de '
+        'procesamiento prevista al inicio, una Raspberry Pi 4, se reemplazó después por una NVIDIA Jetson Orin Nano '
+        'por las razones expuestas en 2.2.5.'])
+    reescribir([396, 397], [
+        'Cada alternativa recibió un juicio de viabilidad en cuatro niveles (alta viabilidad, viabilidad moderada, '
+        'riesgo medio y riesgo crítico), según la dificultad de adquirirla, su desempeño esperado y su flexibilidad, y '
+        'teniendo en cuenta la masa, el consumo eléctrico, el ruido y la exposición al clima. La {T:juicios} reúne las '
+        'subfunciones críticas con el juicio de cada concepto y la razón técnica que lo sustenta.'])
+    reescribir([401, 402, 403, 404, 405], [
+        'Con los juicios se recortaron los conceptos que no aportan al proyecto, con dos criterios. El primero son los '
+        'aportes positivos y negativos de cada elemento: se descartaron los que sumaban más factores negativos, como '
+        'masa excesiva, latencia alta o consumo desproporcionado. El segundo es la disposición para operar en '
+        'exteriores: se descartaron los vulnerables al viento o a la luz solar directa. La {T:filtrado} muestra el '
+        'resultado, una preselección de tecnologías aptas para la misión al aire libre.'])
 
     # ---------------- 2.1.4 combinación y 2.1.5 pasa/no pasa
-    reescribir([407], ['2.1.4 Combinación de conceptos'])
     reescribir([408], [
         'Las alternativas que superaron el filtro se agruparon en tres conceptos globales, cada uno con una opción de '
         'procesamiento, percepción visual, telemetría y gestión eléctrica ({T:comb}). Agruparlas permite ver cómo '
         'interactúan los componentes antes de compararlos.'])
-    reescribir([410], ['2.1.5 Matriz pasa/no pasa'])
     reescribir([411], [
         'Los tres conceptos se evaluaron con una matriz pasa/no pasa ({T:pasa}). "Pasa" indica que el concepto cumple un '
         'requerimiento indispensable para operar al aire libre con seguridad; "no pasa" señala una limitación crítica, '
@@ -154,7 +163,6 @@ def aplicar(M, reescribir, mover, DIAG):
         M.marcar(P[i])
 
     # ---------------- 2.1.6 matriz ponderada
-    reescribir([418], ['2.1.6 Matriz de decisión ponderada'])
     reescribir([419], [
         'Los componentes se seleccionaron con una matriz de decisión ponderada basada en el método de Pugh (Pugh, '
         '1991). Cada alternativa se calificó de 1 a 10 frente a los requerimientos y cada calificación se multiplicó por '
@@ -167,11 +175,14 @@ def aplicar(M, reescribir, mover, DIAG):
         'masa (RF-07) recibió 8: aislar la alimentación de la computadora es indispensable, pero es un respaldo físico. '
         'La telemetría de proximidad (RF-03), el enlace MAVLink (RF-05/RF-06) y la tolerancia al viento con failsafe '
         '(RF-08/RF-11) recibieron 9, porque una falla en cualquiera de ellos termina en colisión. La percepción visual '
-        '(RF-01/RF-02) y el procesamiento a bordo (RF-04) recibieron 10: sin ellos el sistema no existe.',
-        'La escala de 1 a 10 se eligió por su resolución. Con 1 a 5, alternativas cercanas de una misma subfunción '
-        'quedarían empatadas; con 10 niveles se distinguen. Cada nivel tiene una descripción concreta (Anexo B, {T:tB4}'
-        '), y la selección no cambia si las calificaciones se pasan a una escala de 1 a 5 ({T:tB5}) (Pugh, 1991; '
-        'Ulrich & Eppinger, 2016).'])
+        '(RF-01/RF-02) y el procesamiento a bordo (RF-04) recibieron 10: sin ellos el sistema no existe.'])
+    q_esc = M.parrafo(T[8]._tbl, 'La escala de 1 a 10 se eligió por su resolución. Con 1 a 5, alternativas cercanas de una '
+                      'misma subfunción quedarían empatadas; con 10 niveles se distinguen. Cada nivel tiene una '
+                      'descripción concreta ({T:escala}), y la selección no cambia si las calificaciones se pasan a una '
+                      'escala de 1 a 5 (Anexo B, {T:tB5}) (Pugh, 1991; Ulrich & Eppinger, 2016).', AMARILLO)
+    from datos_tablas import ANCLAS
+    cap_esc = M.rotulo(q_esc, 'Tabla', 'escala', 'Significado de cada nivel de la escala de 1 a 10')
+    M.tabla(cap_esc, ANCLAS, [1.3, 4.9, 4.9, 4.9])
     reescribir([424], [
         'La {T:f1} califica los sensores visuales y de distancia según su capacidad y su robustez al aire libre: el 1 '
         'corresponde a un sensor inoperante en exteriores y el 10 a una percepción rápida, estable y con alta inmunidad a '
@@ -200,7 +211,9 @@ def aplicar(M, reescribir, mover, DIAG):
 
     recalcular(T[9], pesos8, True)
     recalcular(T[10], pesos9, True)
-    reescribir([427], ['Con esos resultados se descartaron:'])
+    reescribir([427], ['Dentro de las cámaras, la CSI nativa obtiene el mayor puntaje (315), por encima de la web USB (225) '
+                       'y de la cámara de acción (127). Entre los sensores de distancia, el LiDAR de tiempo de vuelo (306) '
+                       'supera al radar mmWave (248) y al ultrasónico (127). Se descartaron:'])
     reescribir([428], ['Cámara de acción (GoPro): no tiene un bus de baja latencia hacia la computadora de a bordo, lo '
                        'que retrasa la captura.'])
     reescribir([429], ['Cámara web USB: se consideró que cargaba la CPU de la Raspberry Pi y añadía latencia. Con la '
@@ -213,7 +226,10 @@ def aplicar(M, reescribir, mover, DIAG):
         'La {T:f2} califica el procesamiento, los modelos de detección y la alimentación, comparando la capacidad de '
         'cómputo con la masa y el consumo: el 1 corresponde a un elemento sin sistema operativo embebido y el 10 a una '
         'integración completa, con procesamiento fluido y alimentación aislada.'])
-    reescribir([434], ['Con esos resultados se descartaron:'])
+    reescribir([434], ['Entre los procesadores, la Raspberry Pi 4 obtiene 378 puntos, por encima de la Jetson Nano (351) y del '
+                       'Teensy 4.1 (193); entre los modelos, YOLO nano (333) supera a EfficientDet y MobileNet (249); y '
+                       'entre las soluciones de potencia, el regulador UBEC dedicado (152) supera a una batería '
+                       'secundaria (80). Se descartaron:'])
     reescribir([435], ['Jetson Nano: por su consumo (hasta 4 A de pico) y su masa. Esta calificación se revisó después '
                        'con datos medidos, como se explica más adelante.'])
     reescribir([436], ['Teensy 4.1: no tiene sistema operativo ni memoria suficiente para ejecutar redes neuronales '
@@ -229,6 +245,7 @@ def aplicar(M, reescribir, mover, DIAG):
 
     # Tabla 10 rehecha (la original repetía la Tabla 9)
     t10 = T[11]
+    celda(M, t10, 0, 4, 'Intervención por PWM')
     criterios = ['Integración con la computadora de a bordo (RF-04, peso 10)',
                  'Enlace y ejecución de la maniobra (RF-05/RF-06, peso 9)',
                  'Fallo seguro y tolerancia (RF-08/RF-11, peso 9)',
@@ -243,7 +260,7 @@ def aplicar(M, reescribir, mover, DIAG):
             celda(M, t10, fi, cj, 'NA' if v is None else str(v))
         celda(M, t10, 5, cj, '')
         celda(M, t10, 6, cj, str(sum((v or 0) * w for v, w in zip(vals, pes))))
-    nota10 = M.nota(t10._tbl, 'Nota. Calificaciones asignadas con la escala anclada de la {T:tB4} (Anexo B). Se comparan '
+    nota10 = M.nota(t10._tbl, 'Nota. Calificaciones asignadas con la escala anclada de la {T:escala}. Se comparan '
                               'entre sí la Pixhawk y la Navio2 (controladora), MAVLink y la intervención por PWM '
                               '(protocolo) y el dron Aerosant frente a un dron comercial cerrado (plataforma). NA: no '
                               'aplica. [FALTA: validar estas calificaciones con el asesor]')
@@ -251,7 +268,9 @@ def aplicar(M, reescribir, mover, DIAG):
                       'criterios de control de vuelo y los pesos de la Tabla 7. En las Tablas 8 y 9 se agregaron los '
                       'pesos y se recalcularon los totales, porque los originales no salían de los pesos publicados; el '
                       'orden de las alternativas no cambió]', TURQ)
-    p_reval = M.parrafo(nota10, 'La selección se revisó con los datos de la integración. La {T:f2} calificó la Raspberry '
+    p_reval = M.parrafo(nota10, 'Entre las controladoras, la Pixhawk (342) supera a la Navio2 (251); entre los protocolos, '
+                        'MAVLink (261) supera a la intervención por PWM (140); y entre las plataformas, el dron Aerosant '
+                        '(144) supera al comercial cerrado (82). La selección se revisó con los datos de la integración. La {T:f2} calificó la Raspberry '
                         'Pi 4 con 8 en inferencia, latencia y estabilidad de potencia, y descartó la Jetson Nano por '
                         'consumo y masa. En las pruebas de 2.2.5 la Raspberry Pi tuvo caídas de tensión, fallos de '
                         'arranque que corrompieron el sistema operativo y un cuello de botella en la inferencia; la '
@@ -287,42 +306,47 @@ def aplicar(M, reescribir, mover, DIAG):
     cap = M.rotulo(p_n1, 'Tabla', 'implementado', 'Concepto global diseñado frente al implementado')
     tN1 = M.tabla(cap, filasN1, [3.0, 3.2, 4.6, 5.2])
     # figuras 20 a 22
-    mover([442, 443], 'B', 'figB1')
+    M.parrafo(tN1, 'El concepto global del diseño, antes de los cambios de la integración, se muestra en la '
+                   '{F:conceptofig}.', AMARILLO)
+    M.marcar(P[443])
+    fig_c = M.figura(P[443], f'{DIAG}/12_concepto.png', ancho_cm=15.5, color=VERDE)
+    M.nota(fig_c, 'Nota. Corresponde al concepto del diseño, con Raspberry Pi, cámara CSI y TF-Luna. El concepto '
+                  'implementado está en la {T:implementado}.')
+    M.parrafo(fig_c, '[REVISAR: el diagrama original tenía texto ilegible; se redibujó con los componentes del concepto '
+                     'de la tabla anterior]', TURQ)
     for i in (444, 445, 446, 447, 448, 449, 450, 451):
         M.marcar(P[i])
     M.parrafo(P[451], '[REVISAR: las Figuras 21 y 22 se eliminaron: fueron generadas con IA y tenían datos falsos '
                       '(motores A2212 de 1000 KV y "Jetson Nano"; el dron usa motores 2212-920 KV y una Jetson Orin '
-                      'Nano). La foto real del dron está en 2.2.1. El diagrama del concepto del diseño pasó al Anexo B]',
+                      'Nano). La foto real del dron está en 2.2.1. El diagrama del concepto del diseño se conserva en este apartado]',
               TURQ)
 
     # ---------------- 2.1.7 QFD
-    reescribir([452], ['2.1.7 Despliegue de la función de calidad'])
-    reescribir([453], [
+    reescribir([453, 454, 455, 456], [
         'Para traducir los requerimientos en especificaciones medibles se aplicó un despliegue de la función de calidad '
         '(QFD) simplificado. El usuario directo es el semillero de investigación Aerosant y el programa de Ingeniería '
         'Aeronáutica de la Universidad de San Buenaventura. A partir de los objetivos se fijaron siete requerimientos '
         'operativos: detección visual confiable de personas y obstáculos, medición directa de la distancia frontal, '
         'procesamiento a bordo sin enlaces de video, activación oportuna de la maniobra vertical, alimentación aislada '
         'de los motores, recuperación inmediata del control manual y registro automático de datos. Su importancia '
-        'relativa, de 1 a 10, está en el Anexo B ({T:tB7}).',
-        'Esos requerimientos se tradujeron en ocho especificaciones de ingeniería: frecuencia de muestreo del LiDAR (Hz), '
-        'cuadros por segundo de la inferencia, latencia del lazo sensor–decisión–actuador (ms), masa añadida (g), '
-        'corriente del sistema embebido (A), rizado de la línea de alimentación (mV), distancia umbral de activación (m) '
-        'y tiempo de respuesta ante la pérdida del enlace serie (ms). La matriz de la casa de la calidad mostró una '
-        'relación fuerte entre los cuadros por segundo, la latencia del lazo de control y la distancia de activación; por '
-        'eso las especificaciones que más pesan son la velocidad de inferencia y la latencia total, que se midieron en '
-        'la integración (2.2.5) y fijan el umbral de seguridad del LiDAR (2.1.8).'])
-    for i in (454, 455, 456, 458, 459, 460, 461, 462, 463, 464, 465, 466, 467, 468):
+        'relativa, de 1 a 10, está en la {T:qfd}.'])
+    M.parrafo(T[13]._tbl, 'Esos requerimientos se tradujeron en ocho especificaciones de ingeniería: frecuencia de muestreo '
+              'del LiDAR (Hz), cuadros por segundo de la inferencia, latencia del lazo sensor–decisión–actuador (ms), masa '
+              'añadida (g), corriente del sistema embebido (A), rizado de la línea de alimentación (mV), distancia umbral '
+              'de activación (m) y tiempo de respuesta ante la pérdida del enlace serie (ms). La matriz de la casa de la '
+              'calidad mostró una relación fuerte entre los cuadros por segundo, la latencia del lazo de control y la '
+              'distancia de activación; por eso las especificaciones que más pesan son la velocidad de inferencia y la '
+              'latencia total, que se midieron en la integración (2.2.5) y fijan el umbral de seguridad del LiDAR '
+              '(2.1.10).', AMARILLO)
+    for i in (458, 459, 460, 461, 462, 463, 464, 465, 466, 467, 468):
         M.marcar(P[i])
-    mover([457, ('T', 13)], 'B', 'B7')
 
     # ---------------- 2.1.8 LiDAR
-    reescribir([469], ['2.1.8 Selección y lógica del sensor LiDAR de proximidad'])
     reescribir([470], [
         'En la integración se usó un LiDAR Benewake TF03, que mide hasta 70 m sobre superficies oscuras (Benewake, '
         's. f.), en lugar del TF-Luna considerado en el diseño, cuyo alcance es de unos 8 m. Se conecta a la Jetson Orin '
         'Nano mediante un convertidor USB–TTL y entrega 100 lecturas por segundo; mide la distancia con el tiempo de '
-        'ida y vuelta de un pulso infrarrojo, según la ecuación (8).'])
+        'ida y vuelta de un pulso infrarrojo, según la ecuación (4).'])
     M.marcar(P[471])
     reescribir([472], [
         'Su función es activar la maniobra con una medida métrica. YOLO dice qué hay al frente y el LiDAR a qué '

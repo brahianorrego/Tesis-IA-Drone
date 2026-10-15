@@ -408,48 +408,11 @@ def aplicar(M, movidos, REPO):
         return q
 
     def anexo_B(q):
-        q = titulo_anexo(q, 'B', 'Diseño conceptual detallado')
-        q = par(q, 'Este anexo reúne las tablas intermedias del diseño conceptual de 2.1: la generación de alternativas, los '
-                   'juicios de viabilidad, el filtrado, el significado de cada nivel de la escala de calificación, la prueba '
-                   'de sensibilidad de la escala, la revisión de la selección con datos medidos, el diagrama del concepto del '
-                   'diseño y la ponderación del despliegue de la función de calidad.')
-        q = sub(q, 'B.1 Generación de conceptos')
-        q = tabla_movida(q, 'B1', 'Tabla B1', 'Generación de conceptos específicos por función')
-        q = sub(q, 'B.2 Juicios de viabilidad')
-        q = par(q, 'Cada concepto se calificó en cuatro niveles (alta viabilidad, viabilidad moderada, riesgo medio y riesgo '
-                   'crítico) según la dificultad de adquirirlo, su desempeño esperado y su flexibilidad, teniendo en cuenta '
-                   'la masa, el consumo eléctrico, el ruido y la exposición al clima.')
-        q = tabla_movida(q, 'B2', 'Tabla B2', 'Juicios de viabilidad de los conceptos por subfunción',
-                         'Nota. El juicio expresa el grado de viabilidad y la razón técnica que lo sustenta.')
-        q = sub(q, 'B.3 Filtrado de conceptos')
-        q = par(q, 'El filtrado usó dos criterios: los aportes positivos y negativos de cada elemento (se descartaron los de '
-                   'más factores negativos, como masa excesiva, latencia alta o consumo desproporcionado) y su disposición '
-                   'para operar en exteriores (se descartaron los vulnerables al viento o a la luz solar directa).')
-        q = tabla_movida(q, 'B3', 'Tabla B3', 'Revisión tecnológica y filtrado de conceptos')
-        q = sub(q, 'B.4 Significado de cada nivel de la escala de calificación')
-        anclas = [
-            ['Nivel', 'Función 1: sensores', 'Función 2: procesamiento y potencia', 'Función 3: control y seguridad'],
-            ['1', 'Inoperante al aire libre', 'Sin sistema operativo embebido', 'Integración bloqueada (código cerrado)'],
-            ['2', 'Falla constante con el clima', 'No puede ejecutar redes neuronales', 'Método invasivo que anula las '
-             'alertas del autopiloto'],
-            ['3', 'Retardo inaceptable en la captura', 'Masa que anula la sustentación', 'Comunicación insegura con la '
-             'computadora'],
-            ['4', 'Desempeño pobre ante interferencias', 'Consumo desproporcionado', 'Conexión inestable'],
-            ['5', 'Desempeño regular, con desventajas físicas', 'Rendimiento medio por masa térmica', 'Requiere '
-             'adaptaciones físicas excesivas'],
-            ['6', 'Aceptable, sensible al ruido lumínico', 'Aceptable, con pocos cuadros por segundo', 'Une procesamiento '
-             'y control en una placa saturable'],
-            ['7', 'Bueno, con limitaciones menores', 'Bueno, con compromisos de energía', 'Compatible, sin soporte nativo '
-             'para emergencias'],
-            ['8', 'Muy bueno, captura estable y baja masa', 'Buen equilibrio entre cómputo y masa', 'Control externo '
-             'seguro'],
-            ['9', 'Excelente, alta inmunidad a la luz solar', 'Inferencia ágil con bajo consumo', 'Comunicación '
-             'bidireccional excelente'],
-            ['10', 'Percepción rápida, estable y redundante', 'Integración completa y alimentación aislada', 'Control total '
-             'con rutinas de fallo seguro estándar'],
-        ]
-        q = tab(q, 'Tabla B4', 'Significado de cada nivel de la escala de 1 a 10', anclas, [1.3, 4.9, 4.9, 4.9])
-        q = sub(q, 'B.5 Sensibilidad a la escala')
+        q = titulo_anexo(q, 'B', 'Diseño conceptual: sensibilidad y revisión de la selección')
+        q = par(q, 'Este anexo complementa el apartado 2.1 con dos comprobaciones: la prueba de que la escala de '
+                   'calificación no decide el resultado y la revisión de la selección con datos medidos en la '
+                   'integración.')
+        q = sub(q, 'Sensibilidad a la escala')
         pesos8, pesos9 = [10, 9, 9, 8, 9], [10, 10, 8, 8, 9]
         T8 = {'Cámara CSI': [9, 0, 9, 9, 8], 'Cámara web USB': [7, 0, 5, 7, 6], 'Cámara de acción': [4, 0, 2, 3, 5],
               'LiDAR ToF': [0, 9, 9, 9, 8], 'Ultrasónico': [0, 2, 4, 8, 1], 'Radar mmWave': [0, 8, 7, 4, 9]}
@@ -473,10 +436,14 @@ def aplicar(M, movidos, REPO):
                 filas.append([g, a, tot(TT[a], w), s10.index(a) + 1, tot(TT[a], w, True), s5.index(a) + 1])
         q = par(q, 'Para comprobar que la escala no decide el resultado, las calificaciones de las Tablas de las funciones 1 '
                    'y 2 se pasaron a una escala de 1 a 5 (la mitad de la calificación, redondeada hacia arriba) y se '
-                   'recalcularon los totales con los mismos pesos. Dentro de cada subfunción el orden no cambia.')
+                   'recalcularon los totales con los mismos pesos. Dentro de cada subfunción el orden no cambia. La {T:tB5} '
+                   'da los totales en las dos escalas.')
         q = tab(q, 'Tabla B5', 'Sensibilidad de la matriz de decisión a la escala de calificación', filas,
                 [2.6, 4.4, 2.2, 1.6, 2.2, 1.6])
-        q = sub(q, 'B.6 Revisión de la selección con datos medidos')
+        q = sub(q, 'Revisión de la selección con datos medidos')
+        q = par(q, 'La {T:tB6} repite la calificación del procesamiento con lo observado en la integración: la Raspberry Pi 4 '
+                   'tuvo caídas de tensión, fallos de arranque y un cuello de botella en la inferencia, y la Jetson Orin '
+                   'Nano procesó cada cuadro en 9 a 11 ms.')
         filas_r = [['Alternativa', 'Inferencia', 'Latencia', 'Estabilidad de potencia', 'Masa y consumo', 'Python',
                     'Total'],
                    ['Raspberry Pi 4 (calificación del diseño)', 8, 8, 8, 8, 10, tot([8, 8, 8, 8, 10], pesos9)],
@@ -485,82 +452,21 @@ def aplicar(M, movidos, REPO):
                    ['Jetson Orin Nano (con lo medido)', 10, 10, 8, 5, 9, tot([10, 10, 8, 5, 9], pesos9)]]
         q = tab(q, 'Tabla B6', 'Revisión de la calificación del procesamiento con datos de la integración', filas_r,
                 [5.0, 1.8, 1.6, 2.2, 1.8, 1.4, 1.4],
-                'Nota. Pesos de la Tabla 7: 10, 10, 8, 8 y 9. [FALTA: confirmar las calificaciones "con lo observado"]')
-        q = sub(q, 'B.7 Concepto global del diseño')
-        q = par(q, 'El concepto del diseño, antes de los cambios de la integración, se muestra en la {F:fB1}.')
-        q = figura_movida(q, 'figB1', 'Figura B1', 'Diagrama del concepto global obtenido en el diseño conceptual',
-                          'Nota. Corresponde al concepto del diseño, con Raspberry Pi, cámara CSI y TF-Luna. El concepto '
-                          'implementado está en la {T:implementado}.')
-        q = sub(q, 'B.8 Importancia relativa de los requerimientos operativos')
-        q = tabla_movida(q, 'B7', 'Tabla B7', 'Importancia relativa de los requerimientos operativos (QFD)')
+                'Nota. Pesos de la {T:pesos}: 10, 10, 8, 8 y 9. [FALTA: confirmar las calificaciones "con lo observado"]')
         return q
 
     def anexo_C(q):
-        q = titulo_anexo(q, 'C', 'Ensamble e inventario del cuadricóptero')
-        q = par(q, 'Este anexo reúne lo necesario para reconstruir el cuadricóptero: el inventario de componentes, la masa '
-                   'medida y fotografías del montaje. El procedimiento de armado se describe en el apartado 2.2.1.')
-        q = sub(q, 'Inventario de componentes')
-        inv = [['Componente', 'Referencia', 'Cantidad', 'Función'],
-               ['Chasis', 'ZD550, fibra de carbono, configuración X', '1', 'Estructura'],
-               ['Motores', 'Brushless 2212-920 KV', '4', 'Propulsión'],
-               ['Variadores', '40 A, tipo OPTO (sin BEC)', '4', 'Control de los motores'],
-               ['Hélices', '[FALTA: referencia]', '4', 'Propulsión'],
-               ['Controladora de vuelo', 'Pixhawk 2.4.8 con ArduCopter 4.7.0', '1', 'Estabilización y modos de vuelo'],
-               ['Módulo de potencia', 'Power Module PM05-V1.0', '1', 'Alimenta la Pixhawk y mide tensión y corriente'],
-               ['Placa de distribución', 'PDB', '1', 'Reparte la energía a los variadores'],
-               ['Batería', 'LiPo 4S, 6200 mAh, 14.8 V, 77 Wh', '1', 'Fuente de energía'],
-               ['Convertidor', 'DC-DC buck, salida 12.02 V', '1', 'Alimentación de la Jetson'],
-               ['Computadora de a bordo', 'NVIDIA Jetson Orin Nano', '1', 'Percepción y decisión'],
-               ['Cámara', 'Web USB Sonix, 640×480, HFOV 38.9°', '1', 'Video frontal'],
-               ['LiDAR', 'Benewake TF03 (UART)', '1', 'Distancia frontal'],
-               ['Adaptador', 'USB-TTL Prolific PL2303', '1', 'Conexión del LiDAR'],
-               ['Estabilizador', 'BaseCam SimpleBGC, 2 ejes', '1', 'Estabiliza la cámara y el LiDAR'],
-               ['GPS', 'Módulo GPS de la Pixhawk', '1', 'Posición para el modo GUIDED'],
-               ['Radiocontrol', 'Futaba T14SG', '1', 'Mando del piloto'],
-               ['Receptor', 'Corona con codificador PPM', '1', 'Recepción del radiocontrol'],
-               ['Cable de datos', 'DF13 de TELEM2 a conector Dupont (sin 5 V)', '1', 'Enlace MAVLink con la Jetson']]
-        q = par(q, 'La {T:tC1} lista los componentes con su referencia, su cantidad y la función que cumplen.')
-        q = tab(q, 'Tabla C1', 'Componentes del cuadricóptero integrado', inv, [3.4, 5.6, 1.6, 5.4],
-                'Nota. [FALTA: masa de cada subsistema y masa total de despegue]')
-        q = sub(q, 'Masa del cuadricóptero')
-        q = par(q, 'La masa se midió con una báscula de cocina SF-400 (capacidad de 10 kg y resolución de 1 g) y dio '
-                   '2371 g ({F:fC1}). [FALTA: aclarar qué incluye esa medición (batería, Jetson, cámara y estabilizador), '
-                   'la fecha de la medición y la masa de cada subsistema]')
-        q = figura_foto(q, 'Figura C1', 'Medición de la masa del cuadricóptero', 'masa_bascula.jpg', 15.5,
-                        'Nota. A la izquierda, el cuadricóptero sobre la báscula; a la derecha, la lectura: 2371 g. [REVISAR: '
-                        'confirmar la lectura y la configuración medida]')
-        q = sub(q, 'Módulo GPS')
-        q = par(q, 'El modo GUIDED exige posición GPS, por eso el cuadricóptero lleva un módulo GPS sobre el chasis ({F:fC2}). '
-                   '[FALTA: modelo del módulo GPS]')
-        q = figura_foto(q, 'Figura C2', 'Módulo GPS montado sobre el chasis', 'gps.jpg', 6.5,
-                        'Nota. Vista superior del módulo GPS con su cable hacia la Pixhawk.')
+        q = titulo_anexo(q, 'C', 'Fotografías del ensamble del cuadricóptero')
+        q = par(q, 'Este anexo reúne las fotografías del armado. El inventario de componentes, la masa medida y el módulo '
+                   'GPS están en el apartado 2.2.1, y el procedimiento de armado se describe allí mismo.')
         q = sub(q, 'Fotografías del ensamble')
         q = par(q, '[FALTA: fotografías del montaje por etapas (estado inicial desarmado, motores y variadores, placa de '
-                   'distribución, Power Module, Pixhawk, estabilizador, Jetson y aeronave terminada) con una frase que '
-                   'describa cada una]')
+                   'distribución, Power Module, Pixhawk, estabilizador, Jetson y aeronave terminada), cada una con su '
+                   'figura, una frase que la explique antes y la nota de fuente]')
         return q
 
     def anexo_D(q):
-        q = titulo_anexo(q, 'D', 'Parámetros de ArduPilot y del software')
-        pa = [['Parámetro', 'Valor', 'Motivo'],
-              ['SERIAL2_PROTOCOL', '2 (MAVLink 2)', 'TELEM2 es el enlace con la Jetson'],
-              ['SERIAL2_BAUD', '115 (115200)', 'A 460800 y 921600 la Pixhawk no entiende a la Jetson'],
-              ['BRD_SER2_RTSCTS', '0', 'El cable solo lleva TX, RX y GND'],
-              ['FLTMODE_CH', '5', 'El interruptor de tres posiciones de CH5 elige el modo'],
-              ['FLTMODE1 / 4 / 6', '[FALTA: modos finales]', 'Ver 2.2.3'],
-              ['RC8_OPTION', '31', 'CH8 = parada de emergencia de los motores'],
-              ['FS_THR_ENABLE', '1', 'Pérdida de radio: regreso al despegue (RTL)'],
-              ['BATT_FS_LOW_ACT', '2', 'Batería baja: RTL'],
-              ['BATT_LOW_VOLT / BATT_CRT_VOLT', '13.5 V / 13.2 V', 'Evitan activaciones por caída de tensión bajo carga'],
-              ['MNT1_TYPE', '0', 'Sin librería de gimbal, para no duplicar la estabilización'],
-              ['SERVO9_FUNCTION', '0', 'AUX1 libre: la maneja la Jetson con DO_SET_SERVO'],
-              ['SERVO9_MIN / TRIM / MAX', '1000 / 1500 / 2000', 'Equivale a ±45° del estabilizador'],
-              ['BRD_SAFETY_MASK', '16368', 'Salidas 5 a 14 activas con el seguro puesto (banco)'],
-              ['LOIT_SPEED', '400 (4 m/s)', 'Velocidad máxima segura con personas (2.3.2)'],
-              ['LOIT_BRK_ACCEL', '[FALTA: valor leído en la Pixhawk]', 'Aceleración de frenado usada en d_safe'],
-              ['GUID_TIMEOUT', '[FALTA: valor leído en la Pixhawk]', 'Frenado automático si la Jetson deja de enviar']]
-        q = par(q, 'Los parámetros de ArduPilot que se cambiaron o que importan para el sistema están en la {T:tD1}, cada uno con su motivo.')
-        q = tab(q, 'Tabla D1', 'Parámetros de ArduPilot cambiados o relevantes', pa, [4.8, 4.2, 7.0])
+        q = titulo_anexo(q, 'D', 'Parámetros del software de a bordo')
         ps = [['Parámetro del software', 'Valor', 'Dónde se justifica'],
               ['Umbral de probabilidad del clasificador', '0.7', '2.3.2'],
               ['Cuadros seguidos para intervenir', '2', '2.3.2'],
@@ -581,25 +487,10 @@ def aplicar(M, movidos, REPO):
     def anexo_E(q):
         q = titulo_anexo(q, 'E', 'Software de percepción, decisión y control')
         q = par(q, 'El código completo está en el repositorio público del proyecto: https://github.com/brahianorrego/Tesis-IA-'
-                   'Drone (carpetas jetson y simulacion/minimo_tesis). Este anexo presenta su organización, el diagrama de '
-                   'flujo de la primera versión del detector y los listados de los módulos principales.')
-        q = sub(q, 'E.1 Organización del código')
-        mods = [['Archivo', 'Qué hace'],
-                ['jetson/config.py', 'Parámetros: puertos, campo de visión, umbrales'],
-                ['jetson/percepcion.py', 'Cámara y YOLO26n en TensorRT con seguimiento'],
-                ['jetson/lidar_tf.py', 'Lectura y validación de las tramas del TF03'],
-                ['jetson/gimbal_basecam.py', 'Telemetría del estabilizador BaseCam'],
-                ['jetson/sensores.py, jetson/comun.py', 'Fusión de sensores y utilidades'],
-                ['jetson/registro_minimo.py', 'Registro sincronizado de cámara, LiDAR y Pixhawk'],
-                ['jetson/intervencion_banco.py', 'Intervención por MAVLink en banco: GUIDED, subida y retoma del piloto'],
-                ['simulacion/minimo_tesis/decisor_ia.py', 'Clasificador de riesgo y su evaluación con NumPy'],
-                ['simulacion/minimo_tesis/sistema.py', 'Lógica mínima y envolvente de reglas de seguridad'],
-                ['simulacion/minimo_tesis/protocolo_comite.py', 'Escenarios del protocolo y métricas']]
-        q = par(q, 'La {T:tE1} resume qué hace cada módulo del código.')
-        q = tab(q, 'Tabla E1', 'Módulos del software', mods, [6.4, 9.6])
+                   'Drone (carpetas jetson y simulacion/minimo_tesis). Este anexo presenta los listados de los módulos principales.')
+        q = par(q, 'La organización de los módulos está en la {T:modulos}, en el apartado 2.2.6.')
         q = sub(q, 'E.2 Primera versión del detector')
-        q = par(q, 'La {F:fE1} muestra el diagrama de flujo de esa primera versión.')
-        q = figura_movida(q, 'figE1', 'Figura E1', 'Diagrama de flujo de la primera versión del algoritmo de detección')
+        q = par(q, 'El diagrama de flujo de la primera versión del detector está en el apartado 2.2.4.')
         q = sub(q, 'E.3 Listados de código')
         for i, (ruta, titulo) in enumerate([
                 ('jetson/lidar_tf.py', 'Lectura del LiDAR TF03'),
@@ -613,6 +504,8 @@ def aplicar(M, movidos, REPO):
 
     def anexo_F(q):
         q = titulo_anexo(q, 'F', 'Simulación del protocolo y del clasificador')
+        q = par(q, 'Este anexo describe el simulador y la estadística. Los resultados están en el capítulo 3 y los datos del '
+                   'clasificador, en el apartado 2.2.6.')
         q = sub(q, 'F.1 Modelo de simulación')
         q = par(q, 'La simulación reproduce un dron, una persona o un panel y la lógica de a bordo. La cámara y YOLO se '
                    'modelan con una probabilidad de detección que cae con la distancia, ruido en el rumbo y una distancia '
@@ -626,82 +519,6 @@ def aplicar(M, movidos, REPO):
                    'Cada cuadro se etiqueta con la verdad del simulador según una pregunta: si el piloto sigue igual, ¿en '
                    'los próximos 3 s choca o una persona queda a menos de 2 m? Entrenamiento, validación y prueba usan '
                    'mundos distintos.')
-        q = par(q, 'La {T:tF1} reúne los datos y el desempeño del clasificador por cuadro, y la {T:tF2} su matriz de confusión. La {F:fF1} muestra las curvas ROC y de precisión-exhaustividad.')
-        q = tab(q, 'Tabla F1', 'Datos y desempeño del clasificador por cuadro',
-                [['Concepto', 'Valor'], ['Arquitectura', 'MLP 32-16, ReLU, 15 entradas, 1 salida'],
-                 ['Cuadros de entrenamiento', '2 551 725 (13 % con riesgo)'], ['Cuadros de validación', '499 021'],
-                 ['Cuadros de prueba', '533 085 (12 % con riesgo)'], ['Umbral y persistencia', '0.7 y 2 cuadros'],
-                 ['Área bajo la curva ROC', '0.974'], ['Precisión media', '0.914'],
-                 ['Exhaustividad por cuadro', '74.4 %'], ['Precisión', '97.0 %'], ['Falsos positivos', '0.3 %']],
-                [7.0, 9.0], 'Nota. La exhaustividad por cuadro no mide la seguridad: un riesgo dura muchos cuadros y basta '
-                            'detectarlo en dos seguidos; la seguridad se mide en lazo cerrado.')
-        q = tab(q, 'Tabla F2', 'Matriz de confusión en la prueba (por cuadro)',
-                [['', 'Predice CONTINUAR', 'Predice DETENER'], ['Sin riesgo real', '470 330', '1 420'],
-                 ['Con riesgo real', '15 716', '45 619']], [5.0, 5.0, 5.0])
-        c = M.rotulo_anexo(q, 'Figura F1', 'Curvas ROC y de precisión-exhaustividad del clasificador')
-        fig = M.figura(c, f'{REPO}/simulacion/informes/minimo_tesis_decisor_curvas.png', ancho_cm=15.0, color=AMARILLO)
-        q = M.parrafo(fig, '', AMARILLO, estilo='Normal')
-        q = sub(q, 'F.3 Protocolo del comité por escenario')
-        prot = [['Escenario', '¿Activar?', 'Éxito con el sistema', 'Éxito sin ayuda del operador', 'Vuelo seguro sin el '
-                 'sistema', 'Choques con / sin'],
-                ['a) Panel, 1 m/s', 'sí', '100 % [96, 100]', '100 %', '0 %', '0 / 2'],
-                ['a) Panel, 2 m/s', 'sí', '100 % [96, 100]', '100 %', '0 %', '0 / 0'],
-                ['a) Panel, 3 m/s', 'sí', '100 % [96, 100]', '100 %', '0 %', '0 / 0'],
-                ['a) Panel, 4 m/s', 'sí', '100 % [96, 100]', '100 %', '0 %', '0 / 0'],
-                ['b) Persona quieta, 1.5 m/s', 'sí', '100 % [96, 100]', '100 %', '0 %', '0 / 1'],
-                ['b) Persona quieta, 3.0 m/s', 'sí', '100 % [96, 100]', '100 %', '0 %', '0 / 0'],
-                ['c) De frente caminando', 'sí', '100 % [96, 100]', '100 %', '0 %', '0 / 99'],
-                ['c) De frente corriendo', 'sí', '100 % [96, 100]', '72 % [63, 80]', '0 %', '0 / 98'],
-                ['d) Cruza lejos caminando', 'no', '100 % [96, 100]', '100 %', '100 %', '0 / 0'],
-                ['d) Cruza lejos corriendo', 'no', '100 % [96, 100]', '100 %', '100 %', '0 / 0'],
-                ['e) Estático, viene caminando', 'sí', '100 % [96, 100]', '100 %', '0 %', '0 / 100'],
-                ['e) Estático, viene corriendo', 'sí', '100 % [96, 100]', '100 %', '0 %', '0 / 100'],
-                ['e) Estático, pasa de lado a 5 m', 'no', '100 % [96, 100]', '100 %', '100 %', '0 / 0']]
-        q = par(q, 'La {T:tF3} da el resultado del protocolo del comité en simulación para cada escenario.')
-        q = tab(q, 'Tabla F3', 'Resultados del protocolo del comité en simulación (100 vuelos por variante)', prot,
-                [4.6, 1.5, 2.8, 2.6, 2.4, 2.1], 'Nota. Entre corchetes, intervalo de Wilson del 95 %. "Sin ayuda del '
-                                                'operador": el operador no apretó la parada en ningún momento.')
-        q = sub(q, 'F.4 Mundos de prueba')
-        mund = [['Decisor', 'Riesgos no evitados', 'Choques', 'Persona a < 2 m bajo 3.30 m', 'Activaciones innecesarias',
-                 'Detenido sin necesidad (s)'],
-                ['Sin sistema', '2043', '1681', '1488', '—', '—'],
-                ['Reglas', '92 (4.5 %)', '39', '420', '137', '2358'],
-                ['IA sola', '62 (3.0 %)', '27', '143', '54', '813'],
-                ['IA con reglas', '67 (3.3 %)', '28', '218', '67', '1082']]
-        q = par(q, 'En 3840 vuelos sobre mundos aleatorios, los decisores se comparan en la {T:tF4}.')
-        q = tab(q, 'Tabla F4', 'Resultados en 3840 vuelos sobre 60 mundos aleatorios de prueba', mund,
-                [3.2, 2.6, 1.8, 3.0, 2.8, 2.6], 'Nota. 2043 de los 3840 vuelos (53 %) habrían tenido riesgo físico sin el '
-                                                'sistema. Incluye casos físicamente imposibles de evitar.')
-        q = sub(q, 'F.5 Condiciones degradadas')
-        deg = [['Condición', 'Reglas: éxito · choques · innecesarias', 'IA con reglas: éxito · choques · innecesarias'],
-               ['C0 Nominal', '97.6 % · 0 · 44', '98.3 % · 0 · 30'],
-               ['C1 Recall de YOLO 0.85 (sol de frente)', '97.6 % · 0 · 43', '98.4 % · 0 · 28'],
-               ['C2 Recall de YOLO 0.70 (desenfoque)', '97.7 % · 0 · 42', '98.3 % · 0 · 30'],
-               ['C3 Medio cuerpo visible', '97.1 % · 0 · 52', '97.8 % · 0 · 39'],
-               ['C4 Solo torso visible', '97.1 % · 0 · 53', '97.3 % · 0 · 48'],
-               ['C5 LiDAR con ruido ×3 y 5 % sin retorno', '97.6 % · 0 · 44', '98.3 % · 0 · 30'],
-               ['C6 Latencia total de 200 ms', '97.6 % · 0 · 44', '98.3 % · 0 · 30'],
-               ['C7 Latencia total de 300 ms', '97.6 % · 0 · 44', '98.3 % · 0 · 30'],
-               ['C8 Viento de cola de 3 m/s con ráfagas', '97.2 % · 0 · 50', '98.3 % · 0 · 30'],
-               ['C9 Viento de cola de 5 m/s con ráfagas', '97.2 % · 0 · 51', '98.1 % · 0 · 33'],
-               ['C10 Combinada', '96.8 % · 0 · 57', '98.0 % · 0 · 35'],
-               ['C11 Recall de YOLO 0.40', '97.4 % · 0 · 45', '97.4 % · 0 · 46'],
-               ['C12 Solo cabeza y hombros', '96.9 % · 1 · 52', '96.5 % · 1 · 61'],
-               ['C13 Latencia total de 500 ms', '97.6 % · 0 · 44', '98.3 % · 0 · 30']]
-        q = par(q, 'El desempeño con sensores degradados está en la {T:tF5}.')
-        q = tab(q, 'Tabla F5', 'Desempeño con sensores degradados (18 variantes de 100 vuelos por condición)', deg,
-                [6.0, 5.0, 5.0], 'Nota. Combinada: recall 0.85, medio cuerpo, LiDAR degradado, 200 ms y viento de 4 m/s.')
-        q = sub(q, 'F.6 Velocidad máxima segura')
-        vel = [['Condición', 'Panel fijo', 'Persona quieta', 'Persona que corre hacia el dron'],
-               ['C0 Nominal', '11', '4', '10'], ['C6 Latencia de 200 ms', '11', '4', '9'],
-               ['C7 Latencia de 300 ms', '10', '4', '7'], ['C10 Combinada', '11', '4', '8'],
-               ['C11 Recall 0.40', '11', '4', '7'], ['C12 Solo cabeza y hombros', '11', '4', '0'],
-               ['C13 Latencia de 500 ms', '10', '4', '5']]
-        q = par(q, 'La {T:tF6} da la velocidad máxima de avance a la que las reglas detienen el dron con margen.')
-        q = tab(q, 'Tabla F6', 'Velocidad máxima de avance (m/s) a la que las reglas detienen el dron con margen', vel,
-                [6.0, 3.0, 3.0, 4.0], 'Nota. Barrido de 1 a 12 m/s; segura si esa velocidad y todas las menores cumplen en '
-                                      'al menos el 95 % de los vuelos. Con IA y reglas, frente a una persona quieta, sube a '
-                                      '12 m/s.')
         q = sub(q, 'F.7 Pruebas estadísticas')
         q = par(q, 'Las proporciones se reportan con el intervalo de Wilson del 95 %. La comparación entre decisores en los '
                    'escenarios de discriminación usa la prueba exacta de McNemar sobre los 500 vuelos emparejados (mismas '
@@ -712,19 +529,10 @@ def aplicar(M, movidos, REPO):
         return q
 
     def anexo_G(q):
-        q = titulo_anexo(q, 'G', 'Protocolo de pruebas de campo')
-        q = sub(q, 'G.1 Lista de verificación antes de cada jornada')
-        for t in ['Zona consultada en el Visor Geográfico UAS, sin restricciones; permiso del dueño del terreno.',
-                  'Pronóstico revisado; viento medido con anemómetro por debajo del límite fijado [FALTA: límite de viento '
-                  'en m/s].', 'Zona delimitada y señalizada; ningún tercero dentro de ella.',
-                  'Batería cargada y medida (tensión por celda); batería de repuesto en bolsa ignífuga.',
-                  'Hélices, tornillos y amarres revisados; estabilizador y LiDAR firmes.',
-                  'Geocerca de ArduPilot activa; LOIT_SPEED en 4 m/s; modos del interruptor comprobados.',
-                  'Parada de emergencia (CH8) probada en tierra antes de cada vuelo.',
-                  'Registro de la Jetson y DataFlash funcionando; reloj del sistema sincronizado.',
-                  'Fijación GPS 3D antes de activar el modo experimental.',
-                  'Piloto de seguridad y observador presentes; consentimientos firmados de los voluntarios.']:
-            q = M.vineta(q, t)
+        q = titulo_anexo(q, 'G', 'Formatos de las pruebas de campo')
+        q = par(q, 'Este anexo reúne los dos formatos que se usan en cada jornada: la planilla de registro y el consentimiento '
+                   'informado. La lista de verificación, la disposición del campo y los criterios de interrupción están en '
+                   'el apartado 2.3.5.')
         q = sub(q, 'G.2 Planilla de registro por repetición')
         plan = [['Campo', 'Valor'], ['Fecha y hora', ''], ['Escenario y repetición', ''], ['Velocidad de avance (m/s)', ''],
                 ['Viento (m/s) e iluminación', ''], ['¿Se activó el sistema?', ''], ['¿Debía activarse?', ''],
@@ -733,26 +541,6 @@ def aplicar(M, movidos, REPO):
                 ['Observaciones (estabilidad, fallas, comportamiento inesperado)', '']]
         q = par(q, 'La {T:tG1} es la planilla que se llena en cada repetición.')
         q = tab(q, 'Tabla G1', 'Planilla de registro de cada repetición', plan, [8.0, 8.0])
-        q = sub(q, 'G.3 Disposición del campo')
-        q = par(q, 'Campo abierto y plano, sin público. Un panel de 2 × 2.6 m (cartón pluma o lona sobre un marco) a 20 m del '
-                   'punto de partida. Conos a 2, 4, 6, 8, 10, 12 y 15 m sobre la trayectoria, medidos con cinta, para estimar '
-                   'distancias en el video. Primero se usa un maniquí o una silueta de 1.7 m; una persona real solo después '
-                   'de diez éxitos de diez con el maniquí, y siempre con la parada de emergencia en la mano del operador.')
-        q = par(q, 'La {F:fG1} muestra el montaje usado para grabar datos reales de los sensores: el cuadricóptero, sin '
-                   'hélices, se apoya sobre un vehículo, y un computador portátil conectado por SSH registra los datos. '
-                   '[FALTA: fecha, lugar y qué se probó en cada foto; confirmar que el conjunto residencial autorizó '
-                   'grabar y publicar estas imágenes]')
-        q = figura_foto(q, 'Figura G1', 'Montaje para grabar datos reales de los sensores', 'campo_exterior.jpg', 15.5,
-                        'Nota. A la izquierda, el cuadricóptero sin hélices sobre el vehículo, con el portátil conectado; a la '
-                        'derecha, el tramo de la prueba, con una marca negra en el suelo como referencia de distancia. Se '
-                        'difuminó la placa del vehículo.')
-        q = sub(q, 'G.4 Criterios de interrupción')
-        for t in ['Viento por encima del límite o lluvia.', 'Un tercero entra en la zona.',
-                  'Batería por debajo de 3.5 V por celda o aviso de failsafe.',
-                  'Comportamiento inesperado del dron o pérdida del enlace MAVLink.',
-                  'Cualquier contacto con una persona, el maniquí o el panel: se suspende la jornada y se analiza el '
-                  'registro antes de seguir.']:
-            q = M.vineta(q, t)
         q = sub(q, 'G.5 Consentimiento informado para el uso de imagen')
         for t in ['Yo, ____________________, identificado(a) con documento n.° ____________, acepto participar como '
                   'voluntario(a) en los ensayos del proyecto de grado "Implementación experimental de un sistema de detección '
@@ -768,6 +556,6 @@ def aplicar(M, movidos, REPO):
 
     q = P[590]
     q = M.parrafo(q, '', AMARILLO, estilo='Normal')  # ancla para los anexos
-    for f in (anexo_A, anexo_H, anexo_I, anexo_G, anexo_B, anexo_C, anexo_D, anexo_E, anexo_F):
+    for f in (anexo_H, anexo_I, anexo_G, anexo_B, anexo_C, anexo_D, anexo_E, anexo_F):
         q = f(q)
     return q

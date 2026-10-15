@@ -1,5 +1,6 @@
 """Capítulo 2 · 2.2 integración, 2.3 protocolo; capítulos 3 a 5."""
 import copy
+import os
 from docx.oxml.ns import qn
 from docx.text.run import Run
 
@@ -8,6 +9,8 @@ from motor import AMARILLO, ROJO, TURQ, ROSA, VERDE
 
 def aplicar(M, reescribir, mover, DIAG):
     P, T = M.P, M.T
+    FOTOS = os.environ.get('FOTOS', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fotos'))
+    from c3_arquitectura import celda
     for i, k in ((488, ('Figura', 'dron')), (493, ('Figura', 'conex')), (501, ('Tabla', 'aeronav')),
                  (506, ('Figura', 'mp')), (520, ('Figura', 'detector')), (548, ('Tabla', 'estaticas')),
                  (552, ('Figura', 'capturas'))):
@@ -29,10 +32,27 @@ def aplicar(M, reescribir, mover, DIAG):
         'computadora de a bordo, una NVIDIA Jetson Orin Nano, y el conjunto de cámara y LiDAR, montado sobre un '
         'estabilizador BaseCam en la parte frontal para que ambos sensores apunten en la misma dirección. Las hélices se '
         'montaron según el sentido de giro que ArduCopter asigna a cada motor en configuración X: motores 1 y 2 en '
-        'sentido antihorario y 3 y 4 en sentido horario. La masa medida fue de 2371 g ({F:fC1}, Anexo C). [FALTA: aclarar qué incluye esa '
-        'medición y calcular la relación empuje–peso]'])
-    reescribir([487], ['La {F:dron} muestra la aeronave ensamblada. El inventario de componentes está en el Anexo C.'])
+        'sentido antihorario y 3 y 4 en sentido horario.'])
+    reescribir([487], ['La {F:dron} muestra la aeronave ensamblada; las fotografías del armado por etapas están en el Anexo C.'])
     M.marcar(P[490])
+    from datos_tablas import INVENTARIO
+    q = M.parrafo(P[490], 'La {T:inventario} lista los componentes del cuadricóptero integrado, con su referencia, su cantidad y '
+                          'la función que cumple cada uno.', AMARILLO)
+    cap = M.rotulo(q, 'Tabla', 'inventario', 'Componentes del cuadricóptero integrado')
+    t = M.tabla(cap, INVENTARIO, [3.4, 5.6, 1.6, 4.9])
+    q = M.parrafo(t, 'La masa del cuadricóptero se midió con una báscula de cocina SF-400 (capacidad de 10 kg y resolución '
+                     'de 1 g) y dio 2371 g ({F:masa}). [FALTA: aclarar qué incluye esa medición (batería, Jetson, cámara y '
+                     'estabilizador), la fecha y la masa de cada subsistema; con ella se calcula la relación '
+                     'empuje–peso]', AMARILLO)
+    cap = M.rotulo(q, 'Figura', 'masa', 'Medición de la masa del cuadricóptero')
+    fig = M.figura(cap, os.path.join(FOTOS, 'masa_bascula.jpg'), ancho_cm=15.5, color=AMARILLO)
+    q = M.nota(fig, 'Nota. A la izquierda, el cuadricóptero sobre la báscula; a la derecha, la lectura: 2371 g. [REVISAR: '
+                    'confirmar la lectura y la configuración medida]')
+    q = M.parrafo(q, 'El modo GUIDED exige posición GPS, por eso el cuadricóptero lleva un módulo GPS sobre el chasis '
+                     '({F:gps}). [FALTA: modelo del módulo GPS]', AMARILLO)
+    cap = M.rotulo(q, 'Figura', 'gps', 'Módulo GPS montado sobre el chasis')
+    fig = M.figura(cap, os.path.join(FOTOS, 'gps.jpg'), ancho_cm=7.5, color=AMARILLO)
+    M.nota(fig, 'Nota. Vista superior del módulo GPS con su cable hacia la Pixhawk.')
 
     # ---------------- 2.2.2
     reescribir([492], [
@@ -67,12 +87,23 @@ def aplicar(M, reescribir, mover, DIAG):
         'interruptor, configuración de los failsafes y prueba individual de los motores para confirmar su numeración y '
         'sentido de giro. La {T:aeronav} resume cada verificación y su criterio de aceptación. [FALTA: confirmar los '
         'modos finales del interruptor CH5 y el uso de CH7 como interruptor del modo experimental]'])
+    for fila, texto in {1: 'Cumple: ArduCopter 4.7.0 reconocido por Mission Planner',
+                        4: 'Cumple: cuatro ejes e interruptor leídos sin cruces',
+                        5: 'Cumple: cambio de modo reflejado en Mission Planner',
+                        8: 'Cumple: respuesta simétrica de los cuatro motores'}.items():
+        celda(M, T[14], fila, 3, texto)
     M.marcar(P[502])
     reescribir([505], [
         'La {F:mp} muestra la pantalla de vuelo de Mission Planner con la aeronave en tierra: el horizonte artificial '
         'responde a la inclinación del chasis, el modo y el estado de armado se actualizan y no aparecen mensajes de '
         'prearmado, lo que indica que la controladora lee sus sensores y atiende al radiocontrol.'])
     M.marcar(P[508])
+    from datos_tablas import PARAM_ARDUPILOT, MODULOS
+    q = M.parrafo(P[508], 'Los parámetros de ArduPilot que se cambiaron en esta etapa y en la integración con la Jetson están en '
+                          'la {T:ardupilot}, cada uno con su motivo.', AMARILLO)
+    cap = M.rotulo(q, 'Tabla', 'ardupilot', 'Parámetros de ArduPilot cambiados o relevantes')
+    t = M.tabla(cap, PARAM_ARDUPILOT, [4.8, 4.2, 6.5])
+    M.nota(t, 'Nota. Los valores de LOIT_BRK_ACCEL y GUID_TIMEOUT se leen en la Pixhawk con Mission Planner.')
 
     # ---------------- 2.2.4
     reescribir([509], ['2.2.4 Primera versión del algoritmo de detección'])
@@ -89,7 +120,7 @@ def aplicar(M, reescribir, mover, DIAG):
     reescribir([516], [
         'Esta primera versión solo monitorea y advierte: clasifica la cercanía y la posición de la persona, pero no envía '
         'órdenes a la Pixhawk. La decisión de intervenir y el envío de comandos están en el módulo de 2.2.6. Su diagrama '
-        'de flujo está en el Anexo E.'])
+        'de flujo se muestra en la {F:flujo}.'])
     reescribir([518], [
         'Antes de instalarlo en la aeronave, el detector se probó en un computador portátil con su cámara integrada y luz '
         'artificial ({F:detector}). Así se descartaron errores de lógica y de configuración sin las restricciones de '
@@ -98,7 +129,13 @@ def aplicar(M, reescribir, mover, DIAG):
         'Nota. La persona que aparece autorizó el uso de su imagen con fines académicos. [FALTA: reemplazar por una '
         'captura del detector YOLO de personas (la ventana actual dice "Detección de Rostros") y confirmar por escrito la '
         'autorización de la persona]'])
-    mover([523, 524, 525, 526, 527, 528], 'E', 'figE1')
+    for i in (523, 524, 525, 526, 527, 528):
+        M.marcar(P[i])
+    cap = M.rotulo(P[528], 'Figura', 'flujo', 'Diagrama de flujo del algoritmo de detección de personas')
+    M.figura(cap, f'{DIAG}/11_deteccion.png', alto_max=18.0, color=VERDE)
+    M.parrafo(P[528], '[REVISAR: el diagrama original se redibujó con el mismo estilo del resto de figuras y con los '
+                      'pasos que describe el texto: carga del modelo, lectura del cuadro, persona de mayor área, zona, '
+                      'persistencia del riesgo y registro en el archivo CSV]', TURQ)
 
     # ---------------- 2.2.5
     reescribir([531], [
@@ -124,14 +161,16 @@ def aplicar(M, reescribir, mover, DIAG):
 
     # ---------------- 2.2.6
     reescribir([537], ['2.2.6 Arquitectura de software y lógica de decisión'])
-    reescribir([538], [
-        'El código se organiza en módulos, uno por archivo; su organización y los listados principales están en el '
-        'Anexo E. En el cuerpo del documento solo se presentan la arquitectura ({F:arq}) y los estados de la maniobra '
+    q = reescribir([538], [
+        'El código se organiza en módulos, uno por archivo, que resume la {T:modulos}; los listados principales están en '
+        'el Anexo E. En el cuerpo del documento solo se presentan la arquitectura ({F:arq}) y los estados de la maniobra '
         '({F:estados}).'])
+    cap = M.rotulo(q, 'Tabla', 'modulos', 'Módulos del software de a bordo y de simulación')
+    t = M.tabla(cap, MODULOS, [6.4, 9.1])
     for i in (539, 540, 541):
         M.marcar(P[i])
     cap = M.rotulo(P[541], 'Figura', 'arq', 'Arquitectura de percepción, decisión y control')
-    fig = M.figura(cap, f'{DIAG}/01_arquitectura.png', alto_max=17.0)
+    fig = M.figura(cap, f'{DIAG}/01_arquitectura.png', alto_max=19.0)
     reescribir([542], [
         'La cámara alimenta a la IA 1, el detector YOLO26n con seguimiento. El estabilizador no sigue a la persona: '
         'mantiene la cámara y el LiDAR con una inclinación fija de −5°, de modo que el LiDAR mide lo que hay al frente, '
@@ -141,7 +180,7 @@ def aplicar(M, reescribir, mover, DIAG):
         'de un seguimiento alfa-beta de la persona, la distancia, la velocidad de acercamiento, la velocidad lateral y el '
         'tiempo sin detección. Las entradas se calculan con la misma función en la simulación y en el dron, para que el '
         'modelo reciba en vuelo lo mismo que vio al entrenarse.'])
-    reescribir([543], [
+    q = reescribir([543], [
         'La IA 2 es un perceptrón multicapa de scikit-learn con dos capas ocultas de 32 y 16 neuronas (ReLU) y una sola '
         'salida: la probabilidad de que, si el piloto mantiene su mando, en los próximos 3 s ocurra un choque o una '
         'persona quede a menos de 2 m del dron. Si esa probabilidad supera 0.7 durante 2 cuadros seguidos, el sistema '
@@ -149,9 +188,23 @@ def aplicar(M, reescribir, mover, DIAG):
         '1.4.2. El modelo se entrenó con 2 551 725 cuadros de vuelos simulados (13 % con riesgo), etiquetados '
         'automáticamente con la verdad del simulador, y se probó con 533 085 cuadros de mundos que no participaron en '
         'el entrenamiento: área bajo la curva ROC de 0.974 y 0.3 % de falsos positivos por cuadro. El umbral y el número '
-        'de cuadros se eligieron con mundos de validación, nunca con el protocolo. Los detalles del entrenamiento están '
-        'en el Anexo F. [FALTA: validar el clasificador con datos reales del dron (pasos 4 y 5 del plan de pruebas) y '
-        'reportar el resultado]'])
+        'de cuadros se eligieron con mundos de validación, nunca con el protocolo. La {T:clasif} reúne los datos y el '
+        'desempeño por cuadro; los detalles del entrenamiento están en el Anexo F. [FALTA: validar el clasificador con '
+        'datos reales del dron (pasos 4 y 5 del plan de pruebas) y reportar el resultado]'])
+    from datos_tablas import CLASIFICADOR, CONFUSION
+    cap = M.rotulo(q, 'Tabla', 'clasif', 'Datos y desempeño del clasificador por cuadro')
+    t = M.tabla(cap, CLASIFICADOR, [7.0, 8.0])
+    q = M.nota(t, 'Nota. La exhaustividad por cuadro no mide la seguridad: un riesgo dura muchos cuadros y basta detectarlo '
+                  'en dos seguidos; la seguridad se mide en lazo cerrado.')
+    q = M.parrafo(q, 'De los 533 085 cuadros de prueba, 61 335 tenían riesgo real y el clasificador marcó 45 619 (74.4 %); '
+                     'de los 471 750 sin riesgo, solo 1 420 dieron una alarma falsa (0.3 %). La {T:confusion} muestra la '
+                     'matriz completa.', AMARILLO)
+    cap = M.rotulo(q, 'Tabla', 'confusion', 'Matriz de confusión en la prueba (por cuadro)')
+    t = M.tabla(cap, CONFUSION, [5.0, 5.0, 5.0])
+    q = M.parrafo(t, 'Las curvas de la {F:roc} resumen el desempeño: el área bajo la curva ROC es de 0.974 y la precisión '
+                     'media, de 0.914.', AMARILLO)
+    cap = M.rotulo(q, 'Figura', 'roc', 'Curvas ROC y de precisión-exhaustividad del clasificador')
+    M.figura(cap, f'{M.repo}/simulacion/informes/minimo_tesis_decisor_curvas.png', ancho_cm=15.5, color=AMARILLO)
     q = reescribir([544], [
         'La salida del clasificador opera dentro de una envolvente de reglas que no puede saltar: (1) si el LiDAR mide '
         'menos de 3 m mientras el dron avanza, se detiene el avance sin importar lo que diga la IA; (2) el ascenso por '
@@ -162,7 +215,7 @@ def aplicar(M, reescribir, mover, DIAG):
         'la cámara, el detector o el LiDAR, detiene el avance (RF-11). La {F:estados} muestra los estados de la '
         'maniobra.'])
     cap = M.rotulo(q, 'Figura', 'estados', 'Estados de la intervención')
-    fig = M.figura(cap, f'{DIAG}/02_estados.png', alto_max=14.0)
+    fig = M.figura(cap, f'{DIAG}/02_estados.png', alto_max=18.0)
     M.nota(fig, 'Nota. CH5: modo de vuelo; CH7: interruptor del modo experimental; CH8: parada de emergencia.')
     reescribir([545], [
         'La orden llega a la Pixhawk por MAVLink en el modo GUIDED, que exige posición GPS con fijación 3D (ArduPilot, '
@@ -172,8 +225,8 @@ def aplicar(M, reescribir, mover, DIAG):
         'GUIDED sostiene por sí mismo. El piloto retoma el mando moviendo el interruptor de modos; si la Jetson deja de '
         'enviar consignas, el parámetro GUID_TIMEOUT hace que la Pixhawk frene sola. Cada ejecución escribe un registro '
         'CSV con el modo, el armado, la altura, el voltaje, el estado de la decisión, la distancia y su fuente, la '
-        'probabilidad, las órdenes enviadas y las latencias (RF-09). Los parámetros de ArduPilot y del software están en '
-        'el Anexo D.'])
+        'probabilidad, las órdenes enviadas y las latencias (RF-09). Los parámetros de ArduPilot están en la {T:ardupilot} y '
+        'los del software, en el Anexo D.'])
 
     # ---------------- 2.2.7
     reescribir([547], [
@@ -215,15 +268,15 @@ def aplicar(M, reescribir, mover, DIAG):
         'integrada detecta personas con su propia alimentación, el LiDAR entrega 100 lecturas por segundo y el enlace '
         'MAVLink responde. Antes de volar quedan cinco comprobaciones: que la BaseCam, alimentada, lea el pulso de AUX1; '
         'el cambio a GUIDED y la retoma del piloto en banco, midiendo la latencia entre el riesgo y la orden (criterio: '
-        'menos de 150 ms); la grabación de datos reales con el dron sin hélices sobre un vehículo ({F:fG1}, Anexo G), para comparar '
+        'menos de 150 ms); la grabación de datos reales con el dron sin hélices sobre un vehículo ({F:campofoto}, 2.3.5), para comparar '
         'los sensores con su modelo de simulación; el clasificador en modo sombra, que decide y registra pero no manda; y la '
         'fijación GPS 3D que exige GUIDED. [FALTA: resultado de estas cinco comprobaciones]'])
-    reescribir([557], [
+    q = reescribir([557], [
         'Las pruebas siguientes van de menor a mayor riesgo: ejecución en banco sin la Pixhawk, que muestra qué '
         'decidiría el sistema sin enviar nada; ejecución en banco con la Pixhawk conectada y sin hélices, para comprobar '
         'el cambio de modo y la retoma del piloto; y simulación del lazo MAVLink en el simulador SITL de ArduPilot. Solo '
-        'después se pasa al vuelo exterior, con observador y piloto de seguridad, según el protocolo de 2.3 y las listas '
-        'del Anexo G.'])
+        'después se pasa al vuelo exterior, con observador y piloto de seguridad, según el protocolo de 2.3 y la lista de '
+        'verificación de 2.3.5.'])
 
     # =================================================================== 2.3 protocolo
     filas_v = [
@@ -254,11 +307,32 @@ def aplicar(M, reescribir, mover, DIAG):
         ['10 repeticiones', 'Repeticiones de campo por escenario', 'Diez éxitos de diez dan un intervalo de Wilson del '
          '95 % de 72 % a 100 %: muestran que el sistema funciona y validan latencia y frenado.'],
     ]
-    q = M.parrafo(P[557], '2.3 Protocolo de validación experimental', AMARILLO, ppr_de=P[481])
+    q = M.parrafo(q, 'La {T:traza} relaciona cada requerimiento funcional con la prueba que lo verifica y con su estado actual.',
+                  AMARILLO)
+    filas_traza = [
+        ['Requerimiento', 'Cómo se verifica', 'Evidencia', 'Estado'],
+        ['RF-01 Captura visual', 'Video continuo de la cámara USB a 640×480 y 30 cuadros/s', 'Despliegue en la Jetson (2.2.5)', 'Verificado'],
+        ['RF-02 Detección de personas', 'Detector YOLO26n con TensorRT sobre personas en movimiento', '9 a 11 ms por cuadro; prueba de respuesta (2.2.7)', 'Verificado'],
+        ['RF-03 Telemetría de proximidad', 'Lectura del LiDAR TF03 por USB-TTL', '100 lecturas por segundo (2.2.7)', 'Verificado'],
+        ['RF-04 Procesamiento a bordo', 'Inferencia y decisión en la Jetson Orin Nano', 'Ejecución sin enlace de video a tierra (2.2.5)', 'Verificado'],
+        ['RF-05 Enlace MAVLink', 'Comandos de la Jetson a la Pixhawk por TELEM2', '115200 baudios; 10 de 10 comandos con confirmación', 'Verificado'],
+        ['RF-06 Maniobra de evasión', 'Cambio a GUIDED, ascenso a 3.30 m y retoma del piloto en banco', '[FALTA: resultado del paso 3 del plan de pruebas]', 'Pendiente'],
+        ['RF-07 Gestión de potencia', 'Arranque de la Jetson con la alimentación de a bordo', 'Sin reinicios espontáneos (2.2.7)', 'Verificado'],
+        ['RF-08 Tolerancia a perturbaciones', 'Condiciones con viento, luz y sensores degradados', 'Simulación (3.3); campo [FALTA: ensayos]', 'Parcial'],
+        ['RF-09 Trazabilidad de eventos', 'Registro CSV de modo, distancia, decisión y latencias', 'Registro de la Jetson (2.2.6) [FALTA: ejemplo de registro real]', 'Parcial'],
+        ['RF-10 Delimitación de la respuesta', 'Salidas del clasificador: solo detener y ascender', 'Lógica de 2.2.6; sin evasión lateral', 'Verificado'],
+        ['RF-11 Protocolo de fallo seguro', 'Bloqueo ante falta de cámara, detector o LiDAR; GUID_TIMEOUT', '[FALTA: prueba en banco]', 'Pendiente'],
+    ]
+    cap = M.rotulo(q, 'Tabla', 'traza', 'Verificación de los requerimientos funcionales')
+    t = M.tabla(cap, filas_traza, [3.8, 5.0, 4.8, 1.9])
+    q = M.nota(t, 'Nota. "Verificado" significa que la prueba se hizo con la aeronave en tierra; "Parcial", que solo está '
+                  'la parte de simulación; "Pendiente", que falta el resultado. [REVISAR: confirmar cada estado con la '
+                  'bitácora de pruebas]')
+    q = M.parrafo(q, '2.3 Protocolo de validación experimental', AMARILLO, ppr_de=P[481])
     q = M.parrafo(q, 'Para el tercer objetivo se definió un protocolo con los mismos escenarios en simulación y en '
                      'campo. La simulación sirvió para fijar los parámetros iniciales de operación y los criterios de '
                      'seguridad, como prevé el alcance de 1.4.1, antes de arriesgar la aeronave; los vuelos de campo '
-                     'validan el sistema real. El modelo de simulación y sus resultados completos están en el Anexo F.')
+                     'validan el sistema real. El modelo de simulación está en el Anexo F.')
     q = M.parrafo(q, '2.3.1 Escenarios y criterios de éxito', AMARILLO, ppr_de=P[484])
     q = M.parrafo(q, 'El piloto avanza en línea recta en LOITER a 2.3 m, o deja el dron en vuelo estacionario (modo '
                      'estático). Los escenarios son: (a) avance hacia un panel fijo de 2 × 2.6 m a 1, 2, 3 y 4 m/s; (b) '
@@ -275,7 +349,7 @@ def aplicar(M, reescribir, mover, DIAG):
                      'trayectoria; en ellos el éxito se juzga contra lo que habría pasado en el mismo vuelo sin el '
                      'sistema. La {F:secuencia} resume el orden de las pruebas.')
     cap = M.rotulo(q, 'Figura', 'secuencia', 'Secuencia de validación, de la simulación al campo')
-    fig = M.figura(cap, f'{DIAG}/03_experimento.png', ancho_cm=14.5)
+    fig = M.figura(cap, f'{DIAG}/03_experimento.png', ancho_cm=15.5)
     q = M.parrafo(fig, '2.3.2 Origen de los valores numéricos del sistema', AMARILLO, ppr_de=P[484])
     q = M.parrafo(q, 'Cada número del sistema tiene una razón física o se eligió con datos que no se usan para '
                      'evaluarlo. La {T:valores} los reúne.')
@@ -305,6 +379,41 @@ def aplicar(M, reescribir, mover, DIAG):
                      'comportamiento del piloto al retomar el mando, el efecto del viento y la iluminación sobre la '
                      'detección, y las fallas o comportamientos inesperados. Estas observaciones explican los números y '
                      'ayudan a decidir si una falla viene del sensor, de la decisión o del control.')
+
+    q = M.parrafo(q, '2.3.5 Preparación de la jornada y criterios de seguridad', AMARILLO, ppr_de=P[484])
+    q = M.parrafo(q, 'Antes de cada jornada se revisa la lista siguiente; si un punto no se cumple, no se vuela.', AMARILLO)
+    for t in ['Zona consultada en el Visor Geográfico UAS, sin restricciones; permiso del dueño del terreno.',
+              'Pronóstico revisado; viento medido con anemómetro por debajo del límite fijado [FALTA: límite de viento en '
+              'm/s].', 'Zona delimitada y señalizada; ningún tercero dentro de ella.',
+              'Batería cargada y medida (tensión por celda); batería de repuesto en bolsa ignífuga.',
+              'Hélices, tornillos y amarres revisados; estabilizador y LiDAR firmes.',
+              'Geocerca de ArduPilot activa; LOIT_SPEED en 4 m/s; modos del interruptor comprobados.',
+              'Parada de emergencia (CH8) probada en tierra antes de cada vuelo.',
+              'Registro de la Jetson y DataFlash funcionando; reloj del sistema sincronizado.',
+              'Fijación GPS 3D antes de activar el modo experimental.',
+              'Piloto de seguridad y observador presentes; consentimientos firmados de los voluntarios.']:
+        q = M.vineta(q, t)
+    q = M.parrafo(q, 'El campo es abierto y plano, sin público. Un panel de 2 × 2.6 m (cartón pluma o lona sobre un marco) '
+                     'se coloca a 20 m del punto de partida, y sobre la trayectoria se ponen conos a 2, 4, 6, 8, 10, 12 y '
+                     '15 m, medidos con cinta, para estimar distancias en el video. Primero se usa un maniquí o una '
+                     'silueta de 1.7 m; una persona real solo después de diez éxitos de diez con el maniquí, y siempre con '
+                     'la parada de emergencia en la mano del operador. La {F:campofoto} muestra el montaje usado para '
+                     'grabar datos reales de los sensores: el cuadricóptero, sin hélices, se apoya sobre un vehículo, y un '
+                     'computador portátil conectado por SSH registra los datos. [FALTA: fecha, lugar y qué se probó en '
+                     'cada foto; confirmar que el conjunto residencial autorizó grabar y publicar estas imágenes]',
+                  AMARILLO)
+    cap = M.rotulo(q, 'Figura', 'campofoto', 'Montaje para grabar datos reales de los sensores')
+    fig = M.figura(cap, os.path.join(FOTOS, 'campo_exterior.jpg'), ancho_cm=15.5, color=AMARILLO)
+    q = M.nota(fig, 'Nota. A la izquierda, el cuadricóptero sin hélices sobre el vehículo, con el portátil conectado; a la '
+                    'derecha, el tramo de la prueba, con una marca negra en el suelo como referencia de distancia. Se '
+                    'difuminó la placa del vehículo.')
+    q = M.parrafo(q, 'La jornada se interrumpe en cualquiera de estos casos:', AMARILLO)
+    for t in ['Viento por encima del límite o lluvia.', 'Un tercero entra en la zona.',
+              'Batería por debajo de 3.5 V por celda o aviso de failsafe.',
+              'Comportamiento inesperado del dron o pérdida del enlace MAVLink.',
+              'Cualquier contacto con una persona, el maniquí o el panel: se suspende la jornada y se analiza el '
+              'registro antes de seguir.']:
+        q = M.vineta(q, t)
 
     # =================================================================== 3 resultados
     filas_lat = [
@@ -348,8 +457,20 @@ def aplicar(M, reescribir, mover, DIAG):
                      'éxito: 100.0 % [99.7, 100.0]. Sin el sistema, con el operador solo, apenas el 23 % [21, 25] de los '
                      'vuelos fue seguro. No hubo activaciones falsas en los 300 vuelos que no debían activarlo. El '
                      'operador apretó la parada en 28 vuelos, todos con la persona que corre hacia el dron, y ninguno '
-                     'terminó en choque. La {T:latencias} muestra las latencias y distancias principales; el detalle por '
-                     'escenario está en el Anexo F.')
+                     'terminó en choque. La {T:protocolo} da el resultado de cada variante y la {T:latencias} las latencias y '
+                     'distancias principales.')
+    from datos_tablas import PROTOCOLO, MUNDOS, DEGRADADAS, VELOCIDADES
+    cap = M.rotulo(q, 'Tabla', 'protocolo', 'Resultados del protocolo del comité en simulación (100 vuelos por variante)')
+    t = M.tabla(cap, PROTOCOLO, [4.6, 1.5, 2.8, 2.6, 2.4, 2.1])
+    q = M.nota(t, 'Nota. Entre corchetes, intervalo de Wilson del 95 %. "Sin ayuda del operador": el operador no apretó la '
+                  'parada en ningún momento.')
+    q = M.parrafo(q, 'En las 13 variantes el sistema termina con éxito y sin choques. Sin él, todos los escenarios que piden '
+                     'activarse terminan en riesgo físico, y las personas que vienen de frente producen entre 98 y 100 '
+                     'choques de cada 100 vuelos. En los escenarios que no deben activarlo (persona que cruza lejos o pasa '
+                     'de lado) el sistema tampoco se activa, y el vuelo es seguro con y sin él. El único caso en que el '
+                     'operador por sí solo no basta es la persona que corre de frente: sin ayuda del sistema, solo el 72 % '
+                     'de los vuelos sale bien. La {T:latencias} da las latencias y distancias de los escenarios '
+                     'principales.', AMARILLO)
     cap = M.rotulo(q, 'Tabla', 'latencias', 'Latencias y distancias mínimas en simulación')
     t = M.tabla(cap, filas_lat, [5.0, 3.6, 3.6, 3.6])
     q = M.nota(t, 'Nota. Media e intervalo del 95 % de 100 vuelos por escenario.')
@@ -362,13 +483,27 @@ def aplicar(M, reescribir, mover, DIAG):
                      'contrario ocurre 2 veces (McNemar, p = 0.0013).')
     cap = M.rotulo(q, 'Tabla', 'disc', 'Éxito por escenario de discriminación (100 vuelos cada uno)')
     t = M.tabla(cap, filas_disc, [6.6, 2.8, 3.2, 3.4])
-    q = M.parrafo(t, 'En 3840 vuelos sobre mundos aleatorios que no se usaron ni para entrenar ni para elegir el umbral, '
+    q = M.parrafo(t, 'La {F:g1} muestra la diferencia por escenario: la IA gana en los dos casos más difíciles (cruce justo por '
+                     'la trayectoria, 77 % contra 65 %, y cruce por delante, 98 % contra 95 %), empata en los claros y pierde '
+                     'un punto cuando la persona viene de frente a 3 m del costado (95 % contra 96 %).', AMARILLO)
+    cap = M.rotulo(q, 'Figura', 'g1', 'Éxito por escenario de discriminación: reglas solas frente a IA con reglas')
+    fig = M.figura(cap, f'{DIAG}/g1_discriminacion.png', ancho_cm=15.5, color=AMARILLO)
+    q = M.parrafo(fig, 'En 3840 vuelos sobre mundos aleatorios que no se usaron ni para entrenar ni para elegir el umbral, '
                      'la IA con reglas redujo los vuelos con una persona a menos de 2 m del dron por debajo de 3.30 m de '
                      '420 a 218 y las activaciones innecesarias de 137 a 67. Los choques pasaron de 39 a 28, una '
-                     'diferencia que no es estadísticamente significativa ({T:metricas}). Con el piloto a 4 m/s o menos, '
+                     'diferencia que no es estadísticamente significativa ({T:metricas}). La {T:mundos} da el detalle por decisor. Con el piloto a 4 m/s o menos, '
                      'la velocidad recomendada, los riesgos no evitados son prácticamente los mismos (24 con la IA y 22 '
                      'con las reglas): en la operación recomendada la ventaja de la IA es la eficiencia, no una seguridad '
                      'mayor.')
+    cap = M.rotulo(q, 'Tabla', 'mundos', 'Resultados en 3840 vuelos sobre 60 mundos aleatorios de prueba')
+    t = M.tabla(cap, MUNDOS, [3.2, 2.6, 1.8, 3.0, 2.8, 2.6])
+    q = M.nota(t, 'Nota. 2043 de los 3840 vuelos (53 %) habrían tenido riesgo físico sin el sistema. Incluye casos '
+                  'físicamente imposibles de evitar.')
+    q = M.parrafo(q, 'La {F:g2} compara los dos decisores: la IA con reglas deja casi a la mitad los vuelos con una persona '
+                     'cerca (de 420 a 218) y las activaciones innecesarias (de 137 a 67), mientras que los riesgos no '
+                     'evitados bajan menos (de 92 a 67) y los choques, de 39 a 28.', AMARILLO)
+    cap = M.rotulo(q, 'Figura', 'g2', 'Resultados de los dos decisores en 3840 vuelos sobre mundos aleatorios')
+    q = M.figura(cap, f'{DIAG}/g2_mundos.png', ancho_cm=15.5, color=AMARILLO)
     cap = M.rotulo(q, 'Tabla', 'metricas', 'Métricas principales y prueba estadística')
     t = M.tabla(cap, filas_metr, [4.6, 1.9, 2.4, 2.6, 4.5])
     q = M.nota(t, 'Nota. Cada experimento usa vuelos distintos; no se deben mezclar sus cifras. Las pruebas de los 3840 '
@@ -377,13 +512,44 @@ def aplicar(M, reescribir, mover, DIAG):
     q = M.parrafo(q, 'A las velocidades del protocolo ninguna degradación realista hizo fallar el sistema: pérdida de '
                      'detecciones, oclusión de medio cuerpo, ruido del LiDAR, latencias de 200 y 300 ms y viento de cola '
                      'de 3 y 5 m/s. Los límites aparecen al subir la velocidad o con solo la cabeza y los hombros '
-                     'visibles, caso en el que la detección llega tarde incluso a 1 m/s. Las tablas completas están en '
-                     'el Anexo F.')
+                     'visibles, caso en el que la detección llega tarde incluso a 1 m/s. La {T:degr} da el éxito, los choques y las '
+                     'activaciones innecesarias de cada decisor en 14 condiciones con sensores degradados.')
+    cap = M.rotulo(q, 'Tabla', 'degr', 'Desempeño con sensores degradados (18 variantes de 100 vuelos por condición)')
+    t = M.tabla(cap, DEGRADADAS, [6.0, 5.0, 5.0])
+    q = M.nota(t, 'Nota. Combinada: recall 0.85, medio cuerpo, LiDAR degradado, 200 ms y viento de 4 m/s.')
+    q = M.parrafo(q, 'Con las reglas solas, el éxito va de 97.6 % en la condición nominal a 96.8 % en la combinada; con la IA '
+                     'y las reglas, de 98.3 % a 98.0 %. No hubo choques en ninguna condición salvo cuando solo se ve la '
+                     'cabeza y los hombros (C12), donde cada decisor tuvo uno. La ventaja de la IA se pierde justo cuando el '
+                     'detector falla más: con un recall de 0.40 los dos aciertan 97.4 % de los vuelos, y con solo cabeza y '
+                     'hombros la IA queda en 96.5 % frente a 96.9 % de las reglas. La {F:g3} muestra el éxito de cada '
+                     'decisor en las 14 condiciones.', AMARILLO)
+    cap = M.rotulo(q, 'Figura', 'g3', 'Éxito por condición con sensores degradados')
+    fig = M.figura(cap, f'{DIAG}/g3_degradadas.png', ancho_cm=15.5, color=AMARILLO)
+    q = M.nota(fig, 'Nota. El eje vertical empieza en 94 %. C0 es la condición nominal y C10, la combinada.')
+    q = M.parrafo(q, 'La {T:veloc} da la velocidad máxima de avance con margen en las condiciones más exigentes.',
+                  AMARILLO)
+    cap = M.rotulo(q, 'Tabla', 'veloc', 'Velocidad máxima de avance (m/s) a la que las reglas detienen el dron con margen')
+    t = M.tabla(cap, VELOCIDADES, [6.0, 3.0, 3.0, 4.0])
+    q = M.nota(t, 'Nota. Barrido de 1 a 12 m/s; segura si esa velocidad y todas las menores cumplen en al menos el 95 % de '
+                  'los vuelos. Con IA y reglas, frente a una persona quieta, sube a 12 m/s.')
+    q = M.parrafo(q, 'Frente a un panel fijo las reglas detienen el dron con margen hasta 10 u 11 m/s, pero frente a una '
+                     'persona quieta el límite es de 4 m/s en todas las condiciones, y frente a una persona que corre baja '
+                     'hasta 0 m/s cuando solo se ven la cabeza y los hombros. Por eso el piloto se limita a 4 m/s '
+                     '(LOIT_SPEED), como lo resume la {F:g4}.', AMARILLO)
+    cap = M.rotulo(q, 'Figura', 'g4', 'Velocidad máxima segura de avance según la condición y el obstáculo')
+    q = M.figura(cap, f'{DIAG}/g4_velocidades.png', ancho_cm=15.5, color=AMARILLO)
     q = M.parrafo(q, '3.4 Pruebas en banco', AMARILLO, ppr_de=P[481])
-    q = M.parrafo(q, '[FALTA: resultados de los pasos 1 a 5 del plan de pruebas físicas: cuadros por segundo sostenidos '
-                     'durante 10 minutos, huecos del LiDAR, latencia entre el riesgo y la orden medida en el registro, '
-                     'retoma del piloto con el interruptor de modos y comparación del clasificador en modo sombra con la '
-                     'simulación, con fotos del montaje]')
+    q = M.parrafo(q, 'El plan de pruebas físicas tiene cinco pasos, de menor a mayor riesgo ({T:planbanco}). [FALTA: '
+                     'resultado de cada paso, con fotos del montaje]')
+    filas_plan = [['Paso', 'Prueba en banco', 'Criterio de aceptación', 'Resultado'],
+                  ['1', 'Cuadros por segundo sostenidos durante 10 minutos', 'Sin congelamientos ni caídas de cuadros', '[FALTA]'],
+                  ['2', 'Lecturas del LiDAR en movimiento', 'Sin huecos prolongados en la señal', '[FALTA]'],
+                  ['3', 'Latencia entre el riesgo y la orden, medida en el registro', 'Menos de 150 ms', '[FALTA]'],
+                  ['4', 'Retoma del piloto con el interruptor de modos', 'La Jetson suelta el mando y no vuelve a pedir GUIDED', '[FALTA]'],
+                  ['5', 'Clasificador en modo sombra', 'Decide en banco igual que en simulación', '[FALTA]']]
+    cap = M.rotulo(q, 'Tabla', 'planbanco', 'Plan de pruebas en banco y su resultado')
+    t = M.tabla(cap, filas_plan, [1.2, 6.2, 6.0, 2.1])
+    q = M.nota(t, 'Nota. El criterio de latencia sale de la {T:valores}.')
     q = M.parrafo(q, '3.5 Ensayos de campo', AMARILLO, ppr_de=P[481])
     q = M.parrafo(q, 'La {T:campo} resume los ensayos de campo por escenario. [FALTA: fecha, hora, viento medido e '
                      'iluminación de cada jornada]')
@@ -397,8 +563,26 @@ def aplicar(M, reescribir, mover, DIAG):
     q = M.parrafo(q, 'La simulación indica que el sistema cumple el protocolo y que la decisión con IA dentro de reglas '
                      'mejora la discriminación sin perder seguridad. Esto responde a la brecha que señalan Vera-Yanez et '
                      'al. (2023), pero solo en parte: el detector se modeló estadísticamente y no con imágenes reales, '
-                     'así que la validez de esas cifras depende de que los ensayos de campo las confirmen. [FALTA: '
-                     'comparar cada escenario de campo con su intervalo de simulación y explicar las diferencias '
+                     'así que la validez de esas cifras depende de que los ensayos de campo las confirmen. La {T:supuestos} '
+                     'reúne los supuestos del simulador y la prueba con la que cada uno se comprobará en campo.')
+    filas_sup = [['Supuesto del simulador', 'Valor', 'Cómo se comprobará en campo'],
+                 ['Detector', 'Probabilidad de detección que cae con la distancia; ruido en el rumbo', 'Comparar las detecciones reales con las del modelo estadístico (3.4 y 3.5)'],
+                 ['Distancia a la persona', 'Estimada con la altura de la caja, suponiendo 1.72 m de estatura', 'Medir con marcas en el suelo y con el LiDAR cuando el rayo toca a la persona'],
+                 ['LiDAR', 'Un rayo de 0.1 a 30 m, 2 cm de ruido, inclinado −5°', 'Registrar la señal real del TF03 en el carrito y en vuelo'],
+                 ['Retardo de las medidas', '100 ms', 'Medir la latencia entre el riesgo y la orden en el registro de la Jetson'],
+                 ['Control del dron', 'Controladores de posición y actitud de ArduPilot modelados', 'Medir la distancia de frenado real en los ensayos'],
+                 ['Personas', 'Caminan a 1.4 m/s y corren a 3.3 m/s', 'Cronometrar a los voluntarios en cada repetición']]
+    cap = M.rotulo(q, 'Tabla', 'supuestos', 'Supuestos del simulador y su comprobación en campo')
+    t = M.tabla(cap, filas_sup, [3.4, 6.0, 6.1])
+    q = M.parrafo(t, 'La {T:cumple} resume qué se logró en cada objetivo específico, con su evidencia y lo que falta.',
+                  AMARILLO)
+    filas_obj = [['Objetivo específico', 'Qué se logró', 'Evidencia', 'Lo que falta'],
+                 ['1. Definir la arquitectura operativa', 'Arquitectura de percepción, decisión y control con YOLO26n, LiDAR TF03, Jetson Orin Nano y Pixhawk', 'Requerimientos, matrices de decisión y diagramas de 2.1; arquitectura de 2.2.6', '[FALTA: latencia total del ciclo medida]'],
+                 ['2. Evaluar la integración funcional', 'Activación, comunicación y respuesta del detector verificadas en tierra', 'Tablas de 2.2.7 y de verificación de requerimientos', '[FALTA: cambio a GUIDED y retoma del piloto en banco]'],
+                 ['3. Validar el protocolo de evasión', 'Protocolo cumplido en simulación en 1300 vuelos; IA con reglas mejor que las reglas en casos dudosos', 'Capítulo 3 (3.1 a 3.3)', '[FALTA: ensayos de campo con su intervalo de confianza]']]
+    cap = M.rotulo(q, 'Tabla', 'cumple', 'Cumplimiento de los objetivos específicos')
+    t = M.tabla(cap, filas_obj, [3.4, 5.0, 3.8, 3.3])
+    q = M.parrafo(t, '[FALTA: comparar cada escenario de campo con su intervalo de simulación y explicar las diferencias '
                      '(sensor, latencia o viento)]')
 
     # =================================================================== 4 y 5
