@@ -27,6 +27,7 @@ y formato de la plantilla USB (rótulos, notas, tablas con solo líneas horizont
 | `motor.py` | Funciones base: resaltar, insertar párrafos, rótulos con numeración automática, tablas, figuras, hipervínculos a anexos |
 | `c1_inicio.py` … `c5_anexos.py` | Los cambios de cada parte: portada a justificación, marcos, arquitectura, integración y resultados, referencias y anexos |
 | `construir.py` | Aplica todo y numera tablas y figuras |
+| `c6_humanizar.py`, `h_ediciones.py` | Pasada de redacción con la skill humanizer: aplica cada edición en el documento (en rojo y verde en la intervenida) |
 | `pulir.py` | Ajustes finales de formato comunes a las dos versiones |
 | `aceptar2.py` | Vista previa limpia: quita lo rojo y los `[REVISAR]`, deja solo los `[FALTA]` |
 | `pdf_uno.py` | Convierte a PDF con LibreOffice para revisar (LibreOffice no dibuja las ecuaciones; Word sí) |

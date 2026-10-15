@@ -153,9 +153,16 @@ Quedan unas 25 páginas libres para los resultados de banco y de campo.
 
 ### Redacción
 
-El texto se reescribió a mano para que suene natural (frases de largo variado, sin muletillas ni listas de tres por
-costumbre, sin adjetivos de relleno), siguiendo las pautas de "Signs of AI writing" de Wikipedia. El complemento
-"Humanizer" no estaba activo en la sesión; se puede activar en claude.ai para una segunda pasada.
+Se instaló la skill `humanizer` (https://github.com/blader/humanizer, licencia MIT) en `.claude/skills/humanizer/` y se
+aplicó a todo el documento, de la portada a los anexos. Sigue los 26 patrones de "Signs of AI writing" de Wikipedia:
+contrastes "no X sino Y", cierres que repiten lo dicho, frases sentenciosas, tríadas de relleno, rayas, palabras de
+moda, adornos de importancia y listados con negrita. Las 25 correcciones de esta pasada están en
+`herramientas/v2/h_ediciones.py` (se ven en rojo y verde en la copia intervenida). Además:
+
+- Se quitaron de los listados de código del Anexo E las referencias internas (CLAUDE.md, rutas de docs, "decisiones
+  del arquitecto"); es solo texto de comentarios, no código.
+- Se corrigió una inexactitud: las entradas del clasificador son 15 e incluyen "si hay detección".
+- Un detector de IA nunca da certeza. Lo que protege es que cada frase la puedan explicar y defender los autores.
 
 ### Lo que falta (marcado `[FALTA]` en rosa en el Word)
 

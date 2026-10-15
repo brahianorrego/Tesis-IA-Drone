@@ -104,6 +104,22 @@ def _clave(s):
     return s
 
 
+_CAMBIOS_LISTADO = [
+    ('Paso 3 del plan mínimo (docs/PLAN_MINIMO_FISICO.md): intervención', 'Paso 3 del plan de pruebas físicas: intervención'),
+    ('Reglas (decisiones del arquitecto, 2026-10-11):', 'Reglas de diseño:'),
+    ('FASE G · DECISOR IA del mínimo indispensable: la IA', 'DECISOR IA: la IA'),
+    ('tal como las escribe CLAUDE.md (regla 5)', 'tal como las fija el diseño (regla 5)'),
+    ('(fase G)', ''),
+]
+
+
+def _limpiar_comentario(linea):
+    """En los listados impresos se quitan referencias internas del repositorio (solo comentarios, no código)."""
+    for viejo, nuevo in _CAMBIOS_LISTADO:
+        linea = linea.replace(viejo, nuevo)
+    return linea.rstrip() if linea.strip() else linea
+
+
 def aplicar(M, movidos, REPO):
     P, T = M.P, M.T
     # ---------------- referencias
@@ -364,7 +380,7 @@ def aplicar(M, movidos, REPO):
             ('simulacion/minimo_tesis/decisor_ia.py', 'Clasificador de riesgo'),
             ('simulacion/minimo_tesis/sistema.py', 'Lógica mínima y envolvente de seguridad')], start=1):
         c = M.rotulo_anexo(q, f'Listado E{i}', f'{titulo} ({ruta})')
-        lineas = open(f'{REPO}/{ruta}', encoding='utf-8').read().splitlines()
+        lineas = [_limpiar_comentario(x) for x in open(f'{REPO}/{ruta}', encoding='utf-8').read().splitlines()]
         q = M.codigo(c, lineas)
 
     # ================= Anexo F
